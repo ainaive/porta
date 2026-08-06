@@ -16,6 +16,37 @@
     "title": "生态工具链门户",
     "subtitle": "工具、课程、教学视频、模型 API 资源——团队所需的一切，尽在此处。"
   },
+  "sections": {
+    "tools": {
+      "title": "工具",
+      "description": "开箱即用的内部与生态工具。"
+    },
+    "courses": {
+      "title": "课程",
+      "description": "团队沉淀的体系化学习路径。"
+    },
+    "videos": {
+      "title": "视频",
+      "description": "教学视频与内部分享录像。"
+    },
+    "models": {
+      "title": "模型 API",
+      "description": "模型 API 文档、接入端点与使用指南。"
+    },
+    "searchPlaceholder": "搜索…",
+    "empty": "这里还没有内容。",
+    "all": "全部",
+    "latest": "最新添加",
+    "chapters": "章节",
+    "previousChapter": "上一章",
+    "nextChapter": "下一章",
+    "openTool": "打开工具",
+    "documentation": "查看文档",
+    "endpoint": "接入端点",
+    "provider": "提供方",
+    "level": "难度",
+    "estimatedHours": "约 {hours} 小时"
+  },
   "auth": {
     "signInTitle": "登录",
     "signInDescription": "欢迎回到 Porta。",

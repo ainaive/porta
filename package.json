@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
+    "db:seed": "bun scripts/seed.ts",
     "auth:schema": "better-auth generate --config src/lib/auth.ts --output src/db/schema/auth.ts --yes"
   },
   "dependencies": {
@@ -25,6 +26,8 @@
     "radix-ui": "^1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "shadcn": "^4.16.1",
     "sharp": "^0.35.3",
     "sonner": "^2.0.7",
@@ -35,6 +38,7 @@
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
     "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

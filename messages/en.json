@@ -16,6 +16,37 @@
     "title": "The ecosystem toolchain portal",
     "subtitle": "Tools, courses, teaching videos, and model API resources — everything the team builds with, in one place."
   },
+  "sections": {
+    "tools": {
+      "title": "Tools",
+      "description": "Internal and ecosystem tools, ready to use."
+    },
+    "courses": {
+      "title": "Courses",
+      "description": "Structured learning paths from the team."
+    },
+    "videos": {
+      "title": "Videos",
+      "description": "Teaching videos and recorded sessions."
+    },
+    "models": {
+      "title": "Model APIs",
+      "description": "Model API docs, endpoints, and usage guides."
+    },
+    "searchPlaceholder": "Search…",
+    "empty": "Nothing here yet.",
+    "all": "All",
+    "latest": "Latest additions",
+    "chapters": "Chapters",
+    "previousChapter": "Previous",
+    "nextChapter": "Next",
+    "openTool": "Open tool",
+    "documentation": "Documentation",
+    "endpoint": "Endpoint",
+    "provider": "Provider",
+    "level": "Level",
+    "estimatedHours": "~{hours} h"
+  },
   "auth": {
     "signInTitle": "Sign in",
     "signInDescription": "Welcome back to Porta.",
