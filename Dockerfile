@@ -16,7 +16,10 @@ COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
+# BUILD_STANDALONE is what makes next.config.ts emit .next/standalone; it is
+# off by default so Vercel's adapter-driven build doesn't trip over it.
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    BUILD_STANDALONE=1
 # No database is reachable at build time: every DB-backed page is
 # force-dynamic and the db client is lazy, so the build never connects.
 RUN node node_modules/next/dist/bin/next build

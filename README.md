@@ -54,7 +54,11 @@ that, sign-up requires an invite link created in `/admin/invites`.
 **Vercel** — `vercel.json` sets the build command to run migrations before
 `next build`. Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, and `BETTER_AUTH_URL`
 in the project environment. Use a plain TCP Postgres URL (Neon works; set
-`DATABASE_POOLED=1` for pooled endpoints).
+`DATABASE_POOLED=1` for pooled endpoints). Only production builds migrate —
+preview builds skip the step and expect an already-migrated database, so
+they never write to the database production shares. Leave `BETTER_AUTH_URL`
+unset for Preview: pinning it to the production origin makes preview
+deployments fail better-auth's origin check.
 
 **Docker** — the app also runs as a self-hosted container (Next.js standalone
 output, migrations applied on start):

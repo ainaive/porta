@@ -6,6 +6,14 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 
+// Preview builds point at the same database as production, so only the
+// production build may migrate it. VERCEL_ENV is unset locally, in CI, and in
+// the Docker entrypoint, so those paths still migrate as before.
+if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
+  console.log(`Skipping migrations for VERCEL_ENV=${process.env.VERCEL_ENV}`)
+  process.exit(0)
+}
+
 const url = process.env.DATABASE_URL
 if (!url) {
   console.error('DATABASE_URL is not set')

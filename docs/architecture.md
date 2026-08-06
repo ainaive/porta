@@ -90,6 +90,16 @@ Two targets, one codebase — the constraints that keep both working:
   bundle (`bun build scripts/migrate.mjs`) in the entrypoint, before the
   server starts. Vercel runs the same script from node_modules
   (`build:vercel`).
+- **Standalone output is opt-in** (`BUILD_STANDALONE=1`, set only in the
+  Dockerfile build stage) and must stay off on Vercel. Vercel's build adapter
+  owns file tracing and never writes `.next/next-server.js.nft.json`, which
+  Next's standalone step reads without a guard — enabling it there fails the
+  build after page generation. The flag is target-shaped rather than
+  host-shaped so no host is named in `next.config.ts`.
+- **Only production deployments migrate.** `scripts/migrate.mjs` exits early
+  when `VERCEL_ENV` is set to anything but `production`, because preview
+  deployments point at the database production uses. Local runs, CI, and the
+  Docker entrypoint never set `VERCEL_ENV` and are unaffected.
 - CI's docker job boots the compose stack and curls it on every PR.
 
 ## Testing & QA gates
