@@ -16,6 +16,9 @@
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
     "db:seed": "bun scripts/seed.ts",
     "i18n:check": "bun scripts/check-messages.ts",
+    "test": "bun test src/ scripts/ tests/",
+    "test:unit": "bun test src/ scripts/",
+    "test:db": "bun test tests/db/",
     "auth:schema": "better-auth generate --config src/lib/auth.ts --output src/db/schema/auth.ts --yes"
   },
   "dependencies": {
