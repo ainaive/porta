@@ -102,6 +102,36 @@ Two targets, one codebase — the constraints that keep both working:
   Docker entrypoint never set `VERCEL_ENV` and are unaffected.
 - CI's docker job boots the compose stack and curls it on every PR.
 
+## Theming & chrome
+
+Tailwind v4, CSS-first — there is no `tailwind.config.*`. `src/app/globals.css`
+holds the whole token set. **Semantic UI colour** — surfaces, text, borders,
+states — comes from tokens via utilities (`bg-background`,
+`text-muted-foreground`, `border-border`); components should not hard-code it,
+so a scope swap like `.landing` below reaches everything.
+
+Decorative colour is the exception and is allowed inline: the landing's
+ambient glows (`src/components/landing/primitives.tsx`), preview-card tints,
+and status dots are one-off ramps carried straight from the design, not tokens
+anything else should reuse.
+
+- **Two canvases.** The app is light; the landing page (`/`) is dark. A
+  `.landing` class re-points the standard tokens at the landing palette and is
+  applied together with `.dark` so the shadcn primitives' `dark:` variants
+  stay correct. `src/components/site/chrome-shell.tsx` reads the
+  locale-stripped pathname and opens that scope around the header, page and
+  footer. **`SiteHeader`, `SiteFooter` and any shared chrome therefore render
+  on both canvases — check both when changing them.**
+- **Font families are indirected** through `--font-*-stack` properties in
+  `:root`, because `@theme inline` pastes its value straight into each utility
+  and so must name a property that exists at runtime. That indirection is also
+  what lets a scope swap a family list.
+- **`--brand*` are constants**, not theme state. The app chrome is
+  deliberately achromatic; the accent belongs to the landing and the brand
+  mark.
+- Landing copy is held to shipped capability, enforced by an e2e test. See
+  [ADR 0008](./adr/0008-landing-visual-system.md).
+
 ## Testing & QA gates
 
 | Layer | Tool | Owns |

@@ -9,6 +9,7 @@ import {
 import {
   adminListChapters,
   adminListResources,
+  getHomeOverview,
   getPublishedBySlug,
   listChapters,
   listPublished,
@@ -115,6 +116,106 @@ describe('getPublishedBySlug', () => {
     expect((await getPublishedBySlug('tool', 'mine', 'en'))?.title).toBe('Mine')
     expect(await getPublishedBySlug('tool', 'hidden', 'en')).toBeNull()
     expect(await getPublishedBySlug('tool', 'nope', 'en')).toBeNull()
+  })
+})
+
+describe('getHomeOverview', () => {
+  test('partitions published resources by type and counts them all', async () => {
+    await insertResource('t1', [{ locale: 'en', title: 'Tool 1' }])
+    await insertResource('t2', [{ locale: 'en', title: 'Tool 2' }])
+    await insertResource('c1', [{ locale: 'en', title: 'Course 1' }], {
+      type: 'course',
+    })
+    await insertResource('v1', [{ locale: 'en', title: 'Video 1' }], {
+      type: 'video',
+    })
+
+    const { sections } = await getHomeOverview('en')
+    expect(sections.tool.count).toBe(2)
+    expect(sections.course.count).toBe(1)
+    expect(sections.video.count).toBe(1)
+    // Every type has an entry even with nothing published for it.
+    expect(sections.model_api).toEqual({ count: 0, items: [] })
+  })
+
+  test('counts only what a visitor can reach', async () => {
+    await insertResource('visible', [{ locale: 'en', title: 'Visible' }])
+    await insertResource('draft', [{ locale: 'en', title: 'Draft' }], {
+      status: 'draft',
+      tags: ['draft-tag'],
+    })
+    await insertResource('untranslated', [], { tags: ['orphan-tag'] })
+
+    const overview = await getHomeOverview('en')
+    expect(overview.sections.tool.count).toBe(1)
+    expect(overview.latest.map((i) => i.slug)).toEqual(['visible'])
+    expect(overview.tags).toEqual([])
+  })
+
+  test('previews at most three per section but latest spans all types', async () => {
+    for (const n of [1, 2, 3, 4]) {
+      await insertResource(`tool-${n}`, [{ locale: 'en', title: `Tool ${n}` }])
+    }
+    await insertResource('a-course', [{ locale: 'en', title: 'Course' }], {
+      type: 'course',
+    })
+
+    const overview = await getHomeOverview('en')
+    expect(overview.sections.tool.count).toBe(4)
+    expect(overview.sections.tool.items).toHaveLength(3)
+    expect(overview.latest).toHaveLength(5)
+    expect(await getHomeOverview('en', 2)).toHaveProperty('latest.length', 2)
+  })
+
+  test('applies locale fallback and dedupes tags', async () => {
+    await insertResource('zh-only', [{ locale: 'zh', title: '只有中文' }], {
+      tags: ['cli', 'infra'],
+    })
+    await insertResource('both', [{ locale: 'en', title: 'EN' }], {
+      tags: ['cli'],
+    })
+
+    const overview = await getHomeOverview('en')
+    expect(overview.tags).toEqual(['cli', 'infra'])
+    expect(overview.latest.find((i) => i.slug === 'zh-only')?.title).toBe(
+      '只有中文',
+    )
+    expect(overview.latest.find((i) => i.slug === 'zh-only')?.isFallback).toBe(
+      true,
+    )
+  })
+
+  test('chapterCount ignores chapters of courses a visitor cannot reach', async () => {
+    // The publish action refuses to publish without a translation, but the
+    // schema does not enforce it — so the query must not assume it.
+    const orphan = await insertResource('orphan-course', [], {
+      type: 'course',
+    })
+    await db.insert(courseChapters).values({ courseId: orphan, position: 1 })
+
+    const overview = await getHomeOverview('en')
+    expect(overview.sections.course.count).toBe(0)
+    expect(overview.chapterCount).toBe(0)
+  })
+
+  test('chapterCount ignores chapters of unpublished courses', async () => {
+    const published = await insertResource(
+      'live-course',
+      [{ locale: 'en', title: 'Live' }],
+      { type: 'course' },
+    )
+    const draft = await insertResource(
+      'draft-course',
+      [{ locale: 'en', title: 'Draft' }],
+      { type: 'course', status: 'draft' },
+    )
+    await db.insert(courseChapters).values([
+      { courseId: published, position: 1 },
+      { courseId: published, position: 2 },
+      { courseId: draft, position: 1 },
+    ])
+
+    expect((await getHomeOverview('en')).chapterCount).toBe(2)
   })
 })
 

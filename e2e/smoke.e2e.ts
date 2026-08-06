@@ -3,14 +3,48 @@ import { expect, test } from '@playwright/test'
 test.describe('public smoke', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('home renders hero, section cards, and latest additions', async ({
-    page,
-  }) => {
+  test('home renders hero, bento, and latest additions', async ({ page }) => {
     await page.goto('/en')
+    // Asserted line by line: the headline is one h1 split across two spans,
+    // so its accessible name depends on how the two are joined.
+    const hero = page.getByRole('heading', { level: 1 })
+    await expect(hero).toContainText('One portal')
+    await expect(hero).toContainText('the entire toolchain')
     await expect(
-      page.getByRole('heading', { name: 'The ecosystem toolchain portal' }),
+      page.getByRole('heading', { name: 'Every resource, one system' }),
     ).toBeVisible()
     await expect(page.getByText('Latest additions')).toBeVisible()
+    // The footer is rendered by the shared layout, so this covers every page.
+    await expect(page.getByRole('contentinfo')).toBeVisible()
+  })
+
+  // Guards the rule in ADR 0008: the imported design advertised SSO, a ⌘K
+  // global search, a `porta keys create` CLI and course progress, none of
+  // which exist. Re-pasting that copy should fail rather than ship.
+  test('landing claims nothing the product does not do', async ({ page }) => {
+    await page.goto('/en')
+    for (const claim of [
+      'Sign in with SSO',
+      '⌘K',
+      'porta keys create',
+      'OPERATIONAL',
+      'completed',
+    ]) {
+      await expect(page.getByText(claim)).toHaveCount(0)
+    }
+  })
+
+  test('section links stay reachable on a phone', async ({ page }) => {
+    // The desktop nav is `max-sm:hidden`; below that the sheet is the only
+    // way in, so it is worth a test rather than a hover check.
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/en')
+    await page.getByRole('button', { name: 'Menu' }).click()
+    await page
+      .getByRole('dialog')
+      .getByRole('link', { name: 'Courses' })
+      .click()
+    await expect(page).toHaveURL(/\/en\/courses$/)
   })
 
   test('all four section listings respond', async ({ page }) => {

@@ -35,6 +35,10 @@ export const metaSchemas = {
 } as const
 
 export type ResourceType = keyof typeof metaSchemas
+
+// Derived rather than hand-listed, so a new section can't be added to
+// metaSchemas and silently skipped by anything iterating the types.
+export const resourceTypes = Object.keys(metaSchemas) as ResourceType[]
 export type ToolMeta = z.infer<typeof toolMeta>
 export type CourseMeta = z.infer<typeof courseMeta>
 export type VideoMeta = z.infer<typeof videoMeta>

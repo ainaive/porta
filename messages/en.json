@@ -10,11 +10,56 @@
     "models": "Model APIs",
     "admin": "Admin",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "menu": "Menu"
   },
   "home": {
-    "title": "The ecosystem toolchain portal",
-    "subtitle": "Tools, courses, teaching videos, and model API resources — everything the team builds with, in one place."
+    "subtitle": "Internal tools, model API resources, courses, and teaching videos — catalogued in one place, in both languages.",
+    "kicker": "ECOSYSTEM TOOLCHAIN PORTAL",
+    "heroLine1": "One portal,",
+    "heroLine2": "the entire toolchain",
+    "heroSub": "Internal tools, model API resources, courses, and teaching videos — catalogued in one place, in both languages.",
+    "ctaPrimary": "Sign in",
+    "ctaSecondary": "Browse the catalog",
+    "preview": {
+      "title": "Tools directory",
+      "search": "Search tools, docs, courses…"
+    },
+    "bento": {
+      "title": "Every resource, one system",
+      "subtitle": "Stop digging through chat history for links. Tools, model APIs, courses, and videos share one catalog, one set of tags, and one publishing flow.",
+      "tools": {
+        "title": "Tools directory",
+        "description": "Internal and ecosystem tools, each with a summary, tags, and links to the tool itself and its documentation."
+      },
+      "models": {
+        "title": "Model API resources",
+        "description": "Providers, endpoints, and usage guidelines, kept alongside everything else the team builds with."
+      },
+      "courses": {
+        "title": "Courses and chapters",
+        "description": "Structured learning paths, split into ordered chapters you can link straight into."
+      },
+      "videos": {
+        "title": "Teaching videos",
+        "description": "Recorded sessions and walkthroughs, embedded from YouTube and Bilibili."
+      },
+      "bilingual": {
+        "title": "Bilingual by default",
+        "description": "Every page exists in English and Chinese. Anything missing a translation still shows up, marked so you know what you are reading.",
+        "label": "中 / EN"
+      },
+      "search": {
+        "title": "Search and tags in every section",
+        "description": "Filter any section by free text or by tag. Tags are shared across the catalog, so the same word means the same thing everywhere.",
+        "label": "Search"
+      }
+    },
+    "access": {
+      "kicker": "INVITE ONLY",
+      "title": "Public to browse, sign in to read",
+      "description": "Anyone can see this page and every section listing. Full resource pages need an account, and accounts are created from an invite link — there is no open sign-up."
+    }
   },
   "sections": {
     "tools": {
