@@ -8,9 +8,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-heading: var(--font-sans);
+  /* Indirected through `*-stack` properties so a scope like `.landing` can
+     swap the whole family list. `@theme inline` pastes the value into each
+     utility, so it has to name a property that actually exists at runtime. */
+  --font-sans: var(--font-sans-stack);
+  --font-mono: var(--font-mono-stack);
+  --font-display: var(--font-display-stack);
+  --font-heading: var(--font-sans-stack);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -81,6 +85,16 @@
 }
 
 :root {
+  /* Latin from Geist, Han from Noto Sans SC — the zh locale had no declared
+     CJK family at all before this. Display type is Sora, which ships Latin
+     only, so it falls through to Noto for Chinese headings. */
+  --font-sans-stack:
+    var(--font-geist-sans), var(--font-noto-sans-sc), ui-sans-serif, system-ui,
+    sans-serif;
+  --font-mono-stack: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display-stack:
+    var(--font-sora), var(--font-noto-sans-sc), ui-sans-serif, sans-serif;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -161,6 +175,14 @@
    plain `bg-background` / `text-muted-foreground` / `border-border`.
    Note `&:is(.dark *)` never matches the wrapper itself — style the children. */
 .landing {
+  /* The design sets Noto Sans SC ahead of the Latin face for body copy, and
+     uses JetBrains Mono for its kickers and code panels. Scoped here so the
+     app chrome keeps Geist. The wrapper carries `font-sans` so these resolve
+     against `.landing` rather than the inherited value from `html`. */
+  --font-sans-stack:
+    var(--font-noto-sans-sc), var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --font-mono-stack: var(--font-jetbrains-mono), ui-monospace, monospace;
+
   --background: oklch(0.145 0.003 286);
   --foreground: oklch(0.967 0.001 106);
   --card: oklch(0.185 0.004 286);
