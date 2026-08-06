@@ -30,10 +30,10 @@ export function SignInForm() {
       return
     }
     const next = searchParams.get('next')
-    const target =
-      next && next.startsWith('/') && !next.startsWith('//')
-        ? next
-        : `/${locale}`
+    // Only same-origin paths: browsers treat "\" as "/" when resolving URLs,
+    // so "/\evil.com" is protocol-relative — the char after "/" must be
+    // neither slash form.
+    const target = next && /^\/(?![/\\])/.test(next) ? next : `/${locale}`
     hardNavigate(target)
   }
 
