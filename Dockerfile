@@ -3,7 +3,9 @@
 # Debian/glibc — sharp's native binding is built in the bun stage and must
 # match the runtime libc, so never swap the runtime for alpine/musl.
 
-FROM oven/bun:1 AS deps
+# Pinned to the packageManager version, not floating `1`: this stage resolves
+# bun.lock, so --frozen-lockfile is only as reproducible as the bun reading it.
+FROM oven/bun:1.3.14 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
@@ -12,7 +14,7 @@ RUN bun install --frozen-lockfile
 # it under bun-as-node has crashed on CI hardware (segfault at exit). The bun
 # binary is copied in only for the migrator bundling step.
 FROM node:24-bookworm-slim AS build
-COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=oven/bun:1.3.14 /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
