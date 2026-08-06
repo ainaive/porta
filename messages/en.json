@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Porta",
+    "appName": "Silicon Ecosystem",
     "untranslated": "Untranslated"
   },
   "nav": {
@@ -160,7 +160,7 @@
   },
   "auth": {
     "signInTitle": "Sign in",
-    "signInDescription": "Welcome back to Porta.",
+    "signInDescription": "Welcome back to {appName}.",
     "name": "Name",
     "email": "Email",
     "password": "Password",
@@ -168,8 +168,8 @@
     "signingIn": "Signing in…",
     "signInFailed": "Sign-in failed",
     "signUpTitle": "Create your account",
-    "signUpInvited": "You have been invited to Porta.",
-    "signUpBootstrap": "You are setting up Porta — the first account becomes the administrator.",
+    "signUpInvited": "You have been invited to {appName}.",
+    "signUpBootstrap": "You are setting up {appName} — the first account becomes the administrator.",
     "signUpAction": "Create account",
     "signingUp": "Creating account…",
     "signUpFailed": "Sign-up failed",

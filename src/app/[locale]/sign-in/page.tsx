@@ -10,14 +10,19 @@ import {
 } from '@/components/ui/card'
 
 export default async function SignInPage() {
-  const t = await getTranslations('auth')
+  const [t, common] = await Promise.all([
+    getTranslations('auth'),
+    getTranslations('common'),
+  ])
 
   return (
     <main className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>{t('signInTitle')}</CardTitle>
-          <CardDescription>{t('signInDescription')}</CardDescription>
+          <CardDescription>
+            {t('signInDescription', { appName: common('appName') })}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Suspense>
