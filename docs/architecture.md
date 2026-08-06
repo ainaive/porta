@@ -105,9 +105,15 @@ Two targets, one codebase — the constraints that keep both working:
 ## Theming & chrome
 
 Tailwind v4, CSS-first — there is no `tailwind.config.*`. `src/app/globals.css`
-holds the whole token set; components consume it through utilities
-(`bg-background`, `text-muted-foreground`, `border-border`) and should not
-carry raw colour values.
+holds the whole token set. **Semantic UI colour** — surfaces, text, borders,
+states — comes from tokens via utilities (`bg-background`,
+`text-muted-foreground`, `border-border`); components should not hard-code it,
+so a scope swap like `.landing` below reaches everything.
+
+Decorative colour is the exception and is allowed inline: the landing's
+ambient glows (`src/components/landing/primitives.tsx`), preview-card tints,
+and status dots are one-off ramps carried straight from the design, not tokens
+anything else should reuse.
 
 - **Two canvases.** The app is light; the landing page (`/`) is dark. A
   `.landing` class re-points the standard tokens at the landing palette and is

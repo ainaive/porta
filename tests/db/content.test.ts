@@ -185,6 +185,19 @@ describe('getHomeOverview', () => {
     )
   })
 
+  test('chapterCount ignores chapters of courses a visitor cannot reach', async () => {
+    // The publish action refuses to publish without a translation, but the
+    // schema does not enforce it — so the query must not assume it.
+    const orphan = await insertResource('orphan-course', [], {
+      type: 'course',
+    })
+    await db.insert(courseChapters).values({ courseId: orphan, position: 1 })
+
+    const overview = await getHomeOverview('en')
+    expect(overview.sections.course.count).toBe(0)
+    expect(overview.chapterCount).toBe(0)
+  })
+
   test('chapterCount ignores chapters of unpublished courses', async () => {
     const published = await insertResource(
       'live-course',

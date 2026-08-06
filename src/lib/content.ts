@@ -1,4 +1,14 @@
-import { and, arrayContains, asc, count, desc, eq, type SQL } from 'drizzle-orm'
+import {
+  and,
+  arrayContains,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  type SQL,
+  sql,
+} from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/db'
 import {
@@ -97,12 +107,27 @@ export async function getHomeOverview(
       )
       .where(eq(resources.status, 'published'))
       .orderBy(desc(resources.createdAt)),
-    // Chapters of draft courses must not inflate a public number.
+    // Both halves of "reachable" applied here rather than inherited: a draft
+    // course's chapters must not inflate a public number, and neither must an
+    // untranslated one's, since groupResources drops it from the course count
+    // below. The publish action already refuses to publish without a
+    // translation, but nothing in the schema enforces that, so this query
+    // does not lean on it.
     db
       .select({ value: count() })
       .from(courseChapters)
       .innerJoin(resources, eq(resources.id, courseChapters.courseId))
-      .where(eq(resources.status, 'published')),
+      .where(
+        and(
+          eq(resources.status, 'published'),
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(resourceTranslations)
+              .where(eq(resourceTranslations.resourceId, resources.id)),
+          ),
+        ),
+      ),
   ])
 
   // groupResources drops resources with no translation at all, so counts and
