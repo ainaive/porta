@@ -23,7 +23,16 @@ if (!url) {
 const migrationsFolder = fileURLToPath(new URL('../drizzle', import.meta.url))
 const client = postgres(url, { max: 1, onnotice: () => {} })
 
+// Two deploy paths (Vercel build, Docker entrypoint) can target the same
+// database; drizzle's migrator does not serialize itself, so concurrent runs
+// would both apply pending DDL. The advisory lock makes the loser wait and
+// then see an already-migrated journal. Session-level (not xact) because the
+// migrator manages its own transactions; max: 1 keeps lock and migration on
+// the same connection. Key = arbitrary constant, unique to this app.
+const MIGRATION_LOCK_KEY = 727243801
+
 try {
+  await client`select pg_advisory_lock(${MIGRATION_LOCK_KEY})`
   await migrate(drizzle(client), { migrationsFolder })
   console.log('Migrations applied')
 } finally {
