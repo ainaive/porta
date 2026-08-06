@@ -65,6 +65,18 @@ describe('bootstrap', () => {
     await expect(signUp('intruder@example.test')).rejects.toThrow(/invitation/i)
   })
 
+  test('a token-bearing signup never bootstraps, even on an empty table', async () => {
+    // A junk token must not ride the empty-table branch to admin: with a
+    // token present the invite claim is mandatory, and a fresh database
+    // has no invites to claim.
+    const results = await Promise.allSettled([
+      signUp('junk-one@example.test', 'junk-token-1'),
+      signUp('junk-two@example.test', 'junk-token-2'),
+    ])
+    expect(results.every((r) => r.status === 'rejected')).toBe(true)
+    expect(await db.$count(user)).toBe(0)
+  })
+
   test('concurrent bootstrap signups never yield two admins', async () => {
     const results = await Promise.allSettled([
       signUp('first@example.test'),

@@ -46,16 +46,20 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (userData, ctx) => {
-          // First account ever → admin (bootstrap). Otherwise the invite is
-          // claimed here — a conditional UPDATE, so of N concurrent signups
-          // holding one token exactly one proceeds. The request hook has
-          // already produced the friendly errors for the common failures;
-          // this is the authoritative single-use gate.
-          if (!(await hasAnyUser())) {
-            return { data: { ...userData, role: 'admin' } }
-          }
+          // The invite is claimed here — a conditional UPDATE, so of N
+          // concurrent signups holding one token exactly one proceeds. The
+          // request hook has already produced the friendly errors for the
+          // common failures; this is the authoritative single-use gate.
+          // Only tokenless signups may take the bootstrap branch: a token
+          // must always claim, otherwise a junk token would ride an empty
+          // table to admin and dodge the after-hook rollback (which only
+          // covers tokenless signups).
           const token = ctx?.body?.inviteToken
           if (typeof token !== 'string' || token.length === 0) {
+            // First account ever → admin (bootstrap).
+            if (!(await hasAnyUser())) {
+              return { data: { ...userData, role: 'admin' } }
+            }
             return { data: userData }
           }
           const invite = await claimInvite(token)

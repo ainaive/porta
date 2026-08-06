@@ -20,7 +20,14 @@ export function LocaleSwitcher() {
       size="sm"
       className="font-mono text-xs"
       onClick={() => {
-        const query = Object.fromEntries(searchParams.entries())
+        // First value per key, matching the firstParam semantics the pages
+        // render with — entries() would keep the last duplicate instead.
+        const query = Object.fromEntries(
+          Array.from(new Set(searchParams.keys()), (key) => [
+            key,
+            searchParams.get(key) ?? '',
+          ]),
+        )
         router.replace(
           Object.keys(query).length > 0 ? { pathname, query } : pathname,
           { locale: other },

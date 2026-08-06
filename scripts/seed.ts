@@ -16,7 +16,8 @@ const host = process.env.DATABASE_URL
   ? new URL(process.env.DATABASE_URL).hostname
   : 'localhost' // unset falls through to the db client's own error
 if (
-  !['localhost', '127.0.0.1', '::1'].includes(host) &&
+  // URL.hostname keeps the brackets on IPv6 literals, hence '[::1]'.
+  !['localhost', '127.0.0.1', '[::1]'].includes(host) &&
   process.env.SEED_FORCE !== '1'
 ) {
   console.error(
