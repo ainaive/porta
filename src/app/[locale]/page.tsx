@@ -62,7 +62,9 @@ export default async function HomePage({
 
       {latest.length > 0 ? (
         <>
-          <h2 className="mt-14 text-lg font-semibold">{t('sections.latest')}</h2>
+          <h2 className="mt-14 text-lg font-semibold">
+            {t('sections.latest')}
+          </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {latest.map((resource) => (
               <ResourceCard key={resource.id} resource={resource} />

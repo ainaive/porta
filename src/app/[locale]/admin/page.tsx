@@ -1,13 +1,13 @@
-import { count, eq, gt, isNull, and } from 'drizzle-orm'
+import { and, count, eq, gt, isNull } from 'drizzle-orm'
 import { getTranslations } from 'next-intl/server'
-import { db } from '@/db'
-import { invites, resources, user } from '@/db/schema'
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { db } from '@/db'
+import { invites, resources, user } from '@/db/schema'
 import { requireAdmin } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
@@ -48,7 +48,9 @@ export default async function AdminDashboardPage() {
 
   return (
     <main>
-      <h1 className="text-2xl font-semibold tracking-tight">{t('dashboard')}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">
+        {t('dashboard')}
+      </h1>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label}>

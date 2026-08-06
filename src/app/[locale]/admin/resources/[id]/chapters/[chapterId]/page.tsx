@@ -1,12 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { ChapterTranslationForm } from '@/components/admin/chapter-translation-form'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Link } from '@/i18n/navigation'
 import { adminListChapters } from '@/lib/content'
 import { requireAdmin } from '@/lib/session'

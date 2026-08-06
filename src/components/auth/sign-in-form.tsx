@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -42,7 +42,13 @@ export function SignInForm() {
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="email">{t('email')}</FieldLabel>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="password">{t('password')}</FieldLabel>

@@ -1,9 +1,9 @@
 'use server'
 
 import { and, asc, eq, max, ne } from 'drizzle-orm'
+import { nanoid } from 'nanoid'
 import { revalidatePath } from 'next/cache'
 import { getLocale } from 'next-intl/server'
-import { nanoid } from 'nanoid'
 import { z } from 'zod'
 import { db } from '@/db'
 import {
@@ -186,7 +186,8 @@ export async function saveSettings(
   const slug = slugSchema.safeParse(formString(formData, 'slug'))
   if (!slug.success) return { error: 'Slug must be kebab-case' }
 
-  const status = formString(formData, 'status') === 'published' ? 'published' : 'draft'
+  const status =
+    formString(formData, 'status') === 'published' ? 'published' : 'draft'
   if (status === 'published') {
     const translationCount = await db.$count(
       resourceTranslations,

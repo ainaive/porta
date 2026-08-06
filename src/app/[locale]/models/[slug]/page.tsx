@@ -3,12 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { ResourceDetailHeader } from '@/components/resource/detail-header'
 import { Markdown } from '@/components/resource/markdown'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Locale } from '@/i18n/routing'
 import { getPublishedBySlug } from '@/lib/content'
 import { modelApiMeta } from '@/lib/resource-meta'

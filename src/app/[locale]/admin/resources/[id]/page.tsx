@@ -5,15 +5,10 @@ import { SettingsForm } from '@/components/admin/settings-form'
 import { TranslationForm } from '@/components/admin/translation-form'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Link } from '@/i18n/navigation'
-import { adminGetResource } from '@/lib/content'
 import { deleteResource } from '@/lib/admin-actions'
+import { adminGetResource } from '@/lib/content'
 import type { ResourceType } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 
@@ -85,7 +80,10 @@ export default async function EditResourcePage({
             }}
           />
           <Separator className="my-8" />
-          <ConfirmButton action={deleteAction} confirmLabel={t('confirmDelete')}>
+          <ConfirmButton
+            action={deleteAction}
+            confirmLabel={t('confirmDelete')}
+          >
             {t('delete')}
           </ConfirmButton>
         </TabsContent>

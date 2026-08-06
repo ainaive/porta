@@ -1,20 +1,20 @@
 'use client'
 
-import { useActionState } from 'react'
 import { useTranslations } from 'next-intl'
+import { useActionState } from 'react'
 import { ActionFeedback } from '@/components/admin/action-feedback'
 import { NativeSelect } from '@/components/admin/native-select'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { saveSettings, type ActionState } from '@/lib/admin-actions'
+import { type ActionState, saveSettings } from '@/lib/admin-actions'
 import type {
+  CourseMeta,
   ModelApiMeta,
   ResourceType,
   ToolMeta,
   VideoMeta,
-  CourseMeta,
 } from '@/lib/resource-meta'
 
 type Meta = Partial<ToolMeta & VideoMeta & ModelApiMeta & CourseMeta>
@@ -44,11 +44,20 @@ export function SettingsForm({
         <div className="grid gap-6 sm:grid-cols-2">
           <Field>
             <FieldLabel htmlFor="slug">{t('slug')}</FieldLabel>
-            <Input id="slug" name="slug" defaultValue={resource.slug} required />
+            <Input
+              id="slug"
+              name="slug"
+              defaultValue={resource.slug}
+              required
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="status">{t('status')}</FieldLabel>
-            <NativeSelect id="status" name="status" defaultValue={resource.status}>
+            <NativeSelect
+              id="status"
+              name="status"
+              defaultValue={resource.status}
+            >
               <option value="draft">{t('draft')}</option>
               <option value="published">{t('published')}</option>
             </NativeSelect>
@@ -72,7 +81,11 @@ export function SettingsForm({
             </Field>
             <Field>
               <FieldLabel htmlFor="docsUrl">{t('metaDocsUrl')}</FieldLabel>
-              <Input id="docsUrl" name="docsUrl" defaultValue={meta.docsUrl ?? ''} />
+              <Input
+                id="docsUrl"
+                name="docsUrl"
+                defaultValue={meta.docsUrl ?? ''}
+              />
             </Field>
           </div>
         ) : null}
@@ -157,7 +170,11 @@ export function SettingsForm({
           <div className="grid gap-6 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="level">{t('metaLevel')}</FieldLabel>
-              <NativeSelect id="level" name="level" defaultValue={meta.level ?? ''}>
+              <NativeSelect
+                id="level"
+                name="level"
+                defaultValue={meta.level ?? ''}
+              >
                 <option value="">—</option>
                 <option value="beginner">beginner</option>
                 <option value="intermediate">intermediate</option>

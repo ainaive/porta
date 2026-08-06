@@ -1,14 +1,14 @@
 'use client'
 
-import { useActionState } from 'react'
 import { useTranslations } from 'next-intl'
+import { useActionState } from 'react'
 import { ActionFeedback } from '@/components/admin/action-feedback'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import type { Locale } from '@/i18n/routing'
-import { saveTranslation, type ActionState } from '@/lib/admin-actions'
+import { type ActionState, saveTranslation } from '@/lib/admin-actions'
 
 export function TranslationForm({
   resourceId,

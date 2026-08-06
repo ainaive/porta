@@ -28,7 +28,8 @@ export default async function AdminInvitesPage() {
   ])
 
   function statusOf(invite: (typeof rows)[number]) {
-    if (invite.usedAt) return { label: t('statusUsed'), variant: 'secondary' as const }
+    if (invite.usedAt)
+      return { label: t('statusUsed'), variant: 'secondary' as const }
     if (invite.expiresAt < new Date())
       return { label: t('statusExpired'), variant: 'outline' as const }
     return { label: t('statusActive'), variant: 'default' as const }
@@ -92,7 +93,10 @@ export default async function AdminInvitesPage() {
             })}
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={5}
+                  className="text-center text-muted-foreground"
+                >
                   —
                 </TableCell>
               </TableRow>

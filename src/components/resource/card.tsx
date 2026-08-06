@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/card'
 import { Link } from '@/i18n/navigation'
 import type { TranslatedResource } from '@/lib/content'
-import { sectionForType, type ResourceType } from '@/lib/resource-meta'
+import { type ResourceType, sectionForType } from '@/lib/resource-meta'
 
 export async function ResourceCard({
   resource,

@@ -1,5 +1,5 @@
-import { cache } from 'react'
 import { and, arrayContains, asc, desc, eq, type SQL } from 'drizzle-orm'
+import { cache } from 'react'
 import { db } from '@/db'
 import {
   courseChapters,
@@ -268,7 +268,8 @@ export async function adminListChapters(courseId: string): Promise<
   >()
   for (const { chapter, translation } of rows) {
     const entry = byId.get(chapter.id) ?? { chapter, translations: {} }
-    if (translation) entry.translations[translation.locale as Locale] = translation
+    if (translation)
+      entry.translations[translation.locale as Locale] = translation
     byId.set(chapter.id, entry)
   }
   return [...byId.values()].sort(
