@@ -26,10 +26,11 @@ export async function PreviewMock({
   locale: Locale
   items: TranslatedResource[]
 }) {
-  const [t, nav, sections] = await Promise.all([
+  const [t, nav, sections, common] = await Promise.all([
     getTranslations('home'),
     getTranslations('nav'),
     getTranslations('sections'),
+    getTranslations('common'),
   ])
 
   return (
@@ -55,8 +56,8 @@ export async function PreviewMock({
 
         <div className="grid min-h-72 sm:grid-cols-[12.5rem_1fr]">
           <div className="hidden flex-col gap-1 border-r bg-background/60 p-3.5 sm:flex">
-            <div className="px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground/70">
-              PORTA
+            <div className="px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground/70 uppercase">
+              {common('appName')}
             </div>
             {SECTIONS.map((key, index) => (
               <div

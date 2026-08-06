@@ -15,7 +15,11 @@ const SECTIONS = [
 ] as const
 
 export async function SiteHeader() {
-  const [t, session] = await Promise.all([getTranslations('nav'), getSession()])
+  const [t, common, session] = await Promise.all([
+    getTranslations('nav'),
+    getTranslations('common'),
+    getSession(),
+  ])
 
   return (
     // Styled entirely from tokens so the same bar reads correctly on the light
@@ -32,7 +36,7 @@ export async function SiteHeader() {
         <Link href="/" className="flex items-center gap-2.5">
           <BrandMark />
           <span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">
-            Porta
+            {common('appName')}
           </span>
         </Link>
         <nav className="flex items-center gap-1 text-sm max-sm:hidden">
