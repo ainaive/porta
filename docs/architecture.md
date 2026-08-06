@@ -1,4 +1,4 @@
-# Porta Architecture
+# 硅基生态平台 / Silicon Ecosystem — Architecture
 
 Single Next.js App Router application, DB-backed content, deployed to Vercel
 and as a self-hosted Docker container from the same codebase. Domain terms
