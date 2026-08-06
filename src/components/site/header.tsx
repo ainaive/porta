@@ -15,7 +15,11 @@ const SECTIONS = [
 ] as const
 
 export async function SiteHeader() {
-  const [t, session] = await Promise.all([getTranslations('nav'), getSession()])
+  const [t, common, session] = await Promise.all([
+    getTranslations('nav'),
+    getTranslations('common'),
+    getSession(),
+  ])
 
   return (
     // Styled entirely from tokens so the same bar reads correctly on the light
@@ -31,8 +35,12 @@ export async function SiteHeader() {
         />
         <Link href="/" className="flex items-center gap-2.5">
           <BrandMark />
-          <span className="font-display text-[17px] font-extrabold tracking-[-0.03em]">
-            Porta
+          {/* Below sm the mark alone identifies the site: the wordmark plus a
+              hamburger, a locale toggle and a sign-in button do not fit a
+              390px bar. `sr-only` rather than `hidden` so this link keeps its
+              accessible name. */}
+          <span className="font-display text-[17px] font-extrabold tracking-[-0.03em] max-sm:sr-only">
+            {common('appName')}
           </span>
         </Link>
         <nav className="flex items-center gap-1 text-sm max-sm:hidden">

@@ -16,9 +16,10 @@ export default async function SignUpPage({
 }: {
   searchParams: Promise<{ token?: string }>
 }) {
-  const [{ token }, t] = await Promise.all([
+  const [{ token }, t, common] = await Promise.all([
     searchParams,
     getTranslations('auth'),
+    getTranslations('common'),
   ])
   const bootstrap = !(await hasAnyUser())
 
@@ -40,7 +41,9 @@ export default async function SignUpPage({
             <CardHeader>
               <CardTitle>{t('signUpTitle')}</CardTitle>
               <CardDescription>
-                {bootstrap ? t('signUpBootstrap') : t('signUpInvited')}
+                {t(bootstrap ? 'signUpBootstrap' : 'signUpInvited', {
+                  appName: common('appName'),
+                })}
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -1,7 +1,8 @@
-# Porta
+# 硅基生态平台 / Silicon Ecosystem
 
 Ecosystem toolchain portal — a public-facing website whose primary users are
-internal employees. V1 hosts four sections built on one generic content model:
+internal employees. The repository, package, and databases are named `porta`,
+which is the codename rather than the product name (ADR 0009). V1 hosts four sections built on one generic content model:
 
 - **Tools** — internal and ecosystem tools directory
 - **Courses** — structured learning paths with ordered chapters

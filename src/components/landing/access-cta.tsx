@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Link } from '@/i18n/navigation'
 import { Glow, Kicker } from './primitives'
 
-// The design closed on an SSO pitch. Porta has no SSO: accounts come from a
-// single-use invite link (ADR 0002), and the public tier is the landing page
+// The design closed on an SSO pitch. There is no SSO here: accounts come from
+// a single-use invite link (ADR 0002), and the public tier is the landing page
 // plus the section listings. This section says that instead.
 export async function AccessCta({ signedIn }: { signedIn: boolean }) {
   const t = await getTranslations('home')

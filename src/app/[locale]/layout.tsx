@@ -57,9 +57,13 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: 'home' })
+  const [t, common] = await Promise.all([
+    getTranslations({ locale, namespace: 'home' }),
+    getTranslations({ locale, namespace: 'common' }),
+  ])
+  const appName = common('appName')
   return {
-    title: { default: 'Porta', template: '%s · Porta' },
+    title: { default: appName, template: `%s · ${appName}` },
     description: t('subtitle'),
   }
 }

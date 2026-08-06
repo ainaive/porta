@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Porta",
+    "appName": "硅基生态平台",
     "untranslated": "未翻译"
   },
   "nav": {
@@ -160,7 +160,7 @@
   },
   "auth": {
     "signInTitle": "登录",
-    "signInDescription": "欢迎回到 Porta。",
+    "signInDescription": "欢迎回到{appName}。",
     "name": "姓名",
     "email": "邮箱",
     "password": "密码",
@@ -168,8 +168,8 @@
     "signingIn": "登录中…",
     "signInFailed": "登录失败",
     "signUpTitle": "创建账号",
-    "signUpInvited": "你已被邀请加入 Porta。",
-    "signUpBootstrap": "你正在初始化 Porta——第一个账号将成为管理员。",
+    "signUpInvited": "你已被邀请加入{appName}。",
+    "signUpBootstrap": "你正在初始化{appName}——第一个账号将成为管理员。",
     "signUpAction": "创建账号",
     "signingUp": "创建账号中…",
     "signUpFailed": "注册失败",

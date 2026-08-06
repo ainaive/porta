@@ -19,7 +19,7 @@ test('invite → member signup → member is gated from admin', async ({
   const memberPage = await memberContext.newPage()
   await memberPage.goto(inviteUrl)
   await expect(
-    memberPage.getByText('You have been invited to Porta.'),
+    memberPage.getByText('You have been invited to Silicon Ecosystem.'),
   ).toBeVisible()
   await memberPage.getByLabel('Name').fill('Member E2E')
   await memberPage.getByLabel('Email').fill('member@e2e.test')
@@ -28,9 +28,9 @@ test('invite → member signup → member is gated from admin', async ({
   await expect(memberPage).toHaveURL(/\/en$/)
 
   // Members can open gated details…
-  await memberPage.goto('/en/tools/porta-cli')
+  await memberPage.goto('/en/tools/silicon-cli')
   await expect(
-    memberPage.getByRole('heading', { name: 'Porta CLI' }),
+    memberPage.getByRole('heading', { name: 'Silicon CLI' }),
   ).toBeVisible()
 
   // …but the admin area 404s for them (concealment, not a redirect).

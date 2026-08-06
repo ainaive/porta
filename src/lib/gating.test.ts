@@ -16,7 +16,7 @@ describe('splitLocale', () => {
 
 describe('isGatedPath', () => {
   test.each([
-    '/en/tools/porta-cli',
+    '/en/tools/silicon-cli',
     '/zh/courses/some-course/2',
     '/videos/clip',
     '/en/admin',

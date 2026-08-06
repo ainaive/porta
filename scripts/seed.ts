@@ -28,24 +28,24 @@ type SeedResource = {
 const SEED: SeedResource[] = [
   {
     type: 'tool',
-    slug: 'porta-cli',
+    slug: 'silicon-cli',
     tags: ['cli', 'devops'],
     meta: {
-      url: 'https://example.com/porta-cli',
-      docsUrl: 'https://example.com/porta-cli/docs',
+      url: 'https://example.com/silicon-cli',
+      docsUrl: 'https://example.com/silicon-cli/docs',
     },
     translations: [
       {
         locale: 'en',
-        title: 'Porta CLI',
-        summary: 'Command-line companion for the Porta toolchain.',
-        body: '## Install\n\n```bash\nbrew install porta-cli\n```\n\nThen run `porta login` to authenticate.',
+        title: 'Silicon CLI',
+        summary: 'Command-line companion for the Silicon Ecosystem toolchain.',
+        body: '## Install\n\n```bash\nbrew install silicon-cli\n```\n\nThen run `silicon login` to authenticate.',
       },
       {
         locale: 'zh',
-        title: 'Porta 命令行工具',
-        summary: 'Porta 工具链的命令行助手。',
-        body: '## 安装\n\n```bash\nbrew install porta-cli\n```\n\n然后运行 `porta login` 完成认证。',
+        title: '硅基命令行工具',
+        summary: '硅基生态平台工具链的命令行助手。',
+        body: '## 安装\n\n```bash\nbrew install silicon-cli\n```\n\n然后运行 `silicon login` 完成认证。',
       },
     ],
   },
@@ -112,7 +112,7 @@ const SEED: SeedResource[] = [
   },
   {
     type: 'video',
-    slug: 'getting-started-with-porta',
+    slug: 'getting-started-with-silicon',
     tags: ['onboarding'],
     meta: {
       provider: 'youtube',
@@ -122,12 +122,12 @@ const SEED: SeedResource[] = [
     translations: [
       {
         locale: 'en',
-        title: 'Getting started with Porta',
+        title: 'Getting started with Silicon Ecosystem',
         summary: 'A 12-minute tour of the portal and its tools.',
       },
       {
         locale: 'zh',
-        title: 'Porta 快速上手',
+        title: '硅基生态平台快速上手',
         summary: '12 分钟带你了解门户与工具。',
       },
     ],
