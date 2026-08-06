@@ -389,18 +389,24 @@ export async function toggleUserBan(userId: string): Promise<void> {
   const session = await requireAdmin()
   if (userId === session.user.id) return
 
-  const [target] = await db
-    .select({ banned: user.banned })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1)
-  if (!target) return
+  // One transaction, row locked: the flag and the session purge land
+  // together, and two concurrent toggles serialize instead of computing
+  // the same flip.
+  await db.transaction(async (tx) => {
+    const [target] = await tx
+      .select({ banned: user.banned })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+      .for('update')
+    if (!target) return
 
-  const banned = !target.banned
-  await db.update(user).set({ banned }).where(eq(user.id, userId))
-  if (banned) {
-    // Kill live sessions so the ban takes effect immediately.
-    await db.delete(sessionTable).where(eq(sessionTable.userId, userId))
-  }
+    const banned = !target.banned
+    await tx.update(user).set({ banned }).where(eq(user.id, userId))
+    if (banned) {
+      // Kill live sessions so the ban takes effect immediately.
+      await tx.delete(sessionTable).where(eq(sessionTable.userId, userId))
+    }
+  })
   revalidatePath('/', 'layout')
 }
