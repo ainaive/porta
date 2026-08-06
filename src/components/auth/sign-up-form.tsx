@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { authClient } from '@/lib/auth-client'
+import { hardNavigate } from '@/lib/hard-navigate'
 
 type SignUpInput = Parameters<typeof authClient.signUp.email>[0] & {
   inviteToken?: string
@@ -39,7 +40,7 @@ export function SignUpForm({
       toast.error(error.message ?? t('signUpFailed'))
       return
     }
-    window.location.assign(`/${locale}`)
+    hardNavigate(`/${locale}`)
   }
 
   return (

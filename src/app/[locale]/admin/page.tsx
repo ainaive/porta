@@ -1,4 +1,4 @@
-import { and, count, eq, gt, isNull } from 'drizzle-orm'
+import { and, count, gt, isNull } from 'drizzle-orm'
 import { getTranslations } from 'next-intl/server'
 import {
   Card,

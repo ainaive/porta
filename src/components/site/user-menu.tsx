@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Link } from '@/i18n/navigation'
 import { authClient } from '@/lib/auth-client'
+import { hardNavigate } from '@/lib/hard-navigate'
 
 export function UserMenu({
   name,
@@ -31,8 +32,7 @@ export function UserMenu({
 
   async function handleSignOut() {
     await authClient.signOut()
-    // Full navigation so gated pages re-run their server-side session checks.
-    window.location.assign(`/${locale}`)
+    hardNavigate(`/${locale}`)
   }
 
   return (
