@@ -100,12 +100,15 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
+    env:
+      # Compose interpolates the required variable even for `build`.
+      BETTER_AUTH_SECRET: ci-smoke-only-secret-not-production
     steps:
       - uses: actions/checkout@v4
       - run: docker compose build
       - name: Boot the stack and smoke-test it
         run: |
-          BETTER_AUTH_SECRET=$(openssl rand -base64 32) docker compose up -d
+          docker compose up -d
           curl --retry 30 --retry-delay 2 --retry-all-errors -fsS \
             http://localhost:3000/en > /dev/null
           echo "compose stack serves /en"
