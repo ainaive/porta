@@ -20,9 +20,7 @@ export function ChromeShell({ children }: { children: ReactNode }) {
     <div
       className={cn(
         'flex flex-1 flex-col bg-background text-foreground',
-        // `font-sans` re-resolves the family list against this element, which
-        // is where .landing swaps it; inheriting from <html> would not.
-        isLanding && 'landing dark font-sans',
+        isLanding && 'landing dark',
       )}
     >
       {children}

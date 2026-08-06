@@ -179,12 +179,12 @@
    plain `bg-background` / `text-muted-foreground` / `border-border`.
    Note `&:is(.dark *)` never matches the wrapper itself — style the children. */
 .landing {
-  /* The design sets Noto Sans SC ahead of the Latin face for body copy, and
-     uses JetBrains Mono for its kickers and code panels. Scoped here so the
-     app chrome keeps Geist. The wrapper carries `font-sans` so these resolve
-     against `.landing` rather than the inherited value from `html`. */
-  --font-sans-stack:
-    var(--font-noto-sans-sc), var(--font-geist-sans), ui-sans-serif, sans-serif;
+  /* The design uses JetBrains Mono for its kickers and code panels; scoped
+     here so the admin textareas keep Geist Mono. The wrapper carries
+     `font-mono`-adjacent utilities that resolve against `.landing` rather
+     than the value inherited from `html`. Body text deliberately stays on the
+     root stack (Geist for Latin, Noto Sans SC for Han) rather than the
+     design's Noto-first order, which put Latin copy in a CJK face. */
   --font-mono-stack: var(--font-jetbrains-mono), ui-monospace, monospace;
 
   --background: var(--landing-background);
