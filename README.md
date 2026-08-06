@@ -39,6 +39,10 @@ that, sign-up requires an invite link created in `/admin/invites`.
 
 | Script | Purpose |
 |---|---|
+| `bun run verify` | The landing gate: format check, lint, typecheck, i18n parity, unit + DB tests |
+| `bun run test` / `test:unit` / `test:db` | bun test suites (DB suites use a dedicated `porta_test` database) |
+| `bun run test:e2e` | Playwright suite against a production build + throwaway `porta_e2e` database |
+| `bun run format` | Biome format + import organizing |
 | `bun run db:generate` | Generate SQL migrations from schema changes |
 | `bun run db:migrate` | Apply migrations (plain Node, same script as production) |
 | `bun run db:seed` | Seed sample content (wipes content tables, keeps users) |
@@ -63,12 +67,9 @@ Constraint to preserve: no Vercel-only service dependencies, and no
 `NEXT_PUBLIC_*` env vars for environment-dependent values — all config is
 read from server env at runtime so one image runs anywhere.
 
-## Adding a new section
+## Documentation
 
-The content model is generic; a new section is additive:
-
-1. Add the type to the `resource_type` enum in `src/db/schema/content.ts` and
-   generate a migration.
-2. Add a meta zod schema in `src/lib/resource-meta.ts` (+ section mapping).
-3. Add listing/detail pages under `src/app/[locale]/<section>/`.
-4. Add the section to the nav and message files.
+- [CONTEXT.md](./CONTEXT.md) — domain vocabulary
+- [docs/architecture.md](./docs/architecture.md) — system overview,
+  conventions, deployment constraints, and how to add a new section
+- [docs/adr/](./docs/adr/) — decision records

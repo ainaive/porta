@@ -1,9 +1,9 @@
 'use server'
 
 import { and, asc, eq, max, ne } from 'drizzle-orm'
+import { nanoid } from 'nanoid'
 import { revalidatePath } from 'next/cache'
 import { getLocale } from 'next-intl/server'
-import { nanoid } from 'nanoid'
 import { z } from 'zod'
 import { db } from '@/db'
 import {
@@ -17,82 +17,18 @@ import {
 } from '@/db/schema'
 import { redirect } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { metaSchemas, type ResourceType } from '@/lib/resource-meta'
+import {
+  formString,
+  parseMeta,
+  type ResourceType,
+  slugSchema,
+} from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 
 export type ActionState = { ok?: boolean; error?: string }
 
-const slugSchema = z
-  .string()
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'slug must be kebab-case')
-
 const localeSchema = z.enum(['en', 'zh'])
 const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
-
-function formString(formData: FormData, key: string): string {
-  const value = formData.get(key)
-  return typeof value === 'string' ? value.trim() : ''
-}
-
-function optional(value: string): string | undefined {
-  return value === '' ? undefined : value
-}
-
-// Builds the candidate meta object from type-specific form fields, then
-// validates it against the zod schema for that resource type.
-function parseMeta(
-  type: ResourceType,
-  formData: FormData,
-): { meta?: Record<string, unknown>; error?: string } {
-  let candidate: Record<string, unknown>
-  switch (type) {
-    case 'tool':
-      candidate = {
-        url: optional(formString(formData, 'url')),
-        docsUrl: optional(formString(formData, 'docsUrl')),
-      }
-      break
-    case 'video':
-      candidate = {
-        provider: formString(formData, 'provider'),
-        embedUrl: formString(formData, 'embedUrl'),
-        duration: optional(formString(formData, 'duration')),
-      }
-      break
-    case 'model_api':
-      candidate = {
-        provider: optional(formString(formData, 'provider')),
-        docsUrl: optional(formString(formData, 'docsUrl')),
-        endpoint: optional(formString(formData, 'endpoint')),
-        links: formString(formData, 'links')
-          .split('\n')
-          .map((line) => line.trim())
-          .filter(Boolean)
-          .map((line) => {
-            const [label, ...rest] = line.split('|')
-            return { label: label?.trim() ?? '', url: rest.join('|').trim() }
-          }),
-      }
-      break
-    case 'course': {
-      const hours = formString(formData, 'estimatedHours')
-      candidate = {
-        level: optional(formString(formData, 'level')),
-        estimatedHours: hours === '' ? undefined : Number(hours),
-      }
-      break
-    }
-  }
-
-  const parsed = metaSchemas[type].safeParse(candidate)
-  if (!parsed.success) {
-    const message = parsed.error.issues
-      .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
-      .join('; ')
-    return { error: message }
-  }
-  return { meta: parsed.data }
-}
 
 // ---------- Resources ----------
 
@@ -186,7 +122,8 @@ export async function saveSettings(
   const slug = slugSchema.safeParse(formString(formData, 'slug'))
   if (!slug.success) return { error: 'Slug must be kebab-case' }
 
-  const status = formString(formData, 'status') === 'published' ? 'published' : 'draft'
+  const status =
+    formString(formData, 'status') === 'published' ? 'published' : 'draft'
   if (status === 'published') {
     const translationCount = await db.$count(
       resourceTranslations,

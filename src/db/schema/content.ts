@@ -83,7 +83,12 @@ export const courseChapters = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [uniqueIndex('course_chapters_course_position_uq').on(t.courseId, t.position)],
+  (t) => [
+    uniqueIndex('course_chapters_course_position_uq').on(
+      t.courseId,
+      t.position,
+    ),
+  ],
 )
 
 export const courseChapterTranslations = pgTable(

@@ -1,7 +1,7 @@
-import { cache } from 'react'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
+import { cache } from 'react'
 import { redirect } from '@/i18n/navigation'
 import { auth, type Session } from '@/lib/auth'
 

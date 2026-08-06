@@ -158,7 +158,10 @@ const SEED: SeedResource[] = [
       docsUrl: 'https://docs.claude.com',
       endpoint: 'https://api.anthropic.com/v1/messages',
       links: [
-        { label: 'Model overview', url: 'https://docs.claude.com/en/docs/about-claude/models' },
+        {
+          label: 'Model overview',
+          url: 'https://docs.claude.com/en/docs/about-claude/models',
+        },
         { label: 'Pricing', url: 'https://claude.com/pricing' },
       ],
     },
@@ -166,7 +169,8 @@ const SEED: SeedResource[] = [
       {
         locale: 'en',
         title: 'Claude API',
-        summary: 'Company account, rate limits, and usage guidelines for the Claude API.',
+        summary:
+          'Company account, rate limits, and usage guidelines for the Claude API.',
         body: 'Request an API key from the platform team, then follow the quickstart.',
       },
       {
@@ -204,7 +208,10 @@ const COURSE_CHAPTERS = [
       title: 'Why prompts matter',
       body: 'Models do what you ask — the craft is in the asking.',
     },
-    zh: { title: '为什么提示词重要', body: '模型按你的要求行事——关键在于怎么问。' },
+    zh: {
+      title: '为什么提示词重要',
+      body: '模型按你的要求行事——关键在于怎么问。',
+    },
   },
   {
     position: 2,

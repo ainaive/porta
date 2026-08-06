@@ -12,7 +12,7 @@ import {
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { adminListResources } from '@/lib/content'
-import { sectionForType, type ResourceType } from '@/lib/resource-meta'
+import { type ResourceType, sectionForType } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
@@ -53,7 +53,12 @@ export default async function AdminResourcesPage({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Link href={{ pathname: '/admin/resources', query: status ? { status } : undefined }}>
+        <Link
+          href={{
+            pathname: '/admin/resources',
+            query: status ? { status } : undefined,
+          }}
+        >
           <Badge variant={type ? 'outline' : 'default'}>{t('all')}</Badge>
         </Link>
         {TYPES.map((item) => (
@@ -64,7 +69,9 @@ export default async function AdminResourcesPage({
               query: { type: item, ...(status ? { status } : {}) },
             }}
           >
-            <Badge variant={type === item ? 'default' : 'outline'}>{item}</Badge>
+            <Badge variant={type === item ? 'default' : 'outline'}>
+              {item}
+            </Badge>
           </Link>
         ))}
         <span className="mx-2 text-muted-foreground">·</span>
@@ -121,13 +128,17 @@ export default async function AdminResourcesPage({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  /{sectionForType[resource.type as ResourceType]}/{resource.slug}
+                  /{sectionForType[resource.type as ResourceType]}/
+                  {resource.slug}
                 </TableCell>
               </TableRow>
             ))}
             {items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={4}
+                  className="text-center text-muted-foreground"
+                >
                   —
                 </TableCell>
               </TableRow>

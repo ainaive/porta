@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { authClient } from '@/lib/auth-client'
+import { hardNavigate } from '@/lib/hard-navigate'
 
 export function SignInForm() {
   const t = useTranslations('auth')
@@ -28,13 +29,12 @@ export function SignInForm() {
       toast.error(error.message ?? t('signInFailed'))
       return
     }
-    // Full navigation so server components re-render with the new session.
     const next = searchParams.get('next')
     const target =
       next && next.startsWith('/') && !next.startsWith('//')
         ? next
         : `/${locale}`
-    window.location.assign(target)
+    hardNavigate(target)
   }
 
   return (
@@ -42,7 +42,13 @@ export function SignInForm() {
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="email">{t('email')}</FieldLabel>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="password">{t('password')}</FieldLabel>

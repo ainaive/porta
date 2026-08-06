@@ -34,6 +34,11 @@ yarn-error.log*
 .env*
 !.env.example
 
+# test artifacts
+/e2e/.auth/
+/playwright-report/
+/test-results/
+
 # vercel
 .vercel
 

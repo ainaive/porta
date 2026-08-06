@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 export function CopyLinkButton({ token }: { token: string }) {

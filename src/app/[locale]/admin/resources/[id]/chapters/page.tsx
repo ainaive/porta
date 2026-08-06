@@ -11,11 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Link } from '@/i18n/navigation'
-import {
-  addChapter,
-  deleteChapter,
-  moveChapter,
-} from '@/lib/admin-actions'
+import { addChapter, deleteChapter, moveChapter } from '@/lib/admin-actions'
 import { adminGetResource, adminListChapters } from '@/lib/content'
 import { requireAdmin } from '@/lib/session'
 
@@ -120,7 +116,10 @@ export default async function AdminChaptersPage({
             ))}
             {chapters.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={4}
+                  className="text-center text-muted-foreground"
+                >
                   —
                 </TableCell>
               </TableRow>

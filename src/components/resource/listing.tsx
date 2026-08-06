@@ -3,9 +3,9 @@ import { ResourceCard } from '@/components/resource/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Link } from '@/i18n/navigation'
-import { listPublished, listPublishedTags } from '@/lib/content'
-import { sectionForType, type ResourceType } from '@/lib/resource-meta'
 import type { Locale } from '@/i18n/routing'
+import { listPublished, listPublishedTags } from '@/lib/content'
+import { type ResourceType, sectionForType } from '@/lib/resource-meta'
 
 export async function ResourceListing({
   type,
@@ -50,7 +50,9 @@ export async function ResourceListing({
 
       {tags.length > 0 ? (
         <div className="mt-6 flex flex-wrap items-center gap-2">
-          <Link href={{ pathname: `/${section}`, query: q ? { q } : undefined }}>
+          <Link
+            href={{ pathname: `/${section}`, query: q ? { q } : undefined }}
+          >
             <Badge variant={tag ? 'outline' : 'default'}>{t('all')}</Badge>
           </Link>
           {tags.map((item) => (
