@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { listLatest } from '@/lib/content'
+import { getHomeOverview } from '@/lib/content'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,10 +26,11 @@ export default async function HomePage({
   params: Promise<{ locale: Locale }>
 }) {
   const { locale } = await params
-  const [t, latest] = await Promise.all([
+  const [t, overview] = await Promise.all([
     getTranslations(),
-    listLatest(locale, 6),
+    getHomeOverview(locale),
   ])
+  const { latest } = overview
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-12">

@@ -1,4 +1,4 @@
-import { and, arrayContains, asc, desc, eq, type SQL } from 'drizzle-orm'
+import { and, arrayContains, asc, count, desc, eq, type SQL } from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/db'
 import {
@@ -19,7 +19,7 @@ import {
   type TranslatedResource,
   type TranslationRow,
 } from '@/lib/fallback'
-import type { ResourceType } from '@/lib/resource-meta'
+import { type ResourceType, resourceTypes } from '@/lib/resource-meta'
 
 export type { TranslatedChapter, TranslatedResource } from '@/lib/fallback'
 
@@ -64,21 +64,67 @@ export async function listPublishedTags(type: ResourceType): Promise<string[]> {
   return [...new Set(rows.flatMap((r) => r.tags))].sort()
 }
 
-export async function listLatest(
-  locale: Locale,
-  limit = 6,
-): Promise<TranslatedResource[]> {
-  const rows = await db
-    .select({ resource: resources, translation: resourceTranslations })
-    .from(resources)
-    .leftJoin(
-      resourceTranslations,
-      eq(resourceTranslations.resourceId, resources.id),
-    )
-    .where(eq(resources.status, 'published'))
-    .orderBy(desc(resources.createdAt))
+export type HomeSection = {
+  // Every publicly visible resource of this type, not just the preview.
+  count: number
+  items: TranslatedResource[]
+}
 
-  return groupResources(rows, locale).slice(0, limit)
+export type HomeOverview = {
+  latest: TranslatedResource[]
+  sections: Record<ResourceType, HomeSection>
+  tags: string[]
+  chapterCount: number
+}
+
+const SECTION_PREVIEW_LIMIT = 3
+
+// Everything the landing page needs, in two queries. The page shows counts,
+// per-section previews and a tag cloud alongside the latest additions, and
+// they all derive from the same set of published-and-translated resources —
+// splitting them into separate calls would re-run the same scan four times.
+export async function getHomeOverview(
+  locale: Locale,
+  latestLimit = 6,
+): Promise<HomeOverview> {
+  const [rows, chapterRows] = await Promise.all([
+    db
+      .select({ resource: resources, translation: resourceTranslations })
+      .from(resources)
+      .leftJoin(
+        resourceTranslations,
+        eq(resourceTranslations.resourceId, resources.id),
+      )
+      .where(eq(resources.status, 'published'))
+      .orderBy(desc(resources.createdAt)),
+    // Chapters of draft courses must not inflate a public number.
+    db
+      .select({ value: count() })
+      .from(courseChapters)
+      .innerJoin(resources, eq(resources.id, courseChapters.courseId))
+      .where(eq(resources.status, 'published')),
+  ])
+
+  // groupResources drops resources with no translation at all, so counts and
+  // tags below describe what a visitor can actually reach.
+  const published = groupResources(rows, locale)
+
+  const sections = Object.fromEntries(
+    resourceTypes.map((type) => {
+      const items = published.filter((item) => item.type === type)
+      return [
+        type,
+        { count: items.length, items: items.slice(0, SECTION_PREVIEW_LIMIT) },
+      ]
+    }),
+  ) as Record<ResourceType, HomeSection>
+
+  return {
+    latest: published.slice(0, latestLimit),
+    sections,
+    tags: [...new Set(published.flatMap((item) => item.tags))].sort(),
+    chapterCount: chapterRows[0]?.value ?? 0,
+  }
 }
 
 // React-cached so a page and its generateMetadata share one query.
