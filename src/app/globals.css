@@ -197,7 +197,9 @@
   --primary-foreground: oklch(0.145 0.003 286);
   --secondary: oklch(1 0 0 / 5%);
   --secondary-foreground: oklch(0.869 0.005 56);
-  --muted: oklch(1 0 0 / 4%);
+  /* Also drives skeletons and ghost-button hovers, so it has to stay visible
+     against the near-black canvas. */
+  --muted: oklch(1 0 0 / 6%);
   --muted-foreground: oklch(0.709 0.01 56);
   --accent: oklch(1 0 0 / 7%);
   --accent-foreground: oklch(0.967 0.001 106);

@@ -23,7 +23,9 @@ function Tile({
   return (
     <div
       className={cn(
-        'relative rounded-2xl border bg-gradient-to-b from-white/4 to-white/1 p-7 transition hover:-translate-y-1 hover:border-white/18 sm:p-8',
+        // `min-w-0`: a grid item's min width is its min-content by default, so
+        // one long endpoint URL inside would widen the whole track.
+        'relative min-w-0 rounded-2xl border bg-gradient-to-b from-white/4 to-white/1 p-7 transition hover:-translate-y-1 hover:border-white/18 sm:p-8',
         className,
       )}
     >
@@ -137,7 +139,9 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
                     className="size-1.75 shrink-0 rounded-full"
                     style={{ background: DOTS[index % DOTS.length] }}
                   />
-                  <span className="truncate text-[13px]">{tool.title}</span>
+                  <span className="min-w-0 truncate text-[13px]">
+                    {tool.title}
+                  </span>
                   {tool.tags[0] ? (
                     <span className="ml-auto shrink-0 font-mono text-[10px] text-muted-foreground/80 uppercase">
                       {tool.tags[0]}
@@ -168,7 +172,7 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
                 <dt className="shrink-0 text-muted-foreground/70">
                   {sections('provider')}
                 </dt>
-                <dd className="truncate text-secondary-foreground">
+                <dd className="min-w-0 truncate text-secondary-foreground">
                   {endpoint.meta.provider ?? endpoint.item.title}
                 </dd>
               </div>
@@ -176,11 +180,15 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
                 <dt className="shrink-0 text-muted-foreground/70">
                   {sections('endpoint')}
                 </dt>
-                <dd className="truncate text-secondary-foreground">
-                  {endpoint.meta.endpoint}
+                {/* Flex rather than an inline caret: inside a truncating box
+                    the caret gets pushed past the clip edge. */}
+                <dd className="flex min-w-0 items-center gap-1 text-secondary-foreground">
+                  <span className="min-w-0 truncate">
+                    {endpoint.meta.endpoint}
+                  </span>
                   <span
                     aria-hidden
-                    className="animate-caret ml-1 inline-block h-3 w-1.5 translate-y-0.5 bg-brand"
+                    className="animate-caret h-3 w-1.5 shrink-0 bg-brand"
                   />
                 </dd>
               </div>
@@ -219,7 +227,7 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
               label={sections('videos.title')}
             />
             {latestVideo ? (
-              <p className="truncate pb-1 text-[13px] text-muted-foreground">
+              <p className="min-w-0 truncate pb-1 text-[13px] text-muted-foreground">
                 {latestVideo.title}
               </p>
             ) : null}
@@ -238,7 +246,7 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
               would be advertising something that isn't happening. */}
           {fallbackExample ? (
             <div className="mt-6 flex items-center gap-3 rounded-lg border bg-white/2 px-3.5 py-2.5">
-              <span className="truncate text-[13px] text-muted-foreground">
+              <span className="min-w-0 truncate text-[13px] text-muted-foreground">
                 {fallbackExample.title}
               </span>
               <Badge variant="outline" className="ml-auto shrink-0 font-normal">

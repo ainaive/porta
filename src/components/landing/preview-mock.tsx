@@ -78,7 +78,7 @@ export async function PreviewMock({
             ))}
           </div>
 
-          <div className="p-6">
+          <div className="min-w-0 p-6">
             <div className="mb-5 flex items-center gap-3">
               <div className="font-display text-base font-bold">
                 {t('preview.title')}
@@ -93,7 +93,7 @@ export async function PreviewMock({
                 {items.map((item, index) => (
                   <div
                     key={item.id}
-                    className="rounded-xl border bg-white/2 p-3.5"
+                    className="min-w-0 rounded-xl border bg-white/2 p-3.5"
                   >
                     <div className="mb-2 flex items-center gap-2">
                       <span
@@ -103,7 +103,7 @@ export async function PreviewMock({
                           background: TINTS[index % TINTS.length],
                         }}
                       />
-                      <span className="truncate text-[13px] font-medium">
+                      <span className="min-w-0 truncate text-[13px] font-medium">
                         {item.title}
                       </span>
                     </div>
