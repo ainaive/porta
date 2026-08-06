@@ -8,19 +8,21 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { findValidInvite, hasAnyUser } from '@/lib/invites'
+import { firstParam } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>
+  searchParams: Promise<{ token?: string | string[] }>
 }) {
-  const [{ token }, t, common] = await Promise.all([
+  const [sp, t, common] = await Promise.all([
     searchParams,
     getTranslations('auth'),
     getTranslations('common'),
   ])
+  const token = firstParam(sp.token)
   const bootstrap = !(await hasAnyUser())
 
   let lockedEmail: string | null = null

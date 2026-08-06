@@ -14,6 +14,7 @@ import type { Locale } from '@/i18n/routing'
 import { adminListResources } from '@/lib/content'
 import { type ResourceType, sectionForType } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
+import { firstParam } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,10 +26,14 @@ export default async function AdminResourcesPage({
   searchParams,
 }: {
   params: Promise<{ locale: Locale }>
-  searchParams: Promise<{ type?: string; status?: string }>
+  searchParams: Promise<{
+    type?: string | string[]
+    status?: string | string[]
+  }>
 }) {
   await requireAdmin()
-  const [{ locale }, query] = await Promise.all([params, searchParams])
+  const [{ locale }, sp] = await Promise.all([params, searchParams])
+  const query = { type: firstParam(sp.type), status: firstParam(sp.status) }
   const type = TYPES.includes(query.type as ResourceType)
     ? (query.type as ResourceType)
     : undefined
