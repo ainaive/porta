@@ -11,7 +11,7 @@ RUN bun install --frozen-lockfile
 # Build on Node, not Bun: `next build` is a production workload, and running
 # it under bun-as-node has crashed on CI hardware (segfault at exit). The bun
 # binary is copied in only for the migrator bundling step.
-FROM node:22-bookworm-slim AS build
+FROM node:24-bookworm-slim AS build
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -27,7 +27,7 @@ RUN node node_modules/next/dist/bin/next build
 # script gets its own self-contained bundle (drizzle-orm + postgres inlined).
 RUN bun build --target=node scripts/migrate.mjs --outfile=migrate.bundle.mjs
 
-FROM node:22-bookworm-slim AS run
+FROM node:24-bookworm-slim AS run
 WORKDIR /app
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
