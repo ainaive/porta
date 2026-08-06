@@ -24,6 +24,9 @@ export function TranslationForm({
     saveTranslation.bind(null, resourceId, locale),
     {},
   )
+  // React resets the form after every action; on error the echoed submission
+  // wins over the stored translation so nothing typed is lost.
+  const values = state.values
 
   return (
     <form action={formAction}>
@@ -33,7 +36,7 @@ export function TranslationForm({
           <Input
             id={`title-${locale}`}
             name="title"
-            defaultValue={initial?.title ?? ''}
+            defaultValue={values?.title ?? initial?.title ?? ''}
             required
           />
         </Field>
@@ -44,7 +47,7 @@ export function TranslationForm({
           <Input
             id={`summary-${locale}`}
             name="summary"
-            defaultValue={initial?.summary ?? ''}
+            defaultValue={values?.summary ?? initial?.summary ?? ''}
           />
         </Field>
         <Field>
@@ -53,7 +56,7 @@ export function TranslationForm({
             id={`body-${locale}`}
             name="body"
             rows={14}
-            defaultValue={initial?.body ?? ''}
+            defaultValue={values?.body ?? initial?.body ?? ''}
             className="font-mono text-sm"
           />
         </Field>

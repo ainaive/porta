@@ -24,6 +24,9 @@ export function ChapterTranslationForm({
     saveChapterTranslation.bind(null, chapterId, locale),
     {},
   )
+  // React resets the form after every action; on error the echoed submission
+  // wins over the stored translation so nothing typed is lost.
+  const values = state.values
 
   return (
     <form action={formAction}>
@@ -35,7 +38,7 @@ export function ChapterTranslationForm({
           <Input
             id={`ch-title-${locale}`}
             name="title"
-            defaultValue={initial?.title ?? ''}
+            defaultValue={values?.title ?? initial?.title ?? ''}
             required
           />
         </Field>
@@ -47,7 +50,7 @@ export function ChapterTranslationForm({
             id={`ch-body-${locale}`}
             name="body"
             rows={14}
-            defaultValue={initial?.body ?? ''}
+            defaultValue={values?.body ?? initial?.body ?? ''}
             className="font-mono text-sm"
           />
         </Field>

@@ -30,10 +30,22 @@ export function SignInForm() {
       return
     }
     const next = searchParams.get('next')
-    const target =
-      next && next.startsWith('/') && !next.startsWith('//')
-        ? next
-        : `/${locale}`
+    // Only same-origin paths. String checks are insufficient — URL parsing
+    // strips tab/newline and treats "\" as "/", so "/\evil.com" and
+    // "/<TAB>\evil.com" are both protocol-relative. Resolve exactly like
+    // the browser will, require our own origin, and navigate to the
+    // normalized path rather than the raw string.
+    let target = `/${locale}`
+    if (next) {
+      try {
+        const url = new URL(next, window.location.origin)
+        if (url.origin === window.location.origin) {
+          target = url.pathname + url.search + url.hash
+        }
+      } catch {
+        // Unparseable → fall through to the locale root.
+      }
+    }
     hardNavigate(target)
   }
 

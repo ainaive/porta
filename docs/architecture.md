@@ -32,11 +32,17 @@ flowchart LR
   (no DB hit, spoofable-by-presence — acceptable because every gated page and
   server action re-verifies via `requireSession()` / `requireAdmin()` in
   `src/lib/session.ts`). `requireAdmin` calls `notFound()` for non-admins:
-  the admin area is concealed, not just denied.
-- **Sign-up is invite-only**, enforced in the better-auth request hooks
+  the admin area is concealed, not just denied. A banned user's session
+  reads as absent in `getSession` — a ban must not wait for the session to
+  expire.
+- **Sign-up is invite-only**, enforced in the better-auth hooks
   (`src/lib/auth.ts`), so posting directly to `/api/auth/sign-up/email`
-  cannot bypass it. Exception: when the user table is empty, the first
-  signup is allowed and becomes admin (bootstrap).
+  cannot bypass it. The request hook produces the friendly errors; the
+  single-use guarantee is an atomic conditional claim (`claimInvite`) during
+  user creation, so concurrent signups holding one token cannot both land.
+  Exception: when the user table is empty, the first signup is allowed and
+  becomes admin (bootstrap); a bootstrap signup that finds another user
+  after creation rolls itself back rather than minting a second admin.
 - **Auth state changes use full-document navigation** via
   `src/lib/hard-navigate.ts`: the layout's session-dependent chrome (user
   menu, admin link) must re-render with fresh cookies; client-side

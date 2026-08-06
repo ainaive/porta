@@ -81,7 +81,7 @@ export default async function AdminInvitesPage() {
                       {!invite.usedAt ? (
                         <ConfirmButton
                           action={deleteInvite.bind(null, invite.id)}
-                          confirmLabel={t('confirmDelete')}
+                          confirmLabel={t('confirmRevoke')}
                         >
                           {t('revoke')}
                         </ConfirmButton>

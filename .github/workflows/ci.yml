@@ -7,7 +7,9 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel main: back-to-back merges would leave the earlier merge
+  # commit permanently unverified.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   quality:
@@ -77,6 +79,12 @@ jobs:
       E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/porta_e2e
     steps:
       - uses: actions/checkout@v4
+      # bun run respects the node shebang in next's bin: without this the
+      # build/server run on the runner's default Node, not the Node 24 that
+      # engines and the Docker runtime pin.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: package.json

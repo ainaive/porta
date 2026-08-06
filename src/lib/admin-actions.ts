@@ -25,7 +25,37 @@ import {
 } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 
-export type ActionState = { ok?: boolean; error?: string }
+// `error` is a message key under admin.errors (translated where rendered,
+// in ActionFeedback), with `detail` interpolated for technical specifics.
+// `values` echoes the submitted fields on error so forms can re-fill:
+// React 19 resets uncontrolled <form action> forms on every submit, error
+// included — without the echo a failed save discards everything typed.
+export type ActionErrorCode =
+  | 'slugFormat'
+  | 'typeInvalid'
+  | 'slugTaken'
+  | 'titleRequired'
+  | 'publishNeedsTranslation'
+  | 'resourceNotFound'
+  | 'emailInvalid'
+  | 'metaInvalid'
+
+export type ActionState = {
+  ok?: boolean
+  error?: ActionErrorCode
+  detail?: string
+  values?: Record<string, string>
+}
+
+function submittedValues(formData: FormData): Record<string, string> {
+  const values: Record<string, string> = {}
+  for (const [key, value] of formData.entries()) {
+    if (typeof value === 'string' && !key.startsWith('$ACTION')) {
+      values[key] = value
+    }
+  }
+  return values
+}
 
 const localeSchema = z.enum(['en', 'zh'])
 const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
@@ -41,7 +71,10 @@ export async function createResource(
   const type = typeSchema.safeParse(formString(formData, 'type'))
   const slug = slugSchema.safeParse(formString(formData, 'slug'))
   if (!type.success || !slug.success) {
-    return { error: slug.success ? 'Invalid type' : 'Slug must be kebab-case' }
+    return {
+      error: slug.success ? 'typeInvalid' : 'slugFormat',
+      values: submittedValues(formData),
+    }
   }
 
   const existing = await db
@@ -50,7 +83,7 @@ export async function createResource(
     .where(and(eq(resources.type, type.data), eq(resources.slug, slug.data)))
     .limit(1)
   if (existing.length > 0) {
-    return { error: 'A resource of this type with this slug already exists' }
+    return { error: 'slugTaken', values: submittedValues(formData) }
   }
 
   const [created] = await db
@@ -76,7 +109,9 @@ export async function saveTranslation(
   localeSchema.parse(locale)
 
   const title = formString(formData, 'title')
-  if (!title) return { error: 'Title is required' }
+  if (!title) {
+    return { error: 'titleRequired', values: submittedValues(formData) }
+  }
 
   await db
     .insert(resourceTranslations)
@@ -117,10 +152,12 @@ export async function saveSettings(
     .from(resources)
     .where(eq(resources.id, resourceId))
     .limit(1)
-  if (!resource) return { error: 'Resource not found' }
+  if (!resource) return { error: 'resourceNotFound' }
 
   const slug = slugSchema.safeParse(formString(formData, 'slug'))
-  if (!slug.success) return { error: 'Slug must be kebab-case' }
+  if (!slug.success) {
+    return { error: 'slugFormat', values: submittedValues(formData) }
+  }
 
   const status =
     formString(formData, 'status') === 'published' ? 'published' : 'draft'
@@ -130,7 +167,10 @@ export async function saveSettings(
       eq(resourceTranslations.resourceId, resourceId),
     )
     if (translationCount === 0) {
-      return { error: 'Publishing requires at least one translation' }
+      return {
+        error: 'publishNeedsTranslation',
+        values: submittedValues(formData),
+      }
     }
   }
 
@@ -146,7 +186,7 @@ export async function saveSettings(
     )
     .limit(1)
   if (clash.length > 0) {
-    return { error: 'A resource of this type with this slug already exists' }
+    return { error: 'slugTaken', values: submittedValues(formData) }
   }
 
   const tags = formString(formData, 'tags')
@@ -155,7 +195,13 @@ export async function saveSettings(
     .filter(Boolean)
 
   const { meta, error } = parseMeta(resource.type as ResourceType, formData)
-  if (error) return { error }
+  if (error) {
+    return {
+      error: 'metaInvalid',
+      detail: error,
+      values: submittedValues(formData),
+    }
+  }
 
   await db
     .update(resources)
@@ -206,7 +252,9 @@ export async function saveChapterTranslation(
   localeSchema.parse(locale)
 
   const title = formString(formData, 'title')
-  if (!title) return { error: 'Title is required' }
+  if (!title) {
+    return { error: 'titleRequired', values: submittedValues(formData) }
+  }
 
   await db
     .insert(courseChapterTranslations)
@@ -310,7 +358,7 @@ export async function createInvite(
 
   const email = formString(formData, 'email')
   if (email !== '' && !z.email().safeParse(email).success) {
-    return { error: 'Invalid email address' }
+    return { error: 'emailInvalid', values: submittedValues(formData) }
   }
   const role = formString(formData, 'role') === 'admin' ? 'admin' : 'member'
 
@@ -351,18 +399,24 @@ export async function toggleUserBan(userId: string): Promise<void> {
   const session = await requireAdmin()
   if (userId === session.user.id) return
 
-  const [target] = await db
-    .select({ banned: user.banned })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1)
-  if (!target) return
+  // One transaction, row locked: the flag and the session purge land
+  // together, and two concurrent toggles serialize instead of computing
+  // the same flip.
+  await db.transaction(async (tx) => {
+    const [target] = await tx
+      .select({ banned: user.banned })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+      .for('update')
+    if (!target) return
 
-  const banned = !target.banned
-  await db.update(user).set({ banned }).where(eq(user.id, userId))
-  if (banned) {
-    // Kill live sessions so the ban takes effect immediately.
-    await db.delete(sessionTable).where(eq(sessionTable.userId, userId))
-  }
+    const banned = !target.banned
+    await tx.update(user).set({ banned }).where(eq(user.id, userId))
+    if (banned) {
+      // Kill live sessions so the ban takes effect immediately.
+      await tx.delete(sessionTable).where(eq(sessionTable.userId, userId))
+    }
+  })
   revalidatePath('/', 'layout')
 }

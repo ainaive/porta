@@ -11,10 +11,12 @@ test('draft → translate → publish → publicly visible', async ({ page }) =>
   await expect(page).toHaveURL(/\/en\/admin\/resources\/[0-9a-f-]{36}$/)
   const editUrl = page.url()
 
-  // Add the English translation while still a draft.
-  await page.getByLabel('Title').fill(title)
+  // Add the English translation while still a draft. All locale panels stay
+  // mounted (hidden) so drafts survive tab switches; getByRole only sees the
+  // visible panel, so scope the label lookup through it.
+  await page.getByRole('tabpanel').getByLabel('Title').fill(title)
   await page.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByText('Saved')).toBeVisible()
+  await expect(page.getByRole('tabpanel').getByText('Saved')).toBeVisible()
 
   // Drafts never appear publicly.
   await page.goto('/en/tools')

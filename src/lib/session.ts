@@ -8,7 +8,11 @@ import { auth, type Session } from '@/lib/auth'
 // The proxy only checks cookie existence (no DB); these are the authoritative
 // checks and must be called at the top of every gated/admin page and action.
 export const getSession = cache(async (): Promise<Session | null> => {
-  return auth.api.getSession({ headers: await headers() })
+  const session = await auth.api.getSession({ headers: await headers() })
+  // better-auth's admin plugin only rejects banned users at sign-in; a live
+  // session must not outlast a ban, so a banned session reads as absent.
+  if (session?.user.banned) return null
+  return session
 })
 
 export async function requireSession(nextPath?: string): Promise<Session> {

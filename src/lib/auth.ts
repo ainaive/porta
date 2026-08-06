@@ -3,10 +3,10 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { nextCookies } from 'better-auth/next-js'
 import { admin } from 'better-auth/plugins'
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@/db'
-import { invites } from '@/db/schema'
-import { findValidInvite, hasAnyUser } from '@/lib/invites'
+import { invites, user } from '@/db/schema'
+import { claimInvite, findValidInvite, hasAnyUser } from '@/lib/invites'
 
 // Sign-up is invite-only. The gate lives here — in the API hooks — rather than
 // in the sign-up page, so posting directly to /api/auth/sign-up/email cannot
@@ -41,35 +41,60 @@ export const auth = betterAuth({
         })
       }
     }),
-    after: createAuthMiddleware(async (ctx) => {
-      if (ctx.path !== '/sign-up/email') return
-      const newUser = ctx.context.newSession?.user
-      if (!newUser) return
-
-      const token = ctx.body?.inviteToken
-      if (typeof token === 'string' && token.length > 0) {
-        await db
-          .update(invites)
-          .set({ usedAt: new Date(), usedBy: newUser.id })
-          .where(and(eq(invites.token, token), isNull(invites.usedAt)))
-      }
-    }),
   },
   databaseHooks: {
     user: {
       create: {
         before: async (userData, ctx) => {
-          // First account ever → admin (bootstrap). Otherwise the role comes
-          // from the invite, which the request hook has already validated.
-          if (!(await hasAnyUser())) {
-            return { data: { ...userData, role: 'admin' } }
+          // The invite is claimed here — a conditional UPDATE, so of N
+          // concurrent signups holding one token exactly one proceeds. The
+          // request hook has already produced the friendly errors for the
+          // common failures; this is the authoritative single-use gate.
+          // Only tokenless signups may take the bootstrap branch: a token
+          // must always claim, otherwise a junk token would ride an empty
+          // table to admin and dodge the after-hook rollback (which only
+          // covers tokenless signups).
+          const token = ctx?.body?.inviteToken
+          if (typeof token !== 'string' || token.length === 0) {
+            // First account ever → admin (bootstrap).
+            if (!(await hasAnyUser())) {
+              return { data: { ...userData, role: 'admin' } }
+            }
+            return { data: userData }
           }
+          const invite = await claimInvite(token)
+          if (!invite) {
+            throw new APIError('FORBIDDEN', {
+              message: 'This invitation is invalid or has expired.',
+            })
+          }
+          return { data: { ...userData, role: invite.role } }
+        },
+        after: async (createdUser, ctx) => {
           const token = ctx?.body?.inviteToken
           if (typeof token === 'string' && token.length > 0) {
-            const invite = await findValidInvite(token)
-            if (invite) return { data: { ...userData, role: invite.role } }
+            await db
+              .update(invites)
+              .set({ usedBy: createdUser.id })
+              .where(
+                and(
+                  eq(invites.token, token),
+                  isNotNull(invites.usedAt),
+                  isNull(invites.usedBy),
+                ),
+              )
+            return
           }
-          return { data: userData }
+          // Tokenless creation on the sign-up path is the bootstrap. Two
+          // racing bootstraps can both pass the empty-table checks; any
+          // signup that finds another user here rolls itself back — failing
+          // closed beats minting two admins.
+          if (ctx?.path === '/sign-up/email' && (await db.$count(user)) > 1) {
+            await db.delete(user).where(eq(user.id, createdUser.id))
+            throw new APIError('FORBIDDEN', {
+              message: 'Sign-up requires an invitation.',
+            })
+          }
         },
       },
     },

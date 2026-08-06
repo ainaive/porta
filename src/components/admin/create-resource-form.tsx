@@ -15,13 +15,20 @@ export function CreateResourceForm() {
     createResource,
     {},
   )
+  // React resets the form after every action; on error the echoed submission
+  // re-fills the fields so nothing typed is lost.
+  const values = state.values
 
   return (
     <form action={formAction} className="max-w-md">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="type">{t('type')}</FieldLabel>
-          <NativeSelect id="type" name="type" defaultValue="tool">
+          <NativeSelect
+            id="type"
+            name="type"
+            defaultValue={values?.type ?? 'tool'}
+          >
             <option value="tool">tool</option>
             <option value="course">course</option>
             <option value="video">video</option>
@@ -30,7 +37,13 @@ export function CreateResourceForm() {
         </Field>
         <Field>
           <FieldLabel htmlFor="slug">{t('slug')}</FieldLabel>
-          <Input id="slug" name="slug" placeholder="my-resource" required />
+          <Input
+            id="slug"
+            name="slug"
+            placeholder="my-resource"
+            defaultValue={values?.slug ?? ''}
+            required
+          />
         </Field>
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={pending}>

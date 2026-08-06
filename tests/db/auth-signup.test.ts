@@ -62,7 +62,34 @@ describe('bootstrap', () => {
 
   test('second tokenless signup is rejected', async () => {
     await signUp('founder@example.test')
-    expect(signUp('intruder@example.test')).rejects.toThrow(/invitation/i)
+    await expect(signUp('intruder@example.test')).rejects.toThrow(/invitation/i)
+  })
+
+  test('a token-bearing signup never bootstraps, even on an empty table', async () => {
+    // A junk token must not ride the empty-table branch to admin: with a
+    // token present the invite claim is mandatory, and a fresh database
+    // has no invites to claim.
+    const results = await Promise.allSettled([
+      signUp('junk-one@example.test', 'junk-token-1'),
+      signUp('junk-two@example.test', 'junk-token-2'),
+    ])
+    expect(results.every((r) => r.status === 'rejected')).toBe(true)
+    expect(await db.$count(user)).toBe(0)
+  })
+
+  test('concurrent bootstrap signups never yield two admins', async () => {
+    const results = await Promise.allSettled([
+      signUp('first@example.test'),
+      signUp('second@example.test'),
+    ])
+    const admins = await db.select().from(user).where(eq(user.role, 'admin'))
+    // Depending on interleaving zero signups may survive (both roll back,
+    // failing closed) — but never more than one, and no non-admin leftovers.
+    expect(admins.length).toBeLessThanOrEqual(1)
+    expect(await db.$count(user)).toBe(admins.length)
+    expect(
+      results.filter((r) => r.status === 'fulfilled').length,
+    ).toBeLessThanOrEqual(1)
   })
 })
 
@@ -75,14 +102,14 @@ describe('invite redemption', () => {
   })
 
   test('invalid and expired tokens are rejected', async () => {
-    expect(signUp('a@example.test', 'no-such-token')).rejects.toThrow(
+    await expect(signUp('a@example.test', 'no-such-token')).rejects.toThrow(
       /invalid or has expired/i,
     )
 
     await insertInvite('expired', adminId, {
       expiresAt: new Date(Date.now() - DAY),
     })
-    expect(signUp('b@example.test', 'expired')).rejects.toThrow(
+    await expect(signUp('b@example.test', 'expired')).rejects.toThrow(
       /invalid or has expired/i,
     )
   })
@@ -90,7 +117,7 @@ describe('invite redemption', () => {
   test('email-locked invites only work for that email', async () => {
     await insertInvite('locked', adminId, { email: 'right@example.test' })
 
-    expect(signUp('wrong@example.test', 'locked')).rejects.toThrow(
+    await expect(signUp('wrong@example.test', 'locked')).rejects.toThrow(
       /different email/i,
     )
     await signUp('right@example.test', 'locked')
@@ -111,8 +138,26 @@ describe('invite redemption', () => {
     expect(invite.usedBy).toBe(created.user.id)
 
     // A consumed invite cannot be reused.
-    expect(signUp('copycat@example.test', 'admin-invite')).rejects.toThrow(
-      /invalid or has expired/i,
-    )
+    await expect(
+      signUp('copycat@example.test', 'admin-invite'),
+    ).rejects.toThrow(/invalid or has expired/i)
+  })
+
+  test('concurrent signups with one invite create exactly one account', async () => {
+    await insertInvite('race', adminId)
+
+    const results = await Promise.allSettled([
+      signUp('racer-one@example.test', 'race'),
+      signUp('racer-two@example.test', 'race'),
+    ])
+
+    expect(results.filter((r) => r.status === 'fulfilled').length).toBe(1)
+    const [invite] = await db
+      .select()
+      .from(invites)
+      .where(eq(invites.token, 'race'))
+    expect(invite.usedAt).not.toBeNull()
+    // Founder + the single winner.
+    expect(await db.$count(user)).toBe(2)
   })
 })

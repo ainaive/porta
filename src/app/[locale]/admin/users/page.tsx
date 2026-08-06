@@ -83,7 +83,9 @@ export default async function AdminUsersPage() {
                       <div className="flex justify-end">
                         <ConfirmButton
                           action={toggleUserBan.bind(null, row.id)}
-                          confirmLabel={t('confirmDelete')}
+                          confirmLabel={
+                            row.banned ? t('confirmUnban') : t('confirmBan')
+                          }
                         >
                           {row.banned ? t('unban') : t('ban')}
                         </ConfirmButton>

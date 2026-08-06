@@ -1,5 +1,6 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { usePathname, useRouter } from '@/i18n/navigation'
@@ -8,6 +9,9 @@ export function LocaleSwitcher() {
   const locale = useLocale()
   const router = useRouter()
   const pathname = usePathname()
+  // usePathname excludes the query string; carry it over so switching
+  // locale keeps search and tag filters.
+  const searchParams = useSearchParams()
   const other = locale === 'en' ? 'zh' : 'en'
 
   return (
@@ -15,7 +19,20 @@ export function LocaleSwitcher() {
       variant="outline"
       size="sm"
       className="font-mono text-xs"
-      onClick={() => router.replace(pathname, { locale: other })}
+      onClick={() => {
+        // First value per key, matching the firstParam semantics the pages
+        // render with — entries() would keep the last duplicate instead.
+        const query = Object.fromEntries(
+          Array.from(new Set(searchParams.keys()), (key) => [
+            key,
+            searchParams.get(key) ?? '',
+          ]),
+        )
+        router.replace(
+          Object.keys(query).length > 0 ? { pathname, query } : pathname,
+          { locale: other },
+        )
+      }}
     >
       {other === 'zh' ? '中文' : 'English'}
     </Button>

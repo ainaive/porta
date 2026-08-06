@@ -54,21 +54,35 @@ export default async function EditResourcePage({
           <TabsTrigger value="zh">{t('chineseTab')}</TabsTrigger>
           <TabsTrigger value="settings">{t('settingsTab')}</TabsTrigger>
         </TabsList>
-        <TabsContent value="en" className="mt-4">
+        {/* forceMount + CSS-hide: unmounting the inactive panel would drop
+            any draft typed there when switching tabs. */}
+        <TabsContent
+          value="en"
+          forceMount
+          className="mt-4 data-[state=inactive]:hidden"
+        >
           <TranslationForm
             resourceId={resource.id}
             locale="en"
             initial={translations.en ?? null}
           />
         </TabsContent>
-        <TabsContent value="zh" className="mt-4">
+        <TabsContent
+          value="zh"
+          forceMount
+          className="mt-4 data-[state=inactive]:hidden"
+        >
           <TranslationForm
             resourceId={resource.id}
             locale="zh"
             initial={translations.zh ?? null}
           />
         </TabsContent>
-        <TabsContent value="settings" className="mt-4">
+        <TabsContent
+          value="settings"
+          forceMount
+          className="mt-4 data-[state=inactive]:hidden"
+        >
           <SettingsForm
             resource={{
               id: resource.id,

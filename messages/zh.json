@@ -90,6 +90,11 @@
     "endpoint": "接入端点",
     "provider": "提供方",
     "level": "难度",
+    "levels": {
+      "beginner": "入门",
+      "intermediate": "进阶",
+      "advanced": "高级"
+    },
     "estimatedHours": "约 {hours} 小时"
   },
   "errors": {
@@ -120,6 +125,9 @@
     "saved": "已保存",
     "delete": "删除",
     "confirmDelete": "确认删除",
+    "confirmBan": "确认封禁",
+    "confirmUnban": "确认解封",
+    "confirmRevoke": "确认撤销",
     "create": "创建",
     "englishTab": "English",
     "chineseTab": "中文",
@@ -156,7 +164,17 @@
     "metaEndpoint": "接入端点",
     "metaLinks": "链接（每行一条：名称 | URL）",
     "metaLevel": "难度",
-    "metaHours": "预计学时"
+    "metaHours": "预计学时",
+    "errors": {
+      "slugFormat": "Slug 必须是 kebab-case（小写字母、数字、连字符）",
+      "typeInvalid": "类型无效",
+      "slugTaken": "同类型下已存在使用此 slug 的资源",
+      "titleRequired": "标题不能为空",
+      "publishNeedsTranslation": "发布前至少需要一个翻译",
+      "resourceNotFound": "资源不存在",
+      "emailInvalid": "邮箱地址无效",
+      "metaInvalid": "字段无效 — {detail}"
+    }
   },
   "auth": {
     "signInTitle": "登录",
