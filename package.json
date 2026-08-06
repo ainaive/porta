@@ -8,6 +8,8 @@
     "build:vercel": "node scripts/migrate.mjs && next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "biome check --write .",
+    "format:check": "biome ci .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
     "db:seed": "bun scripts/seed.ts",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
+    "@biomejs/biome": "^2.5.7",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^20",
