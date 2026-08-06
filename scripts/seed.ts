@@ -9,6 +9,22 @@ import {
   resourceTranslations,
 } from '../src/db/schema'
 
+// The seed starts by deleting all content, and bun auto-loads .env — so a
+// production DATABASE_URL sitting in the environment must not be enough to
+// point the wipe at production. Same posture as tests/preload.ts.
+const host = process.env.DATABASE_URL
+  ? new URL(process.env.DATABASE_URL).hostname
+  : 'localhost' // unset falls through to the db client's own error
+if (
+  !['localhost', '127.0.0.1', '::1'].includes(host) &&
+  process.env.SEED_FORCE !== '1'
+) {
+  console.error(
+    `Refusing to seed non-local database host "${host}" — the seed deletes all content. Set SEED_FORCE=1 to override.`,
+  )
+  process.exit(1)
+}
+
 type SeedTranslation = {
   locale: 'en' | 'zh'
   title: string
