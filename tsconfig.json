@@ -13,6 +13,11 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    // TypeScript 6 no longer auto-includes every node_modules/@types
+    // package, so the ones we rely on for globals must be named. "bun"
+    // carries the `bun:test` module and Bun globals used by the test files,
+    // preload, and the scripts; "node" carries `node:*` and `process`.
+    "types": ["node", "bun"],
     "plugins": [
       {
         "name": "next"

@@ -84,7 +84,7 @@ Two targets, one codebase — the constraints that keep both working:
 - **Plain TCP Postgres** (postgres.js) — works for Neon and docker-compose
   Postgres alike. The client is a lazy proxy (`src/db/index.ts`) so `next
   build` never needs a database; all DB-backed pages are `force-dynamic`.
-- **Docker**: multi-stage Dockerfile, Bun builds, `node:22-bookworm-slim`
+- **Docker**: multi-stage Dockerfile, Bun builds, `node:24-bookworm-slim`
   runs (glibc must match for sharp — never alpine). Next's standalone output
   bundles server deps into chunks, so migrations run from a self-contained
   bundle (`bun build scripts/migrate.mjs`) in the entrypoint, before the
