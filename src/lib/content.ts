@@ -176,6 +176,104 @@ function groupChapters(
   return result.sort((a, b) => a.position - b.position)
 }
 
+// ---------- Admin queries (callers must requireAdmin() first) ----------
+
+export async function adminListResources(
+  locale: Locale,
+  filters: { type?: ResourceType; status?: 'draft' | 'published' } = {},
+): Promise<TranslatedResource[]> {
+  const conditions: SQL[] = []
+  if (filters.type) conditions.push(eq(resources.type, filters.type))
+  if (filters.status) conditions.push(eq(resources.status, filters.status))
+
+  const rows = await db
+    .select({ resource: resources, translation: resourceTranslations })
+    .from(resources)
+    .leftJoin(
+      resourceTranslations,
+      eq(resourceTranslations.resourceId, resources.id),
+    )
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(resources.updatedAt))
+
+  // Untranslated resources must still appear in the admin list, so group
+  // manually instead of via groupResources (which drops them).
+  const byId = new Map<
+    string,
+    { resource: ResourceRow; translations: TranslationRow[] }
+  >()
+  for (const { resource, translation } of rows) {
+    const entry = byId.get(resource.id) ?? { resource, translations: [] }
+    if (translation) entry.translations.push(translation)
+    byId.set(resource.id, entry)
+  }
+
+  return [...byId.values()].map(({ resource, translations }) => {
+    const picked = pickTranslation(translations, locale)
+    return {
+      ...resource,
+      title: picked?.title ?? '',
+      summary: picked?.summary ?? '',
+      body: picked?.body ?? '',
+      isFallback: picked?.isFallback ?? false,
+    }
+  })
+}
+
+export async function adminGetResource(id: string): Promise<{
+  resource: ResourceRow
+  translations: Partial<Record<Locale, TranslationRow>>
+} | null> {
+  const rows = await db
+    .select({ resource: resources, translation: resourceTranslations })
+    .from(resources)
+    .leftJoin(
+      resourceTranslations,
+      eq(resourceTranslations.resourceId, resources.id),
+    )
+    .where(eq(resources.id, id))
+
+  if (rows.length === 0) return null
+  const translations: Partial<Record<Locale, TranslationRow>> = {}
+  for (const { translation } of rows) {
+    if (translation) translations[translation.locale as Locale] = translation
+  }
+  return { resource: rows[0].resource, translations }
+}
+
+export async function adminListChapters(courseId: string): Promise<
+  {
+    chapter: ChapterRow
+    translations: Partial<Record<Locale, ChapterTranslationRow>>
+  }[]
+> {
+  const rows = await db
+    .select({ chapter: courseChapters, translation: courseChapterTranslations })
+    .from(courseChapters)
+    .leftJoin(
+      courseChapterTranslations,
+      eq(courseChapterTranslations.chapterId, courseChapters.id),
+    )
+    .where(eq(courseChapters.courseId, courseId))
+    .orderBy(asc(courseChapters.position))
+
+  const byId = new Map<
+    string,
+    {
+      chapter: ChapterRow
+      translations: Partial<Record<Locale, ChapterTranslationRow>>
+    }
+  >()
+  for (const { chapter, translation } of rows) {
+    const entry = byId.get(chapter.id) ?? { chapter, translations: {} }
+    if (translation) entry.translations[translation.locale as Locale] = translation
+    byId.set(chapter.id, entry)
+  }
+  return [...byId.values()].sort(
+    (a, b) => a.chapter.position - b.chapter.position,
+  )
+}
+
 export async function listChapters(
   courseId: string,
   locale: Locale,
