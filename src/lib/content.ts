@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { and, arrayContains, asc, desc, eq, type SQL } from 'drizzle-orm'
 import { db } from '@/db'
 import {
@@ -125,7 +126,8 @@ export async function listLatest(
   return groupResources(rows, locale).slice(0, limit)
 }
 
-export async function getPublishedBySlug(
+// React-cached so a page and its generateMetadata share one query.
+export const getPublishedBySlug = cache(async function getPublishedBySlug(
   type: ResourceType,
   slug: string,
   locale: Locale,
@@ -146,7 +148,7 @@ export async function getPublishedBySlug(
     )
 
   return groupResources(rows, locale)[0] ?? null
-}
+})
 
 function groupChapters(
   rows: { chapter: ChapterRow; translation: ChapterTranslationRow | null }[],

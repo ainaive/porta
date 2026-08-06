@@ -16,6 +16,16 @@ import { requireSession } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale; slug: string }>
+}) {
+  const { locale, slug } = await params
+  const resource = await getPublishedBySlug('model_api', slug, locale)
+  return { title: resource?.title }
+}
+
 export default async function ModelApiDetailPage({
   params,
 }: {

@@ -47,6 +47,14 @@
     "level": "Level",
     "estimatedHours": "~{hours} h"
   },
+  "errors": {
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The page you are looking for doesn't exist or has been moved.",
+    "backHome": "Back to home",
+    "errorTitle": "Something went wrong",
+    "errorDescription": "An unexpected error occurred. Please try again.",
+    "retry": "Try again"
+  },
   "admin": {
     "dashboard": "Dashboard",
     "resources": "Resources",

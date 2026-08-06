@@ -10,6 +10,16 @@ import { requireSession } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale; slug: string }>
+}) {
+  const { locale, slug } = await params
+  const resource = await getPublishedBySlug('tool', slug, locale)
+  return { title: resource?.title }
+}
+
 export default async function ToolDetailPage({
   params,
 }: {
