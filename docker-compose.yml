@@ -6,7 +6,8 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: porta
     volumes:
-      - db-data:/var/lib/postgresql/data
+      # postgres:18+ images store data in /var/lib/postgresql (not .../data).
+      - db-data:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres -d porta']
       interval: 5s
