@@ -37,6 +37,9 @@ export function SettingsForm({
     {},
   )
   const meta = resource.meta
+  // React resets the form after every action; on error the echoed submission
+  // wins over the stored settings so nothing typed is lost.
+  const values = state.values
 
   return (
     <form action={formAction}>
@@ -47,7 +50,7 @@ export function SettingsForm({
             <Input
               id="slug"
               name="slug"
-              defaultValue={resource.slug}
+              defaultValue={values?.slug ?? resource.slug}
               required
             />
           </Field>
@@ -56,7 +59,7 @@ export function SettingsForm({
             <NativeSelect
               id="status"
               name="status"
-              defaultValue={resource.status}
+              defaultValue={values?.status ?? resource.status}
             >
               <option value="draft">{t('draft')}</option>
               <option value="published">{t('published')}</option>
@@ -68,7 +71,7 @@ export function SettingsForm({
           <Input
             id="tags"
             name="tags"
-            defaultValue={resource.tags.join(', ')}
+            defaultValue={values?.tags ?? resource.tags.join(', ')}
             placeholder={t('tagsHint')}
           />
         </Field>
@@ -77,14 +80,18 @@ export function SettingsForm({
           <div className="grid gap-6 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="url">{t('metaUrl')}</FieldLabel>
-              <Input id="url" name="url" defaultValue={meta.url ?? ''} />
+              <Input
+                id="url"
+                name="url"
+                defaultValue={values?.url ?? meta.url ?? ''}
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="docsUrl">{t('metaDocsUrl')}</FieldLabel>
               <Input
                 id="docsUrl"
                 name="docsUrl"
-                defaultValue={meta.docsUrl ?? ''}
+                defaultValue={values?.docsUrl ?? meta.docsUrl ?? ''}
               />
             </Field>
           </div>
@@ -97,7 +104,7 @@ export function SettingsForm({
               <NativeSelect
                 id="provider"
                 name="provider"
-                defaultValue={meta.provider ?? 'youtube'}
+                defaultValue={values?.provider ?? meta.provider ?? 'youtube'}
               >
                 <option value="youtube">YouTube</option>
                 <option value="bilibili">Bilibili</option>
@@ -108,7 +115,7 @@ export function SettingsForm({
               <Input
                 id="embedUrl"
                 name="embedUrl"
-                defaultValue={meta.embedUrl ?? ''}
+                defaultValue={values?.embedUrl ?? meta.embedUrl ?? ''}
               />
             </Field>
             <Field>
@@ -116,7 +123,7 @@ export function SettingsForm({
               <Input
                 id="duration"
                 name="duration"
-                defaultValue={meta.duration ?? ''}
+                defaultValue={values?.duration ?? meta.duration ?? ''}
                 placeholder="12:34"
               />
             </Field>
@@ -131,7 +138,7 @@ export function SettingsForm({
                 <Input
                   id="provider"
                   name="provider"
-                  defaultValue={meta.provider ?? ''}
+                  defaultValue={values?.provider ?? meta.provider ?? ''}
                 />
               </Field>
               <Field>
@@ -139,7 +146,7 @@ export function SettingsForm({
                 <Input
                   id="docsUrl"
                   name="docsUrl"
-                  defaultValue={meta.docsUrl ?? ''}
+                  defaultValue={values?.docsUrl ?? meta.docsUrl ?? ''}
                 />
               </Field>
             </div>
@@ -148,7 +155,7 @@ export function SettingsForm({
               <Input
                 id="endpoint"
                 name="endpoint"
-                defaultValue={meta.endpoint ?? ''}
+                defaultValue={values?.endpoint ?? meta.endpoint ?? ''}
               />
             </Field>
             <Field>
@@ -157,9 +164,12 @@ export function SettingsForm({
                 id="links"
                 name="links"
                 rows={4}
-                defaultValue={(meta.links ?? [])
-                  .map((link) => `${link.label} | ${link.url}`)
-                  .join('\n')}
+                defaultValue={
+                  values?.links ??
+                  (meta.links ?? [])
+                    .map((link) => `${link.label} | ${link.url}`)
+                    .join('\n')
+                }
                 className="font-mono text-sm"
               />
             </Field>
@@ -173,7 +183,7 @@ export function SettingsForm({
               <NativeSelect
                 id="level"
                 name="level"
-                defaultValue={meta.level ?? ''}
+                defaultValue={values?.level ?? meta.level ?? ''}
               >
                 <option value="">—</option>
                 <option value="beginner">beginner</option>
@@ -189,7 +199,9 @@ export function SettingsForm({
                 type="number"
                 min="0"
                 step="0.5"
-                defaultValue={meta.estimatedHours ?? ''}
+                defaultValue={
+                  values?.estimatedHours ?? meta.estimatedHours ?? ''
+                }
               />
             </Field>
           </div>

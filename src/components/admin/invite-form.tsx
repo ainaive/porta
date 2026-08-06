@@ -15,16 +15,28 @@ export function InviteForm() {
     createInvite,
     {},
   )
+  // React resets the form after every action; on error the echoed submission
+  // re-fills the fields so nothing typed is lost.
+  const values = state.values
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-3">
       <Field className="w-64">
         <FieldLabel htmlFor="invite-email">{t('inviteEmail')}</FieldLabel>
-        <Input id="invite-email" name="email" type="email" />
+        <Input
+          id="invite-email"
+          name="email"
+          type="email"
+          defaultValue={values?.email ?? ''}
+        />
       </Field>
       <Field className="w-36">
         <FieldLabel htmlFor="invite-role">{t('inviteRole')}</FieldLabel>
-        <NativeSelect id="invite-role" name="role" defaultValue="member">
+        <NativeSelect
+          id="invite-role"
+          name="role"
+          defaultValue={values?.role ?? 'member'}
+        >
           <option value="member">member</option>
           <option value="admin">admin</option>
         </NativeSelect>

@@ -41,14 +41,24 @@ export default async function AdminChapterEditPage({
           <TabsTrigger value="en">{t('englishTab')}</TabsTrigger>
           <TabsTrigger value="zh">{t('chineseTab')}</TabsTrigger>
         </TabsList>
-        <TabsContent value="en" className="mt-4">
+        {/* forceMount + CSS-hide: unmounting the inactive panel would drop
+            any draft typed there when switching tabs. */}
+        <TabsContent
+          value="en"
+          forceMount
+          className="mt-4 data-[state=inactive]:hidden"
+        >
           <ChapterTranslationForm
             chapterId={chapterId}
             locale="en"
             initial={entry.translations.en ?? null}
           />
         </TabsContent>
-        <TabsContent value="zh" className="mt-4">
+        <TabsContent
+          value="zh"
+          forceMount
+          className="mt-4 data-[state=inactive]:hidden"
+        >
           <ChapterTranslationForm
             chapterId={chapterId}
             locale="zh"
