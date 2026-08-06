@@ -10,20 +10,33 @@ function flattenKeys(value: unknown, prefix = ''): string[] {
   )
 }
 
-const enKeys = new Set(flattenKeys(en))
-const zhKeys = new Set(flattenKeys(zh))
-
-const missingInZh = [...enKeys].filter((key) => !zhKeys.has(key))
-const missingInEn = [...zhKeys].filter((key) => !enKeys.has(key))
-
-if (missingInZh.length > 0 || missingInEn.length > 0) {
-  if (missingInZh.length > 0) {
-    console.error(`Missing in zh.json:\n  ${missingInZh.join('\n  ')}`)
+export function diffMessageKeys(
+  a: object,
+  b: object,
+): { missingInB: string[]; missingInA: string[] } {
+  const aKeys = new Set(flattenKeys(a))
+  const bKeys = new Set(flattenKeys(b))
+  return {
+    missingInB: [...aKeys].filter((key) => !bKeys.has(key)),
+    missingInA: [...bKeys].filter((key) => !aKeys.has(key)),
   }
-  if (missingInEn.length > 0) {
-    console.error(`Missing in en.json:\n  ${missingInEn.join('\n  ')}`)
-  }
-  process.exit(1)
 }
 
-console.log(`Message keys in sync (${enKeys.size} keys)`)
+if (import.meta.main) {
+  const { missingInB: missingInZh, missingInA: missingInEn } = diffMessageKeys(
+    en,
+    zh,
+  )
+
+  if (missingInZh.length > 0 || missingInEn.length > 0) {
+    if (missingInZh.length > 0) {
+      console.error(`Missing in zh.json:\n  ${missingInZh.join('\n  ')}`)
+    }
+    if (missingInEn.length > 0) {
+      console.error(`Missing in en.json:\n  ${missingInEn.join('\n  ')}`)
+    }
+    process.exit(1)
+  }
+
+  console.log(`Message keys in sync (${flattenKeys(en).length} keys)`)
+}
