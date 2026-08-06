@@ -67,7 +67,7 @@ test.describe('public smoke', () => {
 
 test.describe('signed in', () => {
   test('video detail embeds the provider player', async ({ page }) => {
-    await page.goto('/en/videos/getting-started-with-porta')
+    await page.goto('/en/videos/getting-started-with-silicon')
     await expect(page.locator('iframe[src*="youtube.com"]')).toBeVisible()
   })
 
