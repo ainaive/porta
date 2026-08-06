@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { SignUpForm } from '@/components/auth/sign-up-form'
 import {
   Card,
@@ -15,7 +16,10 @@ export default async function SignUpPage({
 }: {
   searchParams: Promise<{ token?: string }>
 }) {
-  const { token } = await searchParams
+  const [{ token }, t] = await Promise.all([
+    searchParams,
+    getTranslations('auth'),
+  ])
   const bootstrap = !(await hasAnyUser())
 
   let lockedEmail: string | null = null
@@ -29,16 +33,14 @@ export default async function SignUpPage({
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
+    <main className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         {allowed ? (
           <>
             <CardHeader>
-              <CardTitle>Create your account</CardTitle>
+              <CardTitle>{t('signUpTitle')}</CardTitle>
               <CardDescription>
-                {bootstrap
-                  ? 'You are setting up Porta — the first account becomes the administrator.'
-                  : 'You have been invited to Porta.'}
+                {bootstrap ? t('signUpBootstrap') : t('signUpInvited')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -50,11 +52,9 @@ export default async function SignUpPage({
           </>
         ) : (
           <CardHeader>
-            <CardTitle>Invitation required</CardTitle>
+            <CardTitle>{t('inviteRequiredTitle')}</CardTitle>
             <CardDescription>
-              {token
-                ? 'This invitation link is invalid, expired, or already used. Ask an administrator for a new one.'
-                : 'Sign-up is invite-only. Ask an administrator for an invitation link.'}
+              {token ? t('inviteInvalid') : t('inviteMissing')}
             </CardDescription>
           </CardHeader>
         )}

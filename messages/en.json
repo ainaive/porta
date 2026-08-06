@@ -1,0 +1,38 @@
+{
+  "common": {
+    "appName": "Porta",
+    "untranslated": "Untranslated"
+  },
+  "nav": {
+    "tools": "Tools",
+    "courses": "Courses",
+    "videos": "Videos",
+    "models": "Model APIs",
+    "admin": "Admin",
+    "signIn": "Sign in",
+    "signOut": "Sign out"
+  },
+  "home": {
+    "title": "The ecosystem toolchain portal",
+    "subtitle": "Tools, courses, teaching videos, and model API resources — everything the team builds with, in one place."
+  },
+  "auth": {
+    "signInTitle": "Sign in",
+    "signInDescription": "Welcome back to Porta.",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "signInAction": "Sign in",
+    "signingIn": "Signing in…",
+    "signInFailed": "Sign-in failed",
+    "signUpTitle": "Create your account",
+    "signUpInvited": "You have been invited to Porta.",
+    "signUpBootstrap": "You are setting up Porta — the first account becomes the administrator.",
+    "signUpAction": "Create account",
+    "signingUp": "Creating account…",
+    "signUpFailed": "Sign-up failed",
+    "inviteRequiredTitle": "Invitation required",
+    "inviteInvalid": "This invitation link is invalid, expired, or already used. Ask an administrator for a new one.",
+    "inviteMissing": "Sign-up is invite-only. Ask an administrator for an invitation link."
+  }
+}

@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { getTranslations } from 'next-intl/server'
 import { SignInForm } from '@/components/auth/sign-in-form'
 import {
   Card,
@@ -8,13 +9,15 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const t = await getTranslations('auth')
+
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
+    <main className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>Welcome back to Porta.</CardDescription>
+          <CardTitle>{t('signInTitle')}</CardTitle>
+          <CardDescription>{t('signInDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Suspense>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -19,7 +19,8 @@ export function SignUpForm({
   inviteToken?: string
   lockedEmail?: string | null
 }) {
-  const router = useRouter()
+  const t = useTranslations('auth')
+  const locale = useLocale()
   const [pending, setPending] = useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -33,24 +34,23 @@ export function SignUpForm({
       // Extra field consumed by the server-side invite hook.
       inviteToken,
     } as SignUpInput)
-    setPending(false)
     if (error) {
-      toast.error(error.message ?? 'Sign-up failed')
+      setPending(false)
+      toast.error(error.message ?? t('signUpFailed'))
       return
     }
-    router.push('/')
-    router.refresh()
+    window.location.assign(`/${locale}`)
   }
 
   return (
     <form onSubmit={handleSubmit}>
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="name">Name</FieldLabel>
+          <FieldLabel htmlFor="name">{t('name')}</FieldLabel>
           <Input id="name" name="name" autoComplete="name" required />
         </Field>
         <Field>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <FieldLabel htmlFor="email">{t('email')}</FieldLabel>
           <Input
             id="email"
             name="email"
@@ -62,7 +62,7 @@ export function SignUpForm({
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <FieldLabel htmlFor="password">{t('password')}</FieldLabel>
           <Input
             id="password"
             name="password"
@@ -73,7 +73,7 @@ export function SignUpForm({
           />
         </Field>
         <Button type="submit" disabled={pending}>
-          {pending ? 'Creating account…' : 'Create account'}
+          {pending ? t('signingUp') : t('signUpAction')}
         </Button>
       </FieldGroup>
     </form>
