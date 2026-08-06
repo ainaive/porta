@@ -133,6 +133,10 @@
   --brand: oklch(0.62 0.19 25);
   --brand-2: oklch(0.72 0.16 55);
   --brand-3: oklch(0.65 0.14 300);
+
+  /* Declared at root so it is reachable from outside `.landing` — the body
+     rule below and the logo mark both need it. */
+  --landing-background: oklch(0.145 0.003 286);
 }
 
 .dark {
@@ -183,7 +187,7 @@
     var(--font-noto-sans-sc), var(--font-geist-sans), ui-sans-serif, sans-serif;
   --font-mono-stack: var(--font-jetbrains-mono), ui-monospace, monospace;
 
-  --background: oklch(0.145 0.003 286);
+  --background: var(--landing-background);
   --foreground: oklch(0.967 0.001 106);
   --card: oklch(0.185 0.004 286);
   --card-foreground: oklch(0.967 0.001 106);
@@ -204,6 +208,12 @@
 
 .landing ::selection {
   background: oklch(0.62 0.19 25 / 0.35);
+}
+
+/* The overscroll gutter paints from the body background, so the dark canvas
+   has to reach body or a rubber-band scroll flashes white on the landing. */
+body:has(.landing) {
+  background-color: var(--landing-background);
 }
 
 @layer base {

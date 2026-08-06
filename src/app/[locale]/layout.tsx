@@ -9,6 +9,8 @@ import {
 import { notFound } from 'next/navigation'
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
+import { ChromeShell } from '@/components/site/chrome-shell'
+import { SiteFooter } from '@/components/site/footer'
 import { SiteHeader } from '@/components/site/header'
 import { Toaster } from '@/components/ui/sonner'
 import { routing } from '@/i18n/routing'
@@ -76,8 +78,11 @@ export default async function LocaleLayout({
     >
       <body className="flex min-h-svh flex-col">
         <NextIntlClientProvider>
-          <SiteHeader />
-          <div className="flex flex-1 flex-col">{children}</div>
+          <ChromeShell>
+            <SiteHeader />
+            <div className="flex flex-1 flex-col">{children}</div>
+            <SiteFooter />
+          </ChromeShell>
           <Toaster />
         </NextIntlClientProvider>
       </body>

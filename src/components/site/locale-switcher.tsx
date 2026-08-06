@@ -12,8 +12,9 @@ export function LocaleSwitcher() {
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="sm"
+      className="font-mono text-xs"
       onClick={() => router.replace(pathname, { locale: other })}
     >
       {other === 'zh' ? '中文' : 'English'}

@@ -10,7 +10,8 @@
     "models": "Model APIs",
     "admin": "Admin",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "menu": "Menu"
   },
   "home": {
     "title": "The ecosystem toolchain portal",

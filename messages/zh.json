@@ -10,7 +10,8 @@
     "models": "模型 API",
     "admin": "管理",
     "signIn": "登录",
-    "signOut": "退出登录"
+    "signOut": "退出登录",
+    "menu": "菜单"
   },
   "home": {
     "title": "生态工具链门户",
