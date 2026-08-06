@@ -46,7 +46,7 @@ export default async function CourseDetailPage({
       {meta?.level || meta?.estimatedHours ? (
         <p className="mt-3 text-sm text-muted-foreground">
           {[
-            meta.level ? `${t('level')}: ${meta.level}` : null,
+            meta.level ? `${t('level')}: ${t(`levels.${meta.level}`)}` : null,
             meta.estimatedHours
               ? t('estimatedHours', { hours: meta.estimatedHours })
               : null,

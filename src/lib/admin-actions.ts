@@ -25,12 +25,25 @@ import {
 } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 
+// `error` is a message key under admin.errors (translated where rendered,
+// in ActionFeedback), with `detail` interpolated for technical specifics.
 // `values` echoes the submitted fields on error so forms can re-fill:
 // React 19 resets uncontrolled <form action> forms on every submit, error
 // included — without the echo a failed save discards everything typed.
+export type ActionErrorCode =
+  | 'slugFormat'
+  | 'typeInvalid'
+  | 'slugTaken'
+  | 'titleRequired'
+  | 'publishNeedsTranslation'
+  | 'resourceNotFound'
+  | 'emailInvalid'
+  | 'metaInvalid'
+
 export type ActionState = {
   ok?: boolean
-  error?: string
+  error?: ActionErrorCode
+  detail?: string
   values?: Record<string, string>
 }
 
@@ -59,7 +72,7 @@ export async function createResource(
   const slug = slugSchema.safeParse(formString(formData, 'slug'))
   if (!type.success || !slug.success) {
     return {
-      error: slug.success ? 'Invalid type' : 'Slug must be kebab-case',
+      error: slug.success ? 'typeInvalid' : 'slugFormat',
       values: submittedValues(formData),
     }
   }
@@ -70,10 +83,7 @@ export async function createResource(
     .where(and(eq(resources.type, type.data), eq(resources.slug, slug.data)))
     .limit(1)
   if (existing.length > 0) {
-    return {
-      error: 'A resource of this type with this slug already exists',
-      values: submittedValues(formData),
-    }
+    return { error: 'slugTaken', values: submittedValues(formData) }
   }
 
   const [created] = await db
@@ -100,7 +110,7 @@ export async function saveTranslation(
 
   const title = formString(formData, 'title')
   if (!title) {
-    return { error: 'Title is required', values: submittedValues(formData) }
+    return { error: 'titleRequired', values: submittedValues(formData) }
   }
 
   await db
@@ -142,14 +152,11 @@ export async function saveSettings(
     .from(resources)
     .where(eq(resources.id, resourceId))
     .limit(1)
-  if (!resource) return { error: 'Resource not found' }
+  if (!resource) return { error: 'resourceNotFound' }
 
   const slug = slugSchema.safeParse(formString(formData, 'slug'))
   if (!slug.success) {
-    return {
-      error: 'Slug must be kebab-case',
-      values: submittedValues(formData),
-    }
+    return { error: 'slugFormat', values: submittedValues(formData) }
   }
 
   const status =
@@ -161,7 +168,7 @@ export async function saveSettings(
     )
     if (translationCount === 0) {
       return {
-        error: 'Publishing requires at least one translation',
+        error: 'publishNeedsTranslation',
         values: submittedValues(formData),
       }
     }
@@ -179,10 +186,7 @@ export async function saveSettings(
     )
     .limit(1)
   if (clash.length > 0) {
-    return {
-      error: 'A resource of this type with this slug already exists',
-      values: submittedValues(formData),
-    }
+    return { error: 'slugTaken', values: submittedValues(formData) }
   }
 
   const tags = formString(formData, 'tags')
@@ -191,7 +195,13 @@ export async function saveSettings(
     .filter(Boolean)
 
   const { meta, error } = parseMeta(resource.type as ResourceType, formData)
-  if (error) return { error, values: submittedValues(formData) }
+  if (error) {
+    return {
+      error: 'metaInvalid',
+      detail: error,
+      values: submittedValues(formData),
+    }
+  }
 
   await db
     .update(resources)
@@ -243,7 +253,7 @@ export async function saveChapterTranslation(
 
   const title = formString(formData, 'title')
   if (!title) {
-    return { error: 'Title is required', values: submittedValues(formData) }
+    return { error: 'titleRequired', values: submittedValues(formData) }
   }
 
   await db
@@ -348,7 +358,7 @@ export async function createInvite(
 
   const email = formString(formData, 'email')
   if (email !== '' && !z.email().safeParse(email).success) {
-    return { error: 'Invalid email address', values: submittedValues(formData) }
+    return { error: 'emailInvalid', values: submittedValues(formData) }
   }
   const role = formString(formData, 'role') === 'admin' ? 'admin' : 'member'
 

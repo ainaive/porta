@@ -90,6 +90,11 @@
     "endpoint": "Endpoint",
     "provider": "Provider",
     "level": "Level",
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
     "estimatedHours": "~{hours} h"
   },
   "errors": {
@@ -120,6 +125,9 @@
     "saved": "Saved",
     "delete": "Delete",
     "confirmDelete": "Confirm delete",
+    "confirmBan": "Confirm ban",
+    "confirmUnban": "Confirm unban",
+    "confirmRevoke": "Confirm revoke",
     "create": "Create",
     "englishTab": "English",
     "chineseTab": "中文",
@@ -156,7 +164,17 @@
     "metaEndpoint": "Endpoint",
     "metaLinks": "Links (one per line: Label | URL)",
     "metaLevel": "Level",
-    "metaHours": "Estimated hours"
+    "metaHours": "Estimated hours",
+    "errors": {
+      "slugFormat": "Slug must be kebab-case",
+      "typeInvalid": "Invalid type",
+      "slugTaken": "A resource of this type with this slug already exists",
+      "titleRequired": "Title is required",
+      "publishNeedsTranslation": "Publishing requires at least one translation",
+      "resourceNotFound": "Resource not found",
+      "emailInvalid": "Invalid email address",
+      "metaInvalid": "Invalid fields — {detail}"
+    }
   },
   "auth": {
     "signInTitle": "Sign in",
