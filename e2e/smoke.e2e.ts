@@ -78,4 +78,11 @@ test.describe('signed in', () => {
     await page.getByRole('link', { name: /Next/ }).click()
     await expect(page).toHaveURL(/\/courses\/prompt-engineering-101\/2$/)
   })
+
+  test('a non-numeric chapter segment 404s instead of rendering', async ({
+    page,
+  }) => {
+    const res = await page.goto('/en/courses/prompt-engineering-101/1abc')
+    expect(res?.status()).toBe(404)
+  })
 })

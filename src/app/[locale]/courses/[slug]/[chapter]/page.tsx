@@ -18,8 +18,10 @@ export default async function CourseChapterPage({
   const { locale, slug, chapter } = await params
   await requireSession(`/${locale}/courses/${slug}/${chapter}`)
 
+  // Strict digits only: parseInt('3abc') is 3, which would render chapter 3
+  // at a non-canonical URL. Positions are 1..n, so no leading zeros either.
+  if (!/^[1-9]\d*$/.test(chapter)) notFound()
   const position = Number.parseInt(chapter, 10)
-  if (!Number.isInteger(position) || position < 1) notFound()
 
   const course = await getPublishedBySlug('course', slug, locale)
   if (!course) notFound()
