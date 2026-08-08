@@ -51,6 +51,9 @@ export function CopyLinkButton({ token }: { token: string }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } else {
+      // Clear any lingering success state so the button doesn't read
+      // "Copied" while the toast and revealed URL report failure.
+      setCopied(false)
       setManualUrl(url)
       toast.error(t('copyFailed'))
     }
@@ -65,7 +68,7 @@ export function CopyLinkButton({ token }: { token: string }) {
         <Input
           readOnly
           value={manualUrl}
-          aria-label={t('copyFailed')}
+          aria-label={t('manualInviteUrl')}
           className="h-8 w-64 font-mono text-xs"
           onFocus={(e) => e.currentTarget.select()}
         />

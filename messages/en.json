@@ -146,6 +146,7 @@
     "copyLink": "Copy link",
     "copied": "Copied",
     "copyFailed": "Copy failed — copy the link manually",
+    "manualInviteUrl": "Invitation link",
     "revoke": "Revoke",
     "statusActive": "Active",
     "statusUsed": "Used",
