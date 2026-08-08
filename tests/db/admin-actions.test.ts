@@ -127,6 +127,20 @@ describe('input validation returns handled errors, not 500s', () => {
     })
   })
 
+  test('a valid uuid with no parent row resolves to resourceNotFound', async () => {
+    // Well-formed but absent: passes the uuid guard, then the FK on the
+    // translation insert must map to a handled error, not a 23503 500.
+    const orphan = '00000000-0000-4000-8000-0000000000bb'
+    const f = new FormData()
+    f.set('title', 'x')
+    expect(await saveTranslation(orphan, 'en', {}, f)).toEqual({
+      error: 'resourceNotFound',
+    })
+    expect(await saveChapterTranslation(orphan, 'en', {}, f)).toEqual({
+      error: 'resourceNotFound',
+    })
+  })
+
   test('a duplicate (type, slug) is reported as slugTaken', async () => {
     await db
       .insert(resources)

@@ -61,10 +61,27 @@ const localeSchema = z.enum(['en', 'zh'])
 const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
 const uuidSchema = z.uuid()
 
-// A slug that raced past the pre-check surfaces as the driver's unique
-// violation; turn it into the same handled error rather than a 500.
+// Drizzle wraps driver errors, so the postgres SQLSTATE lives on a cause a
+// level or two down, not the top-level error — walk the chain to find it.
+function pgErrorCode(error: unknown): string | undefined {
+  let current: unknown = error
+  for (let depth = 0; depth < 5 && current; depth++) {
+    const code = (current as { code?: unknown }).code
+    if (typeof code === 'string') return code
+    current = (current as { cause?: unknown }).cause
+  }
+  return undefined
+}
+
+// A slug that raced past the pre-check surfaces as a unique violation; a
+// well-formed id whose parent row is missing (deleted concurrently, or a
+// crafted request) fails a foreign key. Both become handled errors, not 500s.
 function isUniqueViolation(error: unknown): boolean {
-  return (error as { code?: string })?.code === '23505'
+  return pgErrorCode(error) === '23505'
+}
+
+function isForeignKeyViolation(error: unknown): boolean {
+  return pgErrorCode(error) === '23503'
 }
 
 // ---------- Resources ----------
@@ -131,23 +148,28 @@ export async function saveTranslation(
     return { error: 'titleRequired', values: submittedValues(formData) }
   }
 
-  await db
-    .insert(resourceTranslations)
-    .values({
-      resourceId,
-      locale,
-      title,
-      summary: formString(formData, 'summary'),
-      body: formString(formData, 'body'),
-    })
-    .onConflictDoUpdate({
-      target: [resourceTranslations.resourceId, resourceTranslations.locale],
-      set: {
+  try {
+    await db
+      .insert(resourceTranslations)
+      .values({
+        resourceId,
+        locale,
         title,
         summary: formString(formData, 'summary'),
         body: formString(formData, 'body'),
-      },
-    })
+      })
+      .onConflictDoUpdate({
+        target: [resourceTranslations.resourceId, resourceTranslations.locale],
+        set: {
+          title,
+          summary: formString(formData, 'summary'),
+          body: formString(formData, 'body'),
+        },
+      })
+  } catch (e) {
+    if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
+    throw e
+  }
 
   await db
     .update(resources)
@@ -287,16 +309,21 @@ export async function saveChapterTranslation(
     return { error: 'titleRequired', values: submittedValues(formData) }
   }
 
-  await db
-    .insert(courseChapterTranslations)
-    .values({ chapterId, locale, title, body: formString(formData, 'body') })
-    .onConflictDoUpdate({
-      target: [
-        courseChapterTranslations.chapterId,
-        courseChapterTranslations.locale,
-      ],
-      set: { title, body: formString(formData, 'body') },
-    })
+  try {
+    await db
+      .insert(courseChapterTranslations)
+      .values({ chapterId, locale, title, body: formString(formData, 'body') })
+      .onConflictDoUpdate({
+        target: [
+          courseChapterTranslations.chapterId,
+          courseChapterTranslations.locale,
+        ],
+        set: { title, body: formString(formData, 'body') },
+      })
+  } catch (e) {
+    if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
+    throw e
+  }
 
   revalidatePath('/', 'layout')
   return { ok: true }

@@ -5,10 +5,11 @@ test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
 test('invite → member signup → member is gated from admin', async ({
   page,
   browser,
-}, testInfo) => {
-  // Unique per attempt: the e2e database is not reset between CI retries, so a
-  // constant email would collide with the member created on the first attempt.
-  const memberEmail = `member-${Date.now()}-${testInfo.retry}@e2e.test`
+}) => {
+  // The e2e database is not reset between CI retries, so a constant email
+  // would collide with the member created on a prior attempt; a random
+  // component keeps it unique regardless of clock, worker, or run.
+  const memberEmail = `member-${crypto.randomUUID()}@e2e.test`
 
   // Admin creates an invite and copies the link.
   await page.goto('/en/admin/invites')
