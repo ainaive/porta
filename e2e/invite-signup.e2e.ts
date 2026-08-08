@@ -5,7 +5,11 @@ test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
 test('invite → member signup → member is gated from admin', async ({
   page,
   browser,
-}) => {
+}, testInfo) => {
+  // Unique per attempt: the e2e database is not reset between CI retries, so a
+  // constant email would collide with the member created on the first attempt.
+  const memberEmail = `member-${Date.now()}-${testInfo.retry}@e2e.test`
+
   // Admin creates an invite and copies the link.
   await page.goto('/en/admin/invites')
   await page.getByRole('button', { name: 'Create invite' }).click()
@@ -22,7 +26,7 @@ test('invite → member signup → member is gated from admin', async ({
     memberPage.getByText('You have been invited to Silicon Ecosystem.'),
   ).toBeVisible()
   await memberPage.getByLabel('Name').fill('Member E2E')
-  await memberPage.getByLabel('Email').fill('member@e2e.test')
+  await memberPage.getByLabel('Email').fill(memberEmail)
   await memberPage.getByLabel('Password').fill('member-pass-123')
   await memberPage.getByRole('button', { name: 'Create account' }).click()
   await expect(memberPage).toHaveURL(/\/en$/)
