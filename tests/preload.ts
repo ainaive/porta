@@ -21,6 +21,19 @@ if (!/^[a-z0-9_]+$/.test(dbName) || !dbName.endsWith('_test')) {
   )
 }
 
+// The _test suffix protects the database name; this protects the server. A
+// remote host whose db happens to end in _test would still be truncated
+// otherwise. CI runs against a localhost service container.
+const host = new URL(testDatabaseUrl).hostname
+if (
+  !['localhost', '127.0.0.1', '[::1]'].includes(host) &&
+  process.env.ALLOW_NONLOCAL_TEST_DB !== '1'
+) {
+  throw new Error(
+    `Refusing to run tests against non-local host "${host}" — set ALLOW_NONLOCAL_TEST_DB=1 to override`,
+  )
+}
+
 // Force-assign, never ??=: bun auto-loads .env, so the DEV database URL is
 // already in process.env and a conditional assignment would point every
 // test (and its TRUNCATEs) at the development database.
