@@ -73,7 +73,7 @@ export async function createResource(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireAdmin()
+  const session = await requireAdmin()
 
   const type = typeSchema.safeParse(formString(formData, 'type'))
   const slug = slugSchema.safeParse(formString(formData, 'slug'))
@@ -97,7 +97,7 @@ export async function createResource(
   try {
     ;[created] = await db
       .insert(resources)
-      .values({ type: type.data, slug: slug.data })
+      .values({ type: type.data, slug: slug.data, createdBy: session.user.id })
       .returning({ id: resources.id })
   } catch (e) {
     if (isUniqueViolation(e)) {
