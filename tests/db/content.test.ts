@@ -209,13 +209,50 @@ describe('getHomeOverview', () => {
       [{ locale: 'en', title: 'Draft' }],
       { type: 'course', status: 'draft' },
     )
-    await db.insert(courseChapters).values([
-      { courseId: published, position: 1 },
-      { courseId: published, position: 2 },
-      { courseId: draft, position: 1 },
-    ])
+    const chapters = await db
+      .insert(courseChapters)
+      .values([
+        { courseId: published, position: 1 },
+        { courseId: published, position: 2 },
+        { courseId: draft, position: 1 },
+      ])
+      .returning({ id: courseChapters.id })
+    // Translate every chapter so the count turns purely on course status.
+    await db.insert(courseChapterTranslations).values(
+      chapters.map((c) => ({
+        chapterId: c.id,
+        locale: 'en' as const,
+        title: 'Ch',
+      })),
+    )
 
     expect((await getHomeOverview('en')).chapterCount).toBe(2)
+  })
+
+  test('chapterCount ignores untranslated chapters a visitor cannot open', async () => {
+    // Matches groupChapters/listChapters, which drop untranslated chapters:
+    // the landing must not claim more chapters than the course page lists.
+    const course = await insertResource(
+      'partly-translated',
+      [{ locale: 'en', title: 'Course' }],
+      { type: 'course' },
+    )
+    const [translated, untranslated] = await db
+      .insert(courseChapters)
+      .values([
+        { courseId: course, position: 1 },
+        { courseId: course, position: 2 },
+      ])
+      .returning({ id: courseChapters.id })
+    await db.insert(courseChapterTranslations).values({
+      chapterId: translated.id,
+      locale: 'en',
+      title: 'Reachable',
+    })
+    void untranslated
+
+    expect((await getHomeOverview('en')).chapterCount).toBe(1)
+    expect(await listChapters(course, 'en')).toHaveLength(1)
   })
 })
 
