@@ -79,10 +79,12 @@ test.describe('signed in', () => {
     await expect(page).toHaveURL(/\/courses\/prompt-engineering-101\/2$/)
   })
 
-  test('a non-numeric chapter segment 404s instead of rendering', async ({
+  test('a non-numeric chapter segment shows not-found, not chapter 1', async ({
     page,
   }) => {
-    const res = await page.goto('/en/courses/prompt-engineering-101/1abc')
-    expect(res?.status()).toBe(404)
+    // Dynamic/streaming pages can't rewind an already-committed 200, so assert
+    // the not-found UI renders (the codebase's convention) rather than status.
+    await page.goto('/en/courses/prompt-engineering-101/1abc')
+    await expect(page.getByText('Page not found')).toBeVisible()
   })
 })
