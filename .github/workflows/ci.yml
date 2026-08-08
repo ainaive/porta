@@ -120,6 +120,18 @@ jobs:
           curl --retry 30 --retry-delay 2 --retry-all-errors -fsS \
             http://localhost:3000/en > /dev/null
           echo "compose stack serves /en"
+          curl -fsS http://localhost:3000/api/health | grep -q '"ok"'
+          echo "health route serves ok"
+          # The image's HEALTHCHECK must actually flip the container to healthy.
+          cid=$(docker compose ps -q app)
+          for _ in $(seq 1 30); do
+            status=$(docker inspect --format '{{.State.Health.Status}}' "$cid")
+            echo "health: $status"
+            [ "$status" = "healthy" ] && break
+            [ "$status" = "unhealthy" ] && exit 1
+            sleep 2
+          done
+          [ "$(docker inspect --format '{{.State.Health.Status}}' "$cid")" = "healthy" ]
       - name: Dump logs on failure
         if: failure()
         run: docker compose logs
