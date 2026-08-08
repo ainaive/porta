@@ -10,6 +10,7 @@ import {
   sql,
 } from 'drizzle-orm'
 import { cache } from 'react'
+import { z } from 'zod'
 import { db } from '@/db'
 import {
   courseChapters,
@@ -32,6 +33,8 @@ import {
 import { type ResourceType, resourceTypes } from '@/lib/resource-meta'
 
 export type { TranslatedChapter, TranslatedResource } from '@/lib/fallback'
+
+const uuidColumn = z.uuid()
 
 export async function listPublished(
   type: ResourceType,
@@ -224,6 +227,9 @@ export async function adminGetResource(id: string): Promise<{
   resource: ResourceRow
   translations: Partial<Record<Locale, TranslationRow>>
 } | null> {
+  // A non-uuid route param would throw 22P02 at Postgres; treat it as a miss
+  // so the page notFound()s instead of 500ing.
+  if (!uuidColumn.safeParse(id).success) return null
   const rows = await db
     .select({ resource: resources, translation: resourceTranslations })
     .from(resources)
@@ -247,6 +253,7 @@ export async function adminListChapters(courseId: string): Promise<
     translations: Partial<Record<Locale, ChapterTranslationRow>>
   }[]
 > {
+  if (!uuidColumn.safeParse(courseId).success) return []
   const rows = await db
     .select({ chapter: courseChapters, translation: courseChapterTranslations })
     .from(courseChapters)

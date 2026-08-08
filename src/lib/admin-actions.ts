@@ -59,6 +59,13 @@ function submittedValues(formData: FormData): Record<string, string> {
 
 const localeSchema = z.enum(['en', 'zh'])
 const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
+const uuidSchema = z.uuid()
+
+// A slug that raced past the pre-check surfaces as the driver's unique
+// violation; turn it into the same handled error rather than a 500.
+function isUniqueViolation(error: unknown): boolean {
+  return (error as { code?: string })?.code === '23505'
+}
 
 // ---------- Resources ----------
 
@@ -86,10 +93,18 @@ export async function createResource(
     return { error: 'slugTaken', values: submittedValues(formData) }
   }
 
-  const [created] = await db
-    .insert(resources)
-    .values({ type: type.data, slug: slug.data })
-    .returning({ id: resources.id })
+  let created: { id: string }
+  try {
+    ;[created] = await db
+      .insert(resources)
+      .values({ type: type.data, slug: slug.data })
+      .returning({ id: resources.id })
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      return { error: 'slugTaken', values: submittedValues(formData) }
+    }
+    throw e
+  }
 
   revalidatePath('/', 'layout')
   redirect({
@@ -107,6 +122,9 @@ export async function saveTranslation(
 ): Promise<ActionState> {
   await requireAdmin()
   localeSchema.parse(locale)
+  if (!uuidSchema.safeParse(resourceId).success) {
+    return { error: 'resourceNotFound' }
+  }
 
   const title = formString(formData, 'title')
   if (!title) {
@@ -146,6 +164,9 @@ export async function saveSettings(
   formData: FormData,
 ): Promise<ActionState> {
   await requireAdmin()
+  if (!uuidSchema.safeParse(resourceId).success) {
+    return { error: 'resourceNotFound' }
+  }
 
   const [resource] = await db
     .select()
@@ -203,10 +224,17 @@ export async function saveSettings(
     }
   }
 
-  await db
-    .update(resources)
-    .set({ slug: slug.data, status, tags, meta, updatedAt: new Date() })
-    .where(eq(resources.id, resourceId))
+  try {
+    await db
+      .update(resources)
+      .set({ slug: slug.data, status, tags, meta, updatedAt: new Date() })
+      .where(eq(resources.id, resourceId))
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      return { error: 'slugTaken', values: submittedValues(formData) }
+    }
+    throw e
+  }
 
   revalidatePath('/', 'layout')
   return { ok: true }
@@ -250,6 +278,9 @@ export async function saveChapterTranslation(
 ): Promise<ActionState> {
   await requireAdmin()
   localeSchema.parse(locale)
+  if (!uuidSchema.safeParse(chapterId).success) {
+    return { error: 'resourceNotFound' }
+  }
 
   const title = formString(formData, 'title')
   if (!title) {

@@ -112,6 +112,36 @@ describe('chapter ordering contracts', () => {
   })
 })
 
+describe('input validation returns handled errors, not 500s', () => {
+  test('a malformed id resolves to resourceNotFound, not a Postgres 22P02', async () => {
+    const f = new FormData()
+    f.set('title', 'x')
+    expect(await saveTranslation('not-a-uuid', 'en', {}, f)).toEqual({
+      error: 'resourceNotFound',
+    })
+    expect(await saveChapterTranslation('not-a-uuid', 'en', {}, f)).toEqual({
+      error: 'resourceNotFound',
+    })
+    expect(await saveSettings('not-a-uuid', {}, new FormData())).toEqual({
+      error: 'resourceNotFound',
+    })
+  })
+
+  test('a duplicate (type, slug) is reported as slugTaken', async () => {
+    await db
+      .insert(resources)
+      .values({ type: 'tool', slug: 'taken', status: 'draft' })
+
+    const f = new FormData()
+    f.set('type', 'tool')
+    f.set('slug', 'taken')
+    expect(await createResource({}, f)).toEqual({
+      error: 'slugTaken',
+      values: { type: 'tool', slug: 'taken' },
+    })
+  })
+})
+
 describe('every mutation is gated', () => {
   beforeEach(() => {
     denied = true
