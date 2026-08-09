@@ -17,6 +17,19 @@ if (!/^[a-z0-9_]+$/.test(dbName) || !dbName.endsWith('_e2e')) {
   )
 }
 
+// prepare-db DROPs the database, so guard the host too, not just the name: a
+// remote host whose db ends in _e2e must not be dropped. CI uses a localhost
+// service container.
+const host = new URL(E2E_DATABASE_URL).hostname
+if (
+  !['localhost', '127.0.0.1', '[::1]'].includes(host) &&
+  process.env.ALLOW_NONLOCAL_TEST_DB !== '1'
+) {
+  throw new Error(
+    `Refusing to prepare a non-local host "${host}" — set ALLOW_NONLOCAL_TEST_DB=1 to override`,
+  )
+}
+
 const adminUrl = new URL(E2E_DATABASE_URL)
 adminUrl.pathname = '/postgres'
 const admin = postgres(adminUrl.toString(), { max: 1, onnotice: () => {} })

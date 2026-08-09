@@ -45,4 +45,8 @@ COPY --from=build --chown=nextjs:nodejs /app/migrate.bundle.mjs ./scripts/migrat
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
 USER nextjs
 EXPOSE 3000
+# Liveness via the DB-independent health route. No curl in the slim runtime,
+# so use node's http client; a non-2xx or a connection error exits non-zero.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD \
+  node -e "require('http').get('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 ENTRYPOINT ["/bin/sh", "./docker-entrypoint.sh"]

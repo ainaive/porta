@@ -59,6 +59,30 @@ function submittedValues(formData: FormData): Record<string, string> {
 
 const localeSchema = z.enum(['en', 'zh'])
 const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
+const uuidSchema = z.uuid()
+
+// Drizzle wraps driver errors, so the postgres SQLSTATE lives on a cause a
+// level or two down, not the top-level error — walk the chain to find it.
+function pgErrorCode(error: unknown): string | undefined {
+  let current: unknown = error
+  for (let depth = 0; depth < 5 && current; depth++) {
+    const code = (current as { code?: unknown }).code
+    if (typeof code === 'string') return code
+    current = (current as { cause?: unknown }).cause
+  }
+  return undefined
+}
+
+// A slug that raced past the pre-check surfaces as a unique violation; a
+// well-formed id whose parent row is missing (deleted concurrently, or a
+// crafted request) fails a foreign key. Both become handled errors, not 500s.
+function isUniqueViolation(error: unknown): boolean {
+  return pgErrorCode(error) === '23505'
+}
+
+function isForeignKeyViolation(error: unknown): boolean {
+  return pgErrorCode(error) === '23503'
+}
 
 // ---------- Resources ----------
 
@@ -66,7 +90,7 @@ export async function createResource(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireAdmin()
+  const session = await requireAdmin()
 
   const type = typeSchema.safeParse(formString(formData, 'type'))
   const slug = slugSchema.safeParse(formString(formData, 'slug'))
@@ -86,10 +110,18 @@ export async function createResource(
     return { error: 'slugTaken', values: submittedValues(formData) }
   }
 
-  const [created] = await db
-    .insert(resources)
-    .values({ type: type.data, slug: slug.data })
-    .returning({ id: resources.id })
+  let created: { id: string }
+  try {
+    ;[created] = await db
+      .insert(resources)
+      .values({ type: type.data, slug: slug.data, createdBy: session.user.id })
+      .returning({ id: resources.id })
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      return { error: 'slugTaken', values: submittedValues(formData) }
+    }
+    throw e
+  }
 
   revalidatePath('/', 'layout')
   redirect({
@@ -107,29 +139,37 @@ export async function saveTranslation(
 ): Promise<ActionState> {
   await requireAdmin()
   localeSchema.parse(locale)
+  if (!uuidSchema.safeParse(resourceId).success) {
+    return { error: 'resourceNotFound' }
+  }
 
   const title = formString(formData, 'title')
   if (!title) {
     return { error: 'titleRequired', values: submittedValues(formData) }
   }
 
-  await db
-    .insert(resourceTranslations)
-    .values({
-      resourceId,
-      locale,
-      title,
-      summary: formString(formData, 'summary'),
-      body: formString(formData, 'body'),
-    })
-    .onConflictDoUpdate({
-      target: [resourceTranslations.resourceId, resourceTranslations.locale],
-      set: {
+  try {
+    await db
+      .insert(resourceTranslations)
+      .values({
+        resourceId,
+        locale,
         title,
         summary: formString(formData, 'summary'),
         body: formString(formData, 'body'),
-      },
-    })
+      })
+      .onConflictDoUpdate({
+        target: [resourceTranslations.resourceId, resourceTranslations.locale],
+        set: {
+          title,
+          summary: formString(formData, 'summary'),
+          body: formString(formData, 'body'),
+        },
+      })
+  } catch (e) {
+    if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
+    throw e
+  }
 
   await db
     .update(resources)
@@ -146,6 +186,9 @@ export async function saveSettings(
   formData: FormData,
 ): Promise<ActionState> {
   await requireAdmin()
+  if (!uuidSchema.safeParse(resourceId).success) {
+    return { error: 'resourceNotFound' }
+  }
 
   const [resource] = await db
     .select()
@@ -203,10 +246,17 @@ export async function saveSettings(
     }
   }
 
-  await db
-    .update(resources)
-    .set({ slug: slug.data, status, tags, meta, updatedAt: new Date() })
-    .where(eq(resources.id, resourceId))
+  try {
+    await db
+      .update(resources)
+      .set({ slug: slug.data, status, tags, meta, updatedAt: new Date() })
+      .where(eq(resources.id, resourceId))
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      return { error: 'slugTaken', values: submittedValues(formData) }
+    }
+    throw e
+  }
 
   revalidatePath('/', 'layout')
   return { ok: true }
@@ -250,22 +300,30 @@ export async function saveChapterTranslation(
 ): Promise<ActionState> {
   await requireAdmin()
   localeSchema.parse(locale)
+  if (!uuidSchema.safeParse(chapterId).success) {
+    return { error: 'resourceNotFound' }
+  }
 
   const title = formString(formData, 'title')
   if (!title) {
     return { error: 'titleRequired', values: submittedValues(formData) }
   }
 
-  await db
-    .insert(courseChapterTranslations)
-    .values({ chapterId, locale, title, body: formString(formData, 'body') })
-    .onConflictDoUpdate({
-      target: [
-        courseChapterTranslations.chapterId,
-        courseChapterTranslations.locale,
-      ],
-      set: { title, body: formString(formData, 'body') },
-    })
+  try {
+    await db
+      .insert(courseChapterTranslations)
+      .values({ chapterId, locale, title, body: formString(formData, 'body') })
+      .onConflictDoUpdate({
+        target: [
+          courseChapterTranslations.chapterId,
+          courseChapterTranslations.locale,
+        ],
+        set: { title, body: formString(formData, 'body') },
+      })
+  } catch (e) {
+    if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
+    throw e
+  }
 
   revalidatePath('/', 'layout')
   return { ok: true }
