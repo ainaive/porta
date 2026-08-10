@@ -29,6 +29,7 @@ export default async function AdminResourcesPage({
   searchParams: Promise<{
     type?: string | string[]
     status?: string | string[]
+    page?: string | string[]
   }>
 }) {
   await requireAdmin()
@@ -40,11 +41,23 @@ export default async function AdminResourcesPage({
   const status = STATUSES.includes(query.status as (typeof STATUSES)[number])
     ? (query.status as (typeof STATUSES)[number])
     : undefined
+  const parsedPage = Number.parseInt(firstParam(sp.page) ?? '', 10)
+  const page = Number.isNaN(parsedPage) ? undefined : parsedPage
 
-  const [t, items] = await Promise.all([
+  const [t, result] = await Promise.all([
     getTranslations('admin'),
-    adminListResources(locale, { type, status }),
+    adminListResources(locale, { type, status, page }),
   ])
+  const { items, total, page: currentPage, pageSize } = result
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const filterQuery = {
+    ...(type ? { type } : {}),
+    ...(status ? { status } : {}),
+  }
+  const pageHref = (p: number) => ({
+    pathname: '/admin/resources',
+    query: p > 1 ? { ...filterQuery, page: String(p) } : filterQuery,
+  })
 
   return (
     <main>
@@ -151,6 +164,31 @@ export default async function AdminResourcesPage({
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 ? (
+        <nav
+          className="mt-4 flex items-center justify-center gap-4"
+          aria-label={t('pagination')}
+        >
+          {currentPage > 1 ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={pageHref(currentPage - 1)}>← {t('prevPage')}</Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {t('pageOf', { page: currentPage, total: totalPages })}
+          </span>
+          {currentPage < totalPages ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={pageHref(currentPage + 1)}>{t('nextPage')} →</Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
     </main>
   )
 }

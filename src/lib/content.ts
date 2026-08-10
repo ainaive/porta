@@ -246,11 +246,34 @@ export const getPublishedBySlug = cache(async function getPublishedBySlug(
 
 export async function adminListResources(
   locale: Locale,
-  filters: { type?: ResourceType; status?: 'draft' | 'published' } = {},
-): Promise<TranslatedResource[]> {
+  filters: {
+    type?: ResourceType
+    status?: 'draft' | 'published'
+    page?: number
+  } = {},
+): Promise<Paginated<TranslatedResource>> {
+  const pageSize = PAGE_SIZE
+  const page = Math.max(1, Math.trunc(filters.page ?? 1))
   const conditions: SQL[] = []
   if (filters.type) conditions.push(eq(resources.type, filters.type))
   if (filters.status) conditions.push(eq(resources.status, filters.status))
+  const where = conditions.length > 0 ? and(...conditions) : undefined
+
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(resources)
+    .where(where)
+
+  // Resource-level page (see listPublished): ids first, then hydrate.
+  const pageIds = await db
+    .select({ id: resources.id })
+    .from(resources)
+    .where(where)
+    .orderBy(desc(resources.updatedAt))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize)
+  const ids = pageIds.map((r) => r.id)
+  if (ids.length === 0) return { items: [], total, page, pageSize }
 
   const rows = await db
     .select({ resource: resources, translation: resourceTranslations })
@@ -259,7 +282,7 @@ export async function adminListResources(
       resourceTranslations,
       eq(resourceTranslations.resourceId, resources.id),
     )
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(inArray(resources.id, ids))
     .orderBy(desc(resources.updatedAt))
 
   // Untranslated resources must still appear in the admin list, so group
@@ -274,7 +297,7 @@ export async function adminListResources(
     byId.set(resource.id, entry)
   }
 
-  return [...byId.values()].map(({ resource, translations }) => {
+  const items = [...byId.values()].map(({ resource, translations }) => {
     const picked = pickTranslation(translations, locale)
     return {
       ...resource,
@@ -284,6 +307,7 @@ export async function adminListResources(
       isFallback: picked?.isFallback ?? false,
     }
   })
+  return { items, total, page, pageSize }
 }
 
 export async function adminGetResource(id: string): Promise<{

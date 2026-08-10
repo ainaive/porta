@@ -180,7 +180,11 @@
       "resourceNotFound": "Resource not found",
       "emailInvalid": "Invalid email address",
       "metaInvalid": "Invalid fields — {detail}"
-    }
+    },
+    "pagination": "Pagination",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageOf": "Page {page} of {total}"
   },
   "auth": {
     "signInTitle": "Sign in",

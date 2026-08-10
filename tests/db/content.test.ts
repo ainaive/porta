@@ -327,9 +327,22 @@ describe('admin queries', () => {
     })
     await insertResource('untranslated', [])
 
-    const items = await adminListResources('en')
+    const { items, total } = await adminListResources('en')
+    expect(total).toBe(2)
     expect(items.map((i) => i.slug).sort()).toEqual(['draft', 'untranslated'])
     expect(items.find((i) => i.slug === 'untranslated')?.title).toBe('')
+  })
+
+  test('adminListResources paginates and reports the total', async () => {
+    for (let n = 0; n < PAGE_SIZE + 3; n++) {
+      await insertResource(`a-${String(n).padStart(2, '0')}`, [
+        { locale: 'en', title: `R ${n}` },
+      ])
+    }
+    const first = await adminListResources('en', { page: 1 })
+    expect(first.total).toBe(PAGE_SIZE + 3)
+    expect(first.items).toHaveLength(PAGE_SIZE)
+    expect((await adminListResources('en', { page: 2 })).items).toHaveLength(3)
   })
 })
 
