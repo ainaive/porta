@@ -12,8 +12,9 @@ function digestOf(error: unknown): string | undefined {
 // Central sink for every server-side error Next surfaces — RSC renders, route
 // handlers, and server actions alike (context.routeType says which) — with
 // request context attached. This replaces per-action try/catch logging.
-// Client-boundary errors arrive separately via /api/client-error (see
-// lib/client-telemetry.ts), since those never reach the server otherwise.
+// Client-boundary errors are out of scope here (they log to the browser
+// console for local dev); server-side capture of those belongs to a proper
+// error tracker if added later.
 export const onRequestError: Instrumentation.onRequestError = (
   error,
   request,

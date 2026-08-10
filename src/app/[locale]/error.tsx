@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { reportClientError } from '@/lib/client-telemetry'
 import { errorFields, logger } from '@/lib/logger'
 
 export default function ErrorPage({
@@ -18,14 +17,15 @@ export default function ErrorPage({
 }) {
   const t = useTranslations('errors')
 
-  // The boundary used to swallow the error entirely. Report it to the server
-  // (so it reaches the same stdout as server errors) and mirror it to the
-  // browser console for local debugging. The digest correlates to the
-  // server-side entry Next emits in production.
+  // Client-boundary failures log to the browser console (a local-dev aid);
+  // server errors are captured server-side by instrumentation's
+  // onRequestError. The digest correlates this with the server-side entry
+  // Next emits in production.
   useEffect(() => {
-    const fields = { ...errorFields(error), digest: error.digest }
-    reportClientError({ boundary: 'route', ...fields })
-    logger.error('route error boundary', fields)
+    logger.error('route error boundary', {
+      ...errorFields(error),
+      digest: error.digest,
+    })
   }, [error])
 
   return (

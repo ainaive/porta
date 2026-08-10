@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect } from 'react'
-import { reportClientError } from '@/lib/client-telemetry'
 import { errorFields, logger } from '@/lib/logger'
 
 // Last-resort boundary for throws in the locale layout itself (which renders
@@ -18,9 +17,10 @@ export default function GlobalError({
   retry: () => void
 }) {
   useEffect(() => {
-    const fields = { ...errorFields(error), digest: error.digest }
-    reportClientError({ boundary: 'global', ...fields })
-    logger.error('global error boundary', fields)
+    logger.error('global error boundary', {
+      ...errorFields(error),
+      digest: error.digest,
+    })
   }, [error])
 
   return (
