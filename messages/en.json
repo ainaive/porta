@@ -95,7 +95,11 @@
       "intermediate": "Intermediate",
       "advanced": "Advanced"
     },
-    "estimatedHours": "~{hours} h"
+    "estimatedHours": "~{hours} h",
+    "pagination": "Pagination",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageOf": "Page {page} of {total}"
   },
   "errors": {
     "notFoundTitle": "Page not found",

@@ -95,7 +95,11 @@
       "intermediate": "进阶",
       "advanced": "高级"
     },
-    "estimatedHours": "约 {hours} 小时"
+    "estimatedHours": "约 {hours} 小时",
+    "pagination": "分页",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "pageOf": "第 {page} 页 / 共 {total} 页"
   },
   "errors": {
     "notFoundTitle": "页面不存在",

@@ -14,10 +14,16 @@ import {
   listChapters,
   listPublished,
   listPublishedTags,
+  PAGE_SIZE,
 } from '@/lib/content'
 import { resetDb } from './harness'
 
-type Translation = { locale: 'en' | 'zh'; title: string; summary?: string }
+type Translation = {
+  locale: 'en' | 'zh'
+  title: string
+  summary?: string
+  body?: string
+}
 
 async function insertResource(
   slug: string,
@@ -35,6 +41,7 @@ async function insertResource(
         locale: t.locale,
         title: t.title,
         summary: t.summary ?? '',
+        body: t.body ?? '',
       })),
     )
   }
@@ -53,7 +60,7 @@ describe('listPublished', () => {
     })
     await insertResource('untranslated', [])
 
-    const items = await listPublished('tool', 'en')
+    const { items } = await listPublished('tool', 'en')
     expect(items.map((i) => i.slug)).toEqual(['visible'])
   })
 
@@ -64,13 +71,13 @@ describe('listPublished', () => {
     ])
     await insertResource('zh-only', [{ locale: 'zh', title: '只有中文' }])
 
-    const en = await listPublished('tool', 'en')
+    const en = (await listPublished('tool', 'en')).items
     const zhOnly = en.find((i) => i.slug === 'zh-only')
     expect(zhOnly?.title).toBe('只有中文')
     expect(zhOnly?.isFallback).toBe(true)
     expect(en.find((i) => i.slug === 'both')?.isFallback).toBe(false)
 
-    const zh = await listPublished('tool', 'zh')
+    const zh = (await listPublished('tool', 'zh')).items
     expect(zh.find((i) => i.slug === 'both')?.title).toBe('ZH')
   })
 
@@ -83,10 +90,67 @@ describe('listPublished', () => {
     })
 
     const byTag = await listPublished('tool', 'en', { tag: 'cli' })
-    expect(byTag.map((i) => i.slug)).toEqual(['tagged'])
+    expect(byTag.items.map((i) => i.slug)).toEqual(['tagged'])
 
     const byQuery = await listPublished('tool', 'en', { q: 'grep' })
-    expect(byQuery.map((i) => i.slug)).toEqual(['tagged'])
+    expect(byQuery.items.map((i) => i.slug)).toEqual(['tagged'])
+  })
+
+  test('search matches the body, case-insensitively, across locales', async () => {
+    await insertResource('deep', [
+      {
+        locale: 'en',
+        title: 'Tool',
+        body: 'Contains the word Kubernetes deep down.',
+      },
+    ])
+    await insertResource('zh-body', [
+      { locale: 'zh', title: '工具', body: '正文里藏着 Terraform 这个词。' },
+    ])
+    await insertResource('miss', [{ locale: 'en', title: 'Nothing here' }])
+
+    // Body-only match, lowercased query — the old title/summary JS filter missed both.
+    expect(
+      (await listPublished('tool', 'en', { q: 'kubernetes' })).items.map(
+        (i) => i.slug,
+      ),
+    ).toEqual(['deep'])
+    // A zh-only body is found even when browsing in en (search spans locales).
+    expect(
+      (await listPublished('tool', 'en', { q: 'terraform' })).items.map(
+        (i) => i.slug,
+      ),
+    ).toEqual(['zh-body'])
+  })
+
+  test('a literal % in the query is matched, not treated as a wildcard', async () => {
+    await insertResource('pct', [{ locale: 'en', title: '100% coverage' }])
+    await insertResource('plain', [{ locale: 'en', title: 'coverage' }])
+
+    expect(
+      (await listPublished('tool', 'en', { q: '100%' })).items.map(
+        (i) => i.slug,
+      ),
+    ).toEqual(['pct'])
+  })
+
+  test('paginates at the resource level and reports the total', async () => {
+    for (let n = 0; n < PAGE_SIZE + 2; n++) {
+      const label = String(n).padStart(2, '0')
+      await insertResource(`p-${label}`, [
+        { locale: 'en', title: `Tool ${label}` },
+      ])
+    }
+
+    const first = await listPublished('tool', 'en', { page: 1 })
+    expect(first.total).toBe(PAGE_SIZE + 2)
+    expect(first.items).toHaveLength(PAGE_SIZE)
+
+    const second = await listPublished('tool', 'en', { page: 2 })
+    expect(second.items).toHaveLength(2)
+    // No overlap between pages.
+    const firstIds = new Set(first.items.map((i) => i.id))
+    expect(second.items.every((i) => !firstIds.has(i.id))).toBe(true)
   })
 })
 

@@ -9,10 +9,18 @@ export default async function ToolsPage({
   searchParams,
 }: {
   params: Promise<{ locale: Locale }>
-  searchParams: Promise<{ q?: string | string[]; tag?: string | string[] }>
+  searchParams: Promise<{
+    q?: string | string[]
+    tag?: string | string[]
+    page?: string | string[]
+  }>
 }) {
   const [{ locale }, sp] = await Promise.all([params, searchParams])
   const q = firstParam(sp.q)
   const tag = firstParam(sp.tag)
-  return <ResourceListing type="tool" locale={locale} q={q} tag={tag} />
+  const parsedPage = Number.parseInt(firstParam(sp.page) ?? '', 10)
+  const page = Number.isNaN(parsedPage) ? undefined : parsedPage
+  return (
+    <ResourceListing type="tool" locale={locale} q={q} tag={tag} page={page} />
+  )
 }

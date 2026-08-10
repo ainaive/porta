@@ -6,6 +6,9 @@ import {
   desc,
   eq,
   exists,
+  ilike,
+  inArray,
+  or,
   type SQL,
   sql,
 } from 'drizzle-orm'
@@ -36,16 +39,76 @@ export type { TranslatedChapter, TranslatedResource } from '@/lib/fallback'
 
 const uuidColumn = z.uuid()
 
+export const PAGE_SIZE = 24
+
+export type Paginated<T> = {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+// A literal % or _ in the user's query must match itself, not act as a
+// wildcard; backslash is Postgres LIKE's default escape.
+function likePattern(query: string): string {
+  return `%${query.replace(/[\\%_]/g, '\\$&')}%`
+}
+
 export async function listPublished(
   type: ResourceType,
   locale: Locale,
-  filters: { q?: string; tag?: string } = {},
-): Promise<TranslatedResource[]> {
+  filters: { q?: string; tag?: string; page?: number } = {},
+): Promise<Paginated<TranslatedResource>> {
+  const pageSize = PAGE_SIZE
+  const page = Math.max(1, Math.trunc(filters.page ?? 1))
+
   const conditions: SQL[] = [
     eq(resources.type, type),
     eq(resources.status, 'published'),
   ]
   if (filters.tag) conditions.push(arrayContains(resources.tags, [filters.tag]))
+  if (filters.q) {
+    // Match a resource when any of its translations (either locale) contains
+    // the query in title, summary, or body — searched in SQL, not after a
+    // full fetch, and no longer blind to the body.
+    const pattern = likePattern(filters.q)
+    conditions.push(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(resourceTranslations)
+          .where(
+            and(
+              eq(resourceTranslations.resourceId, resources.id),
+              or(
+                ilike(resourceTranslations.title, pattern),
+                ilike(resourceTranslations.summary, pattern),
+                ilike(resourceTranslations.body, pattern),
+              ),
+            ),
+          ),
+      ),
+    )
+  }
+  const where = and(...conditions)
+
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(resources)
+    .where(where)
+
+  // Paginate at the resource level (a resource fans out to one row per
+  // translation in the join below, so LIMIT there would slice rows, not
+  // resources): pick the page's ids first, then hydrate their translations.
+  const pageIds = await db
+    .select({ id: resources.id })
+    .from(resources)
+    .where(where)
+    .orderBy(desc(resources.createdAt))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize)
+  const ids = pageIds.map((r) => r.id)
+  if (ids.length === 0) return { items: [], total, page, pageSize }
 
   const rows = await db
     .select({ resource: resources, translation: resourceTranslations })
@@ -54,19 +117,10 @@ export async function listPublished(
       resourceTranslations,
       eq(resourceTranslations.resourceId, resources.id),
     )
-    .where(and(...conditions))
+    .where(inArray(resources.id, ids))
     .orderBy(desc(resources.createdAt))
 
-  let items = groupResources(rows, locale)
-  if (filters.q) {
-    const q = filters.q.toLowerCase()
-    items = items.filter(
-      (item) =>
-        item.title.toLowerCase().includes(q) ||
-        item.summary.toLowerCase().includes(q),
-    )
-  }
-  return items
+  return { items: groupResources(rows, locale), total, page, pageSize }
 }
 
 export async function listPublishedTags(type: ResourceType): Promise<string[]> {
