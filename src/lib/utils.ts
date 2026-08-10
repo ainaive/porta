@@ -12,3 +12,14 @@ export function firstParam(
 ): string | undefined {
   return Array.isArray(value) ? value[0] : value
 }
+
+// First value per key from a query string. Mirrors firstParam's semantics for
+// carrying a query across a navigation — URLSearchParams.entries() would keep
+// the last duplicate instead.
+export function firstValueQuery(
+  params: URLSearchParams,
+): Record<string, string> {
+  return Object.fromEntries(
+    Array.from(new Set(params.keys()), (key) => [key, params.get(key) ?? '']),
+  )
+}

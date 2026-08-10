@@ -11,7 +11,7 @@
     "format": "biome check --write .",
     "format:check": "biome ci .",
     "typecheck": "next typegen && tsc --noEmit",
-    "verify": "biome ci . && bun run lint && bun run typecheck && bun run i18n:check && bun test",
+    "verify": "biome ci . && bun run lint && bun run typecheck && bun run i18n:check && bun run test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
     "db:seed": "bun scripts/seed.ts",

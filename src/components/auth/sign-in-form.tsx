@@ -9,6 +9,7 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { authClient } from '@/lib/auth-client'
 import { hardNavigate } from '@/lib/hard-navigate'
+import { safeNextPath } from '@/lib/safe-redirect'
 
 export function SignInForm() {
   const t = useTranslations('auth')
@@ -30,23 +31,7 @@ export function SignInForm() {
       return
     }
     const next = searchParams.get('next')
-    // Only same-origin paths. String checks are insufficient — URL parsing
-    // strips tab/newline and treats "\" as "/", so "/\evil.com" and
-    // "/<TAB>\evil.com" are both protocol-relative. Resolve exactly like
-    // the browser will, require our own origin, and navigate to the
-    // normalized path rather than the raw string.
-    let target = `/${locale}`
-    if (next) {
-      try {
-        const url = new URL(next, window.location.origin)
-        if (url.origin === window.location.origin) {
-          target = url.pathname + url.search + url.hash
-        }
-      } catch {
-        // Unparseable → fall through to the locale root.
-      }
-    }
-    hardNavigate(target)
+    hardNavigate(safeNextPath(next, window.location.origin, `/${locale}`))
   }
 
   return (
