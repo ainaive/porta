@@ -9,11 +9,13 @@ type Level = 'debug' | 'info' | 'warn' | 'error'
 type Context = Record<string, unknown>
 
 function emit(level: Level, message: string, context?: Context): void {
+  // Spread context first so a stray context.level/message/time can't shadow
+  // the real fields.
   const line = JSON.stringify({
+    ...context,
     level,
     message,
     time: new Date().toISOString(),
-    ...context,
   })
   // warn/error to stderr, the rest to stdout — the conventional split.
   if (level === 'warn' || level === 'error') console.error(line)

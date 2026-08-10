@@ -20,6 +20,16 @@ describe('logger', () => {
     expect(typeof parsed.time).toBe('string')
   })
 
+  test('context cannot override the required fields', () => {
+    const err = spyOn(console, 'error').mockImplementation(() => {})
+    logger.error('real', { level: 'debug', message: 'fake', time: 'nope' })
+
+    const parsed = JSON.parse(err.mock.calls[0][0] as string)
+    expect(parsed.level).toBe('error')
+    expect(parsed.message).toBe('real')
+    expect(parsed.time).not.toBe('nope')
+  })
+
   test('routes warn/error to stderr and info/debug to stdout', () => {
     const err = spyOn(console, 'error').mockImplementation(() => {})
     const out = spyOn(console, 'log').mockImplementation(() => {})

@@ -174,10 +174,15 @@ export async function saveTranslation(
     throw e
   }
 
-  await db
-    .update(resources)
-    .set({ updatedAt: new Date() })
-    .where(eq(resources.id, resourceId))
+  try {
+    await db
+      .update(resources)
+      .set({ updatedAt: new Date() })
+      .where(eq(resources.id, resourceId))
+  } catch (e) {
+    logger.error('saveTranslation updatedAt bump failed', errorFields(e))
+    throw e
+  }
 
   revalidatePath('/', 'layout')
   return { ok: true }
