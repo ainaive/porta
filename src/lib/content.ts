@@ -60,7 +60,9 @@ export async function listPublished(
   filters: { q?: string; tag?: string; page?: number } = {},
 ): Promise<Paginated<TranslatedResource>> {
   const pageSize = PAGE_SIZE
-  const page = Math.max(1, Math.trunc(filters.page ?? 1))
+  const requested = filters.page ?? 1
+  const page =
+    Number.isFinite(requested) && requested >= 1 ? Math.trunc(requested) : 1
 
   const conditions: SQL[] = [
     eq(resources.type, type),
@@ -100,11 +102,15 @@ export async function listPublished(
   // Paginate at the resource level (a resource fans out to one row per
   // translation in the join below, so LIMIT there would slice rows, not
   // resources): pick the page's ids first, then hydrate their translations.
+  // desc(id) is the tiebreaker: created_at is not unique (a bulk insert shares
+  // one transaction's now()), and without a stable secondary key Postgres may
+  // order ties differently between the page-id and hydration queries, so a
+  // resource could land on two pages or none.
   const pageIds = await db
     .select({ id: resources.id })
     .from(resources)
     .where(where)
-    .orderBy(desc(resources.createdAt))
+    .orderBy(desc(resources.createdAt), desc(resources.id))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
   const ids = pageIds.map((r) => r.id)
@@ -118,7 +124,7 @@ export async function listPublished(
       eq(resourceTranslations.resourceId, resources.id),
     )
     .where(inArray(resources.id, ids))
-    .orderBy(desc(resources.createdAt))
+    .orderBy(desc(resources.createdAt), desc(resources.id))
 
   return { items: groupResources(rows, locale), total, page, pageSize }
 }
@@ -253,7 +259,9 @@ export async function adminListResources(
   } = {},
 ): Promise<Paginated<TranslatedResource>> {
   const pageSize = PAGE_SIZE
-  const page = Math.max(1, Math.trunc(filters.page ?? 1))
+  const requested = filters.page ?? 1
+  const page =
+    Number.isFinite(requested) && requested >= 1 ? Math.trunc(requested) : 1
   const conditions: SQL[] = []
   if (filters.type) conditions.push(eq(resources.type, filters.type))
   if (filters.status) conditions.push(eq(resources.status, filters.status))
@@ -264,12 +272,13 @@ export async function adminListResources(
     .from(resources)
     .where(where)
 
-  // Resource-level page (see listPublished): ids first, then hydrate.
+  // Resource-level page (see listPublished), with desc(id) as the stable
+  // tiebreaker for equal updatedAt.
   const pageIds = await db
     .select({ id: resources.id })
     .from(resources)
     .where(where)
-    .orderBy(desc(resources.updatedAt))
+    .orderBy(desc(resources.updatedAt), desc(resources.id))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
   const ids = pageIds.map((r) => r.id)
@@ -283,7 +292,7 @@ export async function adminListResources(
       eq(resourceTranslations.resourceId, resources.id),
     )
     .where(inArray(resources.id, ids))
-    .orderBy(desc(resources.updatedAt))
+    .orderBy(desc(resources.updatedAt), desc(resources.id))
 
   // Untranslated resources must still appear in the admin list, so group
   // manually instead of via groupResources (which drops them).

@@ -14,7 +14,7 @@ import type { Locale } from '@/i18n/routing'
 import { adminListResources } from '@/lib/content'
 import { type ResourceType, sectionForType } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
-import { firstParam } from '@/lib/utils'
+import { firstParam, parsePageParam } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,8 +41,7 @@ export default async function AdminResourcesPage({
   const status = STATUSES.includes(query.status as (typeof STATUSES)[number])
     ? (query.status as (typeof STATUSES)[number])
     : undefined
-  const parsedPage = Number.parseInt(firstParam(sp.page) ?? '', 10)
-  const page = Number.isNaN(parsedPage) ? undefined : parsedPage
+  const page = parsePageParam(sp.page)
 
   const [t, result] = await Promise.all([
     getTranslations('admin'),

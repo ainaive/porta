@@ -1,6 +1,6 @@
 import { ResourceListing } from '@/components/resource/listing'
 import type { Locale } from '@/i18n/routing'
-import { firstParam } from '@/lib/utils'
+import { firstParam, parsePageParam } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,8 +18,7 @@ export default async function VideosPage({
   const [{ locale }, sp] = await Promise.all([params, searchParams])
   const q = firstParam(sp.q)
   const tag = firstParam(sp.tag)
-  const parsedPage = Number.parseInt(firstParam(sp.page) ?? '', 10)
-  const page = Number.isNaN(parsedPage) ? undefined : parsedPage
+  const page = parsePageParam(sp.page)
   return (
     <ResourceListing type="video" locale={locale} q={q} tag={tag} page={page} />
   )

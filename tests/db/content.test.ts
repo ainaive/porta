@@ -152,6 +152,28 @@ describe('listPublished', () => {
     const firstIds = new Set(first.items.map((i) => i.id))
     expect(second.items.every((i) => !firstIds.has(i.id))).toBe(true)
   })
+
+  test('pages stay disjoint and complete when createdAt ties', async () => {
+    // All share one timestamp (as a bulk insert would): only the desc(id)
+    // tiebreaker keeps the page boundary stable across the two queries.
+    const tied = new Date('2020-01-01T00:00:00Z')
+    for (let n = 0; n < PAGE_SIZE + 5; n++) {
+      await insertResource(
+        `tie-${String(n).padStart(2, '0')}`,
+        [{ locale: 'en', title: `T ${n}` }],
+        { createdAt: tied },
+      )
+    }
+
+    const p1 = await listPublished('tool', 'en', { page: 1 })
+    const p2 = await listPublished('tool', 'en', { page: 2 })
+    const union = new Set([
+      ...p1.items.map((i) => i.id),
+      ...p2.items.map((i) => i.id),
+    ])
+    // No id appears on both pages, and together they cover every resource.
+    expect(union.size).toBe(PAGE_SIZE + 5)
+  })
 })
 
 describe('listPublishedTags', () => {
