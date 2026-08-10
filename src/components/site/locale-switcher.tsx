@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { usePathname, useRouter } from '@/i18n/navigation'
+import { firstValueQuery } from '@/lib/utils'
 
 export function LocaleSwitcher() {
   const locale = useLocale()
@@ -20,14 +21,7 @@ export function LocaleSwitcher() {
       size="sm"
       className="font-mono text-xs"
       onClick={() => {
-        // First value per key, matching the firstParam semantics the pages
-        // render with — entries() would keep the last duplicate instead.
-        const query = Object.fromEntries(
-          Array.from(new Set(searchParams.keys()), (key) => [
-            key,
-            searchParams.get(key) ?? '',
-          ]),
-        )
+        const query = firstValueQuery(searchParams)
         router.replace(
           Object.keys(query).length > 0 ? { pathname, query } : pathname,
           { locale: other },
