@@ -4,6 +4,7 @@ import { ConfirmButton } from './confirm-button'
 
 afterEach(() => {
   cleanup()
+  mock.restore()
   jest.useRealTimers()
 })
 

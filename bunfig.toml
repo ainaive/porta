@@ -1,2 +1,5 @@
 [test]
-preload = ["./tests/preload.ts", "./tests/happydom.ts"]
+# happydom is NOT preloaded here — it would install a DOM (replacing fetch/URL/
+# Request/Response/FormData/... globally) for the node and DB suites too. It is
+# added only for the component-test run (see the test:components script).
+preload = ["./tests/preload.ts"]

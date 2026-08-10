@@ -13,7 +13,25 @@ const messages = {
   },
 }
 
-afterEach(cleanup)
+// Snapshot the globals this suite mutates so each test starts clean —
+// otherwise the toast spy's call count and the forced insecure context leak
+// into later runs (order-dependent failures under --rerun-each).
+const originalIsSecureContext = Object.getOwnPropertyDescriptor(
+  window,
+  'isSecureContext',
+)
+const originalExecCommand = document.execCommand
+
+afterEach(() => {
+  cleanup()
+  mock.restore()
+  document.execCommand = originalExecCommand
+  if (originalIsSecureContext) {
+    Object.defineProperty(window, 'isSecureContext', originalIsSecureContext)
+  } else {
+    Reflect.deleteProperty(window, 'isSecureContext')
+  }
+})
 
 function renderButton() {
   return render(
