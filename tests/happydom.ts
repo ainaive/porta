@@ -1,11 +1,21 @@
-// Installs a DOM (window/document/etc.) so component tests (*.test.tsx) can
-// render with Testing Library. Imported at the top of each component test —
-// deliberately NOT a global bunfig preload, so the node and DB suites keep
-// Bun's native fetch/URL/Request/Response/FormData primitives. Idempotent:
-// several component files may import it in one run, and register() throws if
-// a DOM is already registered.
+import { afterAll, beforeAll } from 'bun:test'
 import { GlobalRegistrator } from '@happy-dom/global-registrator'
 
-if (!GlobalRegistrator.isRegistered) {
-  GlobalRegistrator.register()
+// Call at the top of a component test (*.test.tsx) to install a DOM for that
+// file's tests and tear it down afterwards. Registering (and unregistering)
+// per file — rather than a global bunfig preload — keeps the node and DB
+// suites on Bun's native fetch/URL/Request/Response/FormData globals even in a
+// mixed `bun test` run. A concrete URL gives window.location a real origin
+// (happy-dom's default about:blank origin is the string "null").
+export function setupHappyDom(url = 'http://localhost:3000'): void {
+  beforeAll(() => {
+    if (!GlobalRegistrator.isRegistered) {
+      GlobalRegistrator.register({ url })
+    }
+  })
+  afterAll(async () => {
+    if (GlobalRegistrator.isRegistered) {
+      await GlobalRegistrator.unregister()
+    }
+  })
 }

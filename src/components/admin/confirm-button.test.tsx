@@ -1,7 +1,9 @@
-import '../../../tests/happydom'
 import { afterEach, describe, expect, jest, mock, test } from 'bun:test'
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
+import { setupHappyDom } from '../../../tests/happydom'
 import { ConfirmButton } from './confirm-button'
+
+setupHappyDom()
 
 afterEach(() => {
   cleanup()
