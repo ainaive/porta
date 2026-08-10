@@ -60,6 +60,10 @@ flowchart LR
   `src/lib/content.ts` fetch both locales' rows and pick. Untranslated-
   everywhere resources never surface publicly (admin list still shows them);
   publishing requires ≥1 translation (enforced in `saveSettings`).
+- Public search (`listPublished`) is a SQL `ILIKE` across every translation's
+  title/summary/body in both locales, backed by `pg_trgm` GIN indexes;
+  listings paginate at the resource level (page size 24). See
+  [ADR 0011](./adr/0011-search-and-pagination.md).
 
 ## i18n
 
