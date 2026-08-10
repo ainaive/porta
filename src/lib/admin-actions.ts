@@ -17,7 +17,6 @@ import {
 } from '@/db/schema'
 import { redirect } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { errorFields, logger } from '@/lib/logger'
 import {
   formString,
   parseMeta,
@@ -121,7 +120,6 @@ export async function createResource(
     if (isUniqueViolation(e)) {
       return { error: 'slugTaken', values: submittedValues(formData) }
     }
-    logger.error('createResource insert failed', errorFields(e))
     throw e
   }
 
@@ -170,19 +168,13 @@ export async function saveTranslation(
       })
   } catch (e) {
     if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
-    logger.error('saveTranslation upsert failed', errorFields(e))
     throw e
   }
 
-  try {
-    await db
-      .update(resources)
-      .set({ updatedAt: new Date() })
-      .where(eq(resources.id, resourceId))
-  } catch (e) {
-    logger.error('saveTranslation updatedAt bump failed', errorFields(e))
-    throw e
-  }
+  await db
+    .update(resources)
+    .set({ updatedAt: new Date() })
+    .where(eq(resources.id, resourceId))
 
   revalidatePath('/', 'layout')
   return { ok: true }
@@ -263,7 +255,6 @@ export async function saveSettings(
     if (isUniqueViolation(e)) {
       return { error: 'slugTaken', values: submittedValues(formData) }
     }
-    logger.error('saveSettings update failed', errorFields(e))
     throw e
   }
 
@@ -331,7 +322,6 @@ export async function saveChapterTranslation(
       })
   } catch (e) {
     if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
-    logger.error('saveChapterTranslation upsert failed', errorFields(e))
     throw e
   }
 

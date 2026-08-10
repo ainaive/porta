@@ -8,10 +8,13 @@ import { errorFields, logger } from '@/lib/logger'
 
 export default function ErrorPage({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string }
-  reset: () => void
+  // retry() (stable in Next 16.3) re-fetches and re-renders the failed
+  // subtree; reset() only clears boundary state, so a server-origin error
+  // would immediately throw again.
+  retry: () => void
 }) {
   const t = useTranslations('errors')
 
@@ -29,7 +32,7 @@ export default function ErrorPage({
     <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center">
       <h1 className="text-xl font-semibold">{t('errorTitle')}</h1>
       <p className="max-w-md text-muted-foreground">{t('errorDescription')}</p>
-      <Button onClick={reset} className="mt-2">
+      <Button onClick={retry} className="mt-2">
         {t('retry')}
       </Button>
     </main>

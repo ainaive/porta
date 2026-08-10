@@ -10,10 +10,12 @@ import { errorFields, logger } from '@/lib/logger'
 // CSS, fonts, or i18n providers — hence inline styles and English copy.
 export default function GlobalError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string }
-  reset: () => void
+  // retry() re-fetches the failed tree; reset() only clears state, which for
+  // a root-layout/server error would rethrow immediately.
+  retry: () => void
 }) {
   useEffect(() => {
     const fields = { ...errorFields(error), digest: error.digest }
@@ -44,7 +46,7 @@ export default function GlobalError({
         </p>
         <button
           type="button"
-          onClick={() => reset()}
+          onClick={() => retry()}
           style={{
             padding: '0.5rem 1rem',
             borderRadius: '0.5rem',
