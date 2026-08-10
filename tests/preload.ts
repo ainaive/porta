@@ -39,6 +39,12 @@ if (
 // test (and its TRUNCATEs) at the development database.
 process.env.DATABASE_URL = testDatabaseUrl
 
+// The component-test DOM registrar (tests/happydom.ts) installs a process-wide
+// window, and better-auth resolves its base URL from window.location when
+// BETTER_AUTH_URL is unset — which throws on the DOM's bogus location. Give it
+// a deterministic value (??= so a real one, e.g. from .env, still wins).
+process.env.BETTER_AUTH_URL ??= 'http://localhost:3000'
+
 afterAll(async () => {
   await closeDb()
 })
