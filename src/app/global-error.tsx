@@ -19,7 +19,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     const fields = { ...errorFields(error), digest: error.digest }
-    reportClientError({ message: 'global error boundary', ...fields })
+    reportClientError({ boundary: 'global', ...fields })
     logger.error('global error boundary', fields)
   }, [error])
 

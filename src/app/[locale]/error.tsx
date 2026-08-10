@@ -24,7 +24,7 @@ export default function ErrorPage({
   // server-side entry Next emits in production.
   useEffect(() => {
     const fields = { ...errorFields(error), digest: error.digest }
-    reportClientError({ message: 'route error boundary', ...fields })
+    reportClientError({ boundary: 'route', ...fields })
     logger.error('route error boundary', fields)
   }, [error])
 
