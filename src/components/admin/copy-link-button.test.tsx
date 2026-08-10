@@ -1,5 +1,6 @@
+import '../../../tests/happydom'
 import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 import { toast } from 'sonner'
 import { CopyLinkButton } from './copy-link-button'
@@ -52,13 +53,13 @@ describe('CopyLinkButton', () => {
     document.execCommand = mock(() => false)
     const toastError = spyOn(toast, 'error').mockImplementation(() => 'id')
 
-    renderButton()
-    fireEvent.click(screen.getByRole('button', { name: 'Copy link' }))
+    // render-returned queries (not the module-level `screen`, which binds to
+    // document.body at import — before the self-imported DOM exists).
+    const { getByRole, findByLabelText } = renderButton()
+    fireEvent.click(getByRole('button', { name: 'Copy link' }))
 
     // The link is revealed in a labelled input the admin can select by hand.
-    const input = (await screen.findByLabelText(
-      'Invitation link',
-    )) as HTMLInputElement
+    const input = (await findByLabelText('Invitation link')) as HTMLInputElement
     expect(input.value).toContain('/en/sign-up?token=tok123')
     expect(toastError).toHaveBeenCalledTimes(1)
   })

@@ -18,7 +18,8 @@
     "i18n:check": "bun scripts/check-messages.ts",
     "test": "bun run test:node && bun run test:components",
     "test:node": "bun test $(find src scripts tests -name '*.test.ts')",
-    "test:components": "bun test --preload ./tests/happydom.ts $(find src -name '*.test.tsx')",
+    "test:components": "bun test $(find src -name '*.test.tsx')",
+    "test:unit": "bun test $(find src scripts -name '*.test.ts') && bun run test:components",
     "test:db": "bun test tests/db/",
     "test:e2e": "bun e2e/prepare-db.ts && next build && playwright test",
     "auth:schema": "better-auth generate --config src/lib/auth.ts --output src/db/schema/auth.ts --yes"

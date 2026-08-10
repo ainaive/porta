@@ -1,5 +1,6 @@
+import '../../../tests/happydom'
 import { afterEach, describe, expect, jest, mock, test } from 'bun:test'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { ConfirmButton } from './confirm-button'
 
 afterEach(() => {
@@ -11,13 +12,15 @@ afterEach(() => {
 describe('ConfirmButton', () => {
   test('requires two clicks: the first arms, the second runs the action once', async () => {
     const action = mock(() => Promise.resolve())
-    render(
+    // render-returned queries (not the module-level `screen`, which binds to
+    // document.body at import — before the self-imported DOM exists).
+    const { getByRole } = render(
       <ConfirmButton action={action} confirmLabel="Confirm delete">
         Delete
       </ConfirmButton>,
     )
 
-    const button = screen.getByRole('button')
+    const button = getByRole('button')
     expect(button.textContent).toBe('Delete')
 
     // First click arms only — the action must not fire.
@@ -36,12 +39,12 @@ describe('ConfirmButton', () => {
   test('auto-disarms to the idle label after the timeout, without acting', () => {
     jest.useFakeTimers()
     const action = mock(() => Promise.resolve())
-    render(
+    const { getByRole } = render(
       <ConfirmButton action={action} confirmLabel="Confirm delete">
         Delete
       </ConfirmButton>,
     )
-    const button = screen.getByRole('button')
+    const button = getByRole('button')
 
     fireEvent.click(button)
     expect(button.textContent).toBe('Confirm delete')
