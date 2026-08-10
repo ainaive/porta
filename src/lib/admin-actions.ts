@@ -17,6 +17,7 @@ import {
 } from '@/db/schema'
 import { redirect } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
+import { errorFields, logger } from '@/lib/logger'
 import {
   formString,
   parseMeta,
@@ -120,6 +121,7 @@ export async function createResource(
     if (isUniqueViolation(e)) {
       return { error: 'slugTaken', values: submittedValues(formData) }
     }
+    logger.error('createResource insert failed', errorFields(e))
     throw e
   }
 
@@ -168,6 +170,7 @@ export async function saveTranslation(
       })
   } catch (e) {
     if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
+    logger.error('saveTranslation upsert failed', errorFields(e))
     throw e
   }
 
@@ -255,6 +258,7 @@ export async function saveSettings(
     if (isUniqueViolation(e)) {
       return { error: 'slugTaken', values: submittedValues(formData) }
     }
+    logger.error('saveSettings update failed', errorFields(e))
     throw e
   }
 
@@ -322,6 +326,7 @@ export async function saveChapterTranslation(
       })
   } catch (e) {
     if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
+    logger.error('saveChapterTranslation upsert failed', errorFields(e))
     throw e
   }
 
