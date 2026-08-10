@@ -97,6 +97,16 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      # test:e2e runs a full `next build`; cache Next's incremental build
+      # cache so it isn't cold every run. The restore-keys fallback reuses the
+      # newest cache for the same deps even when source changed (the point of
+      # an incremental cache), while the source hash keeps the exact key fresh.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**/*.ts', 'src/**/*.tsx', 'messages/*.json', 'next.config.ts') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('bun.lock') }}-
       - run: bunx playwright install --with-deps chromium
       - run: bun run test:e2e
       - uses: actions/upload-artifact@v4
