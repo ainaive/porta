@@ -23,3 +23,15 @@ export function firstValueQuery(
     Array.from(new Set(params.keys()), (key) => [key, params.get(key) ?? '']),
   )
 }
+
+// A `?page=` param, or undefined when it isn't a plain positive integer.
+// Strict digits-only (rejects "2junk") and safe-integer (rejects overlong
+// input that parseInt would round to Infinity and feed to the DB offset).
+export function parsePageParam(
+  value: string | string[] | undefined,
+): number | undefined {
+  const raw = firstParam(value)
+  if (raw === undefined || !/^\d+$/.test(raw)) return undefined
+  const n = Number.parseInt(raw, 10)
+  return Number.isSafeInteger(n) && n > 0 ? n : undefined
+}

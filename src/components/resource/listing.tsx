@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import { ResourceCard } from '@/components/resource/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
@@ -12,18 +13,28 @@ export async function ResourceListing({
   locale,
   q,
   tag,
+  page,
 }: {
   type: ResourceType
   locale: Locale
   q?: string
   tag?: string
+  page?: number
 }) {
   const section = sectionForType[type]
-  const [t, items, tags] = await Promise.all([
+  const [t, result, tags] = await Promise.all([
     getTranslations('sections'),
-    listPublished(type, locale, { q, tag }),
+    listPublished(type, locale, { q, tag, page }),
     listPublishedTags(type),
   ])
+  const { items, total, page: currentPage, pageSize } = result
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  // Preserve the active search/tag across page links.
+  const baseQuery = { ...(q ? { q } : {}), ...(tag ? { tag } : {}) }
+  const pageHref = (p: number) => ({
+    pathname: `/${section}`,
+    query: p > 1 ? { ...baseQuery, page: String(p) } : baseQuery,
+  })
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
@@ -80,6 +91,31 @@ export async function ResourceListing({
           ))}
         </div>
       )}
+
+      {totalPages > 1 ? (
+        <nav
+          className="mt-10 flex items-center justify-center gap-4"
+          aria-label={t('pagination')}
+        >
+          {currentPage > 1 ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={pageHref(currentPage - 1)}>← {t('prevPage')}</Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {t('pageOf', { page: currentPage, total: totalPages })}
+          </span>
+          {currentPage < totalPages ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={pageHref(currentPage + 1)}>{t('nextPage')} →</Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
     </main>
   )
 }

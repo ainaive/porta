@@ -6,6 +6,9 @@ import {
   desc,
   eq,
   exists,
+  ilike,
+  inArray,
+  or,
   type SQL,
   sql,
 } from 'drizzle-orm'
@@ -36,16 +39,97 @@ export type { TranslatedChapter, TranslatedResource } from '@/lib/fallback'
 
 const uuidColumn = z.uuid()
 
+export const PAGE_SIZE = 24
+
+export type Paginated<T> = {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+// A literal % or _ in the user's query must match itself, not act as a
+// wildcard; backslash is Postgres LIKE's default escape.
+function likePattern(query: string): string {
+  return `%${query.replace(/[\\%_]/g, '\\$&')}%`
+}
+
 export async function listPublished(
   type: ResourceType,
   locale: Locale,
-  filters: { q?: string; tag?: string } = {},
-): Promise<TranslatedResource[]> {
+  filters: { q?: string; tag?: string; page?: number } = {},
+): Promise<Paginated<TranslatedResource>> {
+  const pageSize = PAGE_SIZE
+  const requested = filters.page ?? 1
+  const page =
+    Number.isFinite(requested) && requested >= 1 ? Math.trunc(requested) : 1
+
   const conditions: SQL[] = [
     eq(resources.type, type),
     eq(resources.status, 'published'),
+    // Only resources that will actually render: groupResources drops
+    // untranslated-everywhere rows, so counting/paginating without this would
+    // inflate the total and yield short or empty pages.
+    exists(
+      db
+        .select({ one: sql`1` })
+        .from(resourceTranslations)
+        .where(eq(resourceTranslations.resourceId, resources.id)),
+    ),
   ]
   if (filters.tag) conditions.push(arrayContains(resources.tags, [filters.tag]))
+  if (filters.q) {
+    // Match a resource when any of its translations (either locale) contains
+    // the query in title, summary, or body — searched in SQL, not after a
+    // full fetch, and no longer blind to the body.
+    const pattern = likePattern(filters.q)
+    conditions.push(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(resourceTranslations)
+          .where(
+            and(
+              eq(resourceTranslations.resourceId, resources.id),
+              or(
+                ilike(resourceTranslations.title, pattern),
+                ilike(resourceTranslations.summary, pattern),
+                ilike(resourceTranslations.body, pattern),
+              ),
+            ),
+          ),
+      ),
+    )
+  }
+  const where = and(...conditions)
+
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(resources)
+    .where(where)
+
+  // Clamp past-the-end requests to the last page so ?page=999 shows the final
+  // page, not "Page 999 of 2" with a Previous link into the void.
+  const clampedPage = Math.min(page, Math.max(1, Math.ceil(total / pageSize)))
+
+  // Paginate at the resource level (a resource fans out to one row per
+  // translation in the join below, so LIMIT there would slice rows, not
+  // resources): pick the page's ids first, then hydrate their translations.
+  // desc(id) is the tiebreaker: created_at is not unique (a bulk insert shares
+  // one transaction's now()), and without a stable secondary key Postgres may
+  // order ties differently between the page-id and hydration queries, so a
+  // resource could land on two pages or none.
+  const pageIds = await db
+    .select({ id: resources.id })
+    .from(resources)
+    .where(where)
+    .orderBy(desc(resources.createdAt), desc(resources.id))
+    .limit(pageSize)
+    .offset((clampedPage - 1) * pageSize)
+  const ids = pageIds.map((r) => r.id)
+  if (ids.length === 0) {
+    return { items: [], total, page: clampedPage, pageSize }
+  }
 
   const rows = await db
     .select({ resource: resources, translation: resourceTranslations })
@@ -54,19 +138,15 @@ export async function listPublished(
       resourceTranslations,
       eq(resourceTranslations.resourceId, resources.id),
     )
-    .where(and(...conditions))
-    .orderBy(desc(resources.createdAt))
+    .where(inArray(resources.id, ids))
+    .orderBy(desc(resources.createdAt), desc(resources.id))
 
-  let items = groupResources(rows, locale)
-  if (filters.q) {
-    const q = filters.q.toLowerCase()
-    items = items.filter(
-      (item) =>
-        item.title.toLowerCase().includes(q) ||
-        item.summary.toLowerCase().includes(q),
-    )
+  return {
+    items: groupResources(rows, locale),
+    total,
+    page: clampedPage,
+    pageSize,
   }
-  return items
 }
 
 export async function listPublishedTags(type: ResourceType): Promise<string[]> {
@@ -192,11 +272,41 @@ export const getPublishedBySlug = cache(async function getPublishedBySlug(
 
 export async function adminListResources(
   locale: Locale,
-  filters: { type?: ResourceType; status?: 'draft' | 'published' } = {},
-): Promise<TranslatedResource[]> {
+  filters: {
+    type?: ResourceType
+    status?: 'draft' | 'published'
+    page?: number
+  } = {},
+): Promise<Paginated<TranslatedResource>> {
+  const pageSize = PAGE_SIZE
+  const requested = filters.page ?? 1
+  const page =
+    Number.isFinite(requested) && requested >= 1 ? Math.trunc(requested) : 1
   const conditions: SQL[] = []
   if (filters.type) conditions.push(eq(resources.type, filters.type))
   if (filters.status) conditions.push(eq(resources.status, filters.status))
+  const where = conditions.length > 0 ? and(...conditions) : undefined
+
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(resources)
+    .where(where)
+
+  const clampedPage = Math.min(page, Math.max(1, Math.ceil(total / pageSize)))
+
+  // Resource-level page (see listPublished), with desc(id) as the stable
+  // tiebreaker for equal updatedAt.
+  const pageIds = await db
+    .select({ id: resources.id })
+    .from(resources)
+    .where(where)
+    .orderBy(desc(resources.updatedAt), desc(resources.id))
+    .limit(pageSize)
+    .offset((clampedPage - 1) * pageSize)
+  const ids = pageIds.map((r) => r.id)
+  if (ids.length === 0) {
+    return { items: [], total, page: clampedPage, pageSize }
+  }
 
   const rows = await db
     .select({ resource: resources, translation: resourceTranslations })
@@ -205,8 +315,8 @@ export async function adminListResources(
       resourceTranslations,
       eq(resourceTranslations.resourceId, resources.id),
     )
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(resources.updatedAt))
+    .where(inArray(resources.id, ids))
+    .orderBy(desc(resources.updatedAt), desc(resources.id))
 
   // Untranslated resources must still appear in the admin list, so group
   // manually instead of via groupResources (which drops them).
@@ -220,7 +330,7 @@ export async function adminListResources(
     byId.set(resource.id, entry)
   }
 
-  return [...byId.values()].map(({ resource, translations }) => {
+  const items = [...byId.values()].map(({ resource, translations }) => {
     const picked = pickTranslation(translations, locale)
     return {
       ...resource,
@@ -230,6 +340,7 @@ export async function adminListResources(
       isFallback: picked?.isFallback ?? false,
     }
   })
+  return { items, total, page: clampedPage, pageSize }
 }
 
 export async function adminGetResource(id: string): Promise<{

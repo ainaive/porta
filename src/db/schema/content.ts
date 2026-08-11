@@ -68,6 +68,21 @@ export const resourceTranslations = pgTable(
       t.resourceId,
       t.locale,
     ),
+    // Trigram GIN indexes back the public search's ILIKE '%q%' across all
+    // three text columns (see listPublished). Requires the pg_trgm extension,
+    // enabled at the top of the generated migration.
+    index('resource_translations_title_trgm').using(
+      'gin',
+      t.title.op('gin_trgm_ops'),
+    ),
+    index('resource_translations_summary_trgm').using(
+      'gin',
+      t.summary.op('gin_trgm_ops'),
+    ),
+    index('resource_translations_body_trgm').using(
+      'gin',
+      t.body.op('gin_trgm_ops'),
+    ),
   ],
 )
 

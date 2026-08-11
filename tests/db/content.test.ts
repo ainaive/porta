@@ -14,10 +14,16 @@ import {
   listChapters,
   listPublished,
   listPublishedTags,
+  PAGE_SIZE,
 } from '@/lib/content'
 import { resetDb } from './harness'
 
-type Translation = { locale: 'en' | 'zh'; title: string; summary?: string }
+type Translation = {
+  locale: 'en' | 'zh'
+  title: string
+  summary?: string
+  body?: string
+}
 
 async function insertResource(
   slug: string,
@@ -35,6 +41,7 @@ async function insertResource(
         locale: t.locale,
         title: t.title,
         summary: t.summary ?? '',
+        body: t.body ?? '',
       })),
     )
   }
@@ -53,7 +60,7 @@ describe('listPublished', () => {
     })
     await insertResource('untranslated', [])
 
-    const items = await listPublished('tool', 'en')
+    const { items } = await listPublished('tool', 'en')
     expect(items.map((i) => i.slug)).toEqual(['visible'])
   })
 
@@ -64,13 +71,13 @@ describe('listPublished', () => {
     ])
     await insertResource('zh-only', [{ locale: 'zh', title: '只有中文' }])
 
-    const en = await listPublished('tool', 'en')
+    const en = (await listPublished('tool', 'en')).items
     const zhOnly = en.find((i) => i.slug === 'zh-only')
     expect(zhOnly?.title).toBe('只有中文')
     expect(zhOnly?.isFallback).toBe(true)
     expect(en.find((i) => i.slug === 'both')?.isFallback).toBe(false)
 
-    const zh = await listPublished('tool', 'zh')
+    const zh = (await listPublished('tool', 'zh')).items
     expect(zh.find((i) => i.slug === 'both')?.title).toBe('ZH')
   })
 
@@ -83,10 +90,111 @@ describe('listPublished', () => {
     })
 
     const byTag = await listPublished('tool', 'en', { tag: 'cli' })
-    expect(byTag.map((i) => i.slug)).toEqual(['tagged'])
+    expect(byTag.items.map((i) => i.slug)).toEqual(['tagged'])
 
     const byQuery = await listPublished('tool', 'en', { q: 'grep' })
-    expect(byQuery.map((i) => i.slug)).toEqual(['tagged'])
+    expect(byQuery.items.map((i) => i.slug)).toEqual(['tagged'])
+  })
+
+  test('search matches the body, case-insensitively, across locales', async () => {
+    await insertResource('deep', [
+      {
+        locale: 'en',
+        title: 'Tool',
+        body: 'Contains the word Kubernetes deep down.',
+      },
+    ])
+    await insertResource('zh-body', [
+      { locale: 'zh', title: '工具', body: '正文里藏着 Terraform 这个词。' },
+    ])
+    await insertResource('miss', [{ locale: 'en', title: 'Nothing here' }])
+
+    // Body-only match, lowercased query — the old title/summary JS filter missed both.
+    expect(
+      (await listPublished('tool', 'en', { q: 'kubernetes' })).items.map(
+        (i) => i.slug,
+      ),
+    ).toEqual(['deep'])
+    // A zh-only body is found even when browsing in en (search spans locales).
+    expect(
+      (await listPublished('tool', 'en', { q: 'terraform' })).items.map(
+        (i) => i.slug,
+      ),
+    ).toEqual(['zh-body'])
+  })
+
+  test('a literal % in the query is matched, not treated as a wildcard', async () => {
+    await insertResource('pct', [{ locale: 'en', title: '100% coverage' }])
+    await insertResource('plain', [{ locale: 'en', title: 'coverage' }])
+
+    expect(
+      (await listPublished('tool', 'en', { q: '100%' })).items.map(
+        (i) => i.slug,
+      ),
+    ).toEqual(['pct'])
+  })
+
+  test('paginates at the resource level and reports the total', async () => {
+    for (let n = 0; n < PAGE_SIZE + 2; n++) {
+      const label = String(n).padStart(2, '0')
+      await insertResource(`p-${label}`, [
+        { locale: 'en', title: `Tool ${label}` },
+      ])
+    }
+
+    const first = await listPublished('tool', 'en', { page: 1 })
+    expect(first.total).toBe(PAGE_SIZE + 2)
+    expect(first.items).toHaveLength(PAGE_SIZE)
+
+    const second = await listPublished('tool', 'en', { page: 2 })
+    expect(second.items).toHaveLength(2)
+    // No overlap between pages.
+    const firstIds = new Set(first.items.map((i) => i.id))
+    expect(second.items.every((i) => !firstIds.has(i.id))).toBe(true)
+  })
+
+  test('untranslated resources are excluded from the total and pages', async () => {
+    await insertResource('t1', [{ locale: 'en', title: 'One' }])
+    await insertResource('t2', [{ locale: 'en', title: 'Two' }])
+    await insertResource('u1', [])
+    await insertResource('u2', [])
+
+    const r = await listPublished('tool', 'en')
+    // The count must reflect only what renders — otherwise the total inflates
+    // and a page of untranslated ids comes back empty.
+    expect(r.total).toBe(2)
+    expect(r.items.map((i) => i.slug).sort()).toEqual(['t1', 't2'])
+  })
+
+  test('an out-of-range page clamps to the last page', async () => {
+    await insertResource('a', [{ locale: 'en', title: 'A' }])
+    await insertResource('b', [{ locale: 'en', title: 'B' }])
+
+    const r = await listPublished('tool', 'en', { page: 999 })
+    expect(r.page).toBe(1)
+    expect(r.items).toHaveLength(2)
+  })
+
+  test('pages stay disjoint and complete when createdAt ties', async () => {
+    // All share one timestamp (as a bulk insert would): only the desc(id)
+    // tiebreaker keeps the page boundary stable across the two queries.
+    const tied = new Date('2020-01-01T00:00:00Z')
+    for (let n = 0; n < PAGE_SIZE + 5; n++) {
+      await insertResource(
+        `tie-${String(n).padStart(2, '0')}`,
+        [{ locale: 'en', title: `T ${n}` }],
+        { createdAt: tied },
+      )
+    }
+
+    const p1 = await listPublished('tool', 'en', { page: 1 })
+    const p2 = await listPublished('tool', 'en', { page: 2 })
+    const union = new Set([
+      ...p1.items.map((i) => i.id),
+      ...p2.items.map((i) => i.id),
+    ])
+    // No id appears on both pages, and together they cover every resource.
+    expect(union.size).toBe(PAGE_SIZE + 5)
   })
 })
 
@@ -263,9 +371,22 @@ describe('admin queries', () => {
     })
     await insertResource('untranslated', [])
 
-    const items = await adminListResources('en')
+    const { items, total } = await adminListResources('en')
+    expect(total).toBe(2)
     expect(items.map((i) => i.slug).sort()).toEqual(['draft', 'untranslated'])
     expect(items.find((i) => i.slug === 'untranslated')?.title).toBe('')
+  })
+
+  test('adminListResources paginates and reports the total', async () => {
+    for (let n = 0; n < PAGE_SIZE + 3; n++) {
+      await insertResource(`a-${String(n).padStart(2, '0')}`, [
+        { locale: 'en', title: `R ${n}` },
+      ])
+    }
+    const first = await adminListResources('en', { page: 1 })
+    expect(first.total).toBe(PAGE_SIZE + 3)
+    expect(first.items).toHaveLength(PAGE_SIZE)
+    expect((await adminListResources('en', { page: 2 })).items).toHaveLength(3)
   })
 })
 

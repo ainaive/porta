@@ -95,7 +95,11 @@
       "intermediate": "Intermediate",
       "advanced": "Advanced"
     },
-    "estimatedHours": "~{hours} h"
+    "estimatedHours": "~{hours} h",
+    "pagination": "Pagination",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageOf": "Page {page} of {total}"
   },
   "errors": {
     "notFoundTitle": "Page not found",
@@ -176,7 +180,11 @@
       "resourceNotFound": "Resource not found",
       "emailInvalid": "Invalid email address",
       "metaInvalid": "Invalid fields — {detail}"
-    }
+    },
+    "pagination": "Pagination",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageOf": "Page {page} of {total}"
   },
   "auth": {
     "signInTitle": "Sign in",

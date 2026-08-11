@@ -63,6 +63,16 @@ test.describe('public smoke', () => {
     await page.goto('/en/tools')
     await expect(page.getByText('Secret draft tool')).toHaveCount(0)
   })
+
+  test('section search filters the listing', async ({ page }) => {
+    await page.goto('/en/tools?q=dashboard')
+    await expect(page.getByText('CI Dashboard')).toBeVisible()
+    await expect(page.getByText('Silicon CLI')).toHaveCount(0)
+
+    // A query that matches nothing lands on the empty state.
+    await page.goto('/en/tools?q=zzzznomatchzzzz')
+    await expect(page.getByText('Nothing here yet.')).toBeVisible()
+  })
 })
 
 test.describe('signed in', () => {
