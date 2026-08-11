@@ -67,6 +67,15 @@ export async function listPublished(
   const conditions: SQL[] = [
     eq(resources.type, type),
     eq(resources.status, 'published'),
+    // Only resources that will actually render: groupResources drops
+    // untranslated-everywhere rows, so counting/paginating without this would
+    // inflate the total and yield short or empty pages.
+    exists(
+      db
+        .select({ one: sql`1` })
+        .from(resourceTranslations)
+        .where(eq(resourceTranslations.resourceId, resources.id)),
+    ),
   ]
   if (filters.tag) conditions.push(arrayContains(resources.tags, [filters.tag]))
   if (filters.q) {
@@ -99,6 +108,10 @@ export async function listPublished(
     .from(resources)
     .where(where)
 
+  // Clamp past-the-end requests to the last page so ?page=999 shows the final
+  // page, not "Page 999 of 2" with a Previous link into the void.
+  const clampedPage = Math.min(page, Math.max(1, Math.ceil(total / pageSize)))
+
   // Paginate at the resource level (a resource fans out to one row per
   // translation in the join below, so LIMIT there would slice rows, not
   // resources): pick the page's ids first, then hydrate their translations.
@@ -112,9 +125,11 @@ export async function listPublished(
     .where(where)
     .orderBy(desc(resources.createdAt), desc(resources.id))
     .limit(pageSize)
-    .offset((page - 1) * pageSize)
+    .offset((clampedPage - 1) * pageSize)
   const ids = pageIds.map((r) => r.id)
-  if (ids.length === 0) return { items: [], total, page, pageSize }
+  if (ids.length === 0) {
+    return { items: [], total, page: clampedPage, pageSize }
+  }
 
   const rows = await db
     .select({ resource: resources, translation: resourceTranslations })
@@ -126,7 +141,12 @@ export async function listPublished(
     .where(inArray(resources.id, ids))
     .orderBy(desc(resources.createdAt), desc(resources.id))
 
-  return { items: groupResources(rows, locale), total, page, pageSize }
+  return {
+    items: groupResources(rows, locale),
+    total,
+    page: clampedPage,
+    pageSize,
+  }
 }
 
 export async function listPublishedTags(type: ResourceType): Promise<string[]> {
@@ -272,6 +292,8 @@ export async function adminListResources(
     .from(resources)
     .where(where)
 
+  const clampedPage = Math.min(page, Math.max(1, Math.ceil(total / pageSize)))
+
   // Resource-level page (see listPublished), with desc(id) as the stable
   // tiebreaker for equal updatedAt.
   const pageIds = await db
@@ -280,9 +302,11 @@ export async function adminListResources(
     .where(where)
     .orderBy(desc(resources.updatedAt), desc(resources.id))
     .limit(pageSize)
-    .offset((page - 1) * pageSize)
+    .offset((clampedPage - 1) * pageSize)
   const ids = pageIds.map((r) => r.id)
-  if (ids.length === 0) return { items: [], total, page, pageSize }
+  if (ids.length === 0) {
+    return { items: [], total, page: clampedPage, pageSize }
+  }
 
   const rows = await db
     .select({ resource: resources, translation: resourceTranslations })
@@ -316,7 +340,7 @@ export async function adminListResources(
       isFallback: picked?.isFallback ?? false,
     }
   })
-  return { items, total, page, pageSize }
+  return { items, total, page: clampedPage, pageSize }
 }
 
 export async function adminGetResource(id: string): Promise<{

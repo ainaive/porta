@@ -153,6 +153,28 @@ describe('listPublished', () => {
     expect(second.items.every((i) => !firstIds.has(i.id))).toBe(true)
   })
 
+  test('untranslated resources are excluded from the total and pages', async () => {
+    await insertResource('t1', [{ locale: 'en', title: 'One' }])
+    await insertResource('t2', [{ locale: 'en', title: 'Two' }])
+    await insertResource('u1', [])
+    await insertResource('u2', [])
+
+    const r = await listPublished('tool', 'en')
+    // The count must reflect only what renders — otherwise the total inflates
+    // and a page of untranslated ids comes back empty.
+    expect(r.total).toBe(2)
+    expect(r.items.map((i) => i.slug).sort()).toEqual(['t1', 't2'])
+  })
+
+  test('an out-of-range page clamps to the last page', async () => {
+    await insertResource('a', [{ locale: 'en', title: 'A' }])
+    await insertResource('b', [{ locale: 'en', title: 'B' }])
+
+    const r = await listPublished('tool', 'en', { page: 999 })
+    expect(r.page).toBe(1)
+    expect(r.items).toHaveLength(2)
+  })
+
   test('pages stay disjoint and complete when createdAt ties', async () => {
     // All share one timestamp (as a bulk insert would): only the desc(id)
     // tiebreaker keeps the page boundary stable across the two queries.
