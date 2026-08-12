@@ -3,6 +3,7 @@
 import { and, asc, eq, max, ne } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
 import { db } from '@/db'
@@ -17,6 +18,8 @@ import {
 } from '@/db/schema'
 import { redirect } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
+import { auth } from '@/lib/auth'
+import { sendEmail } from '@/lib/email'
 import {
   formString,
   parseMeta,
@@ -60,6 +63,12 @@ function submittedValues(formData: FormData): Record<string, string> {
 const localeSchema = z.enum(['en', 'zh'])
 const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
 const uuidSchema = z.uuid()
+
+// Server-side origin for emailed links (no window here). BETTER_AUTH_URL is the
+// canonical URL both deploy targets already set.
+function appBaseUrl(): string {
+  return process.env.BETTER_AUTH_URL ?? ''
+}
 
 // Drizzle wraps driver errors, so the postgres SQLSTATE lives on a cause a
 // level or two down, not the top-level error — walk the chain to find it.
@@ -420,13 +429,26 @@ export async function createInvite(
   }
   const role = formString(formData, 'role') === 'admin' ? 'admin' : 'member'
 
+  const token = nanoid(32)
   await db.insert(invites).values({
-    token: nanoid(32),
+    token,
     email: email === '' ? null : email.toLowerCase(),
     role,
     invitedBy: session.user.id,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   })
+
+  // Email the link when the invite is addressed to someone (open invites are
+  // copy-link only). Copy-link still works either way.
+  if (email !== '') {
+    const url = `${appBaseUrl()}/${await getLocale()}/sign-up?token=${token}`
+    await sendEmail({
+      to: email.toLowerCase(),
+      subject: "You've been invited · 邀请你加入",
+      text: `You've been invited to join. Sign up: ${url}\n\n你被邀请加入。注册：${url}`,
+      html: `<p>You've been invited to join / 你被邀请加入:</p><p><a href="${url}">${url}</a></p>`,
+    })
+  }
 
   revalidatePath('/', 'layout')
   return { ok: true }
@@ -451,6 +473,27 @@ export async function setUserRole(
   const role = formString(formData, 'role') === 'admin' ? 'admin' : 'member'
   await db.update(user).set({ role }).where(eq(user.id, userId))
   revalidatePath('/', 'layout')
+}
+
+// Admin-triggered recovery for a member who can't self-serve: sends the same
+// password-reset email the forgot-password flow does. Same non-committal
+// response whether or not the user exists.
+export async function sendUserResetEmail(userId: string): Promise<void> {
+  await requireAdmin()
+  const [target] = await db
+    .select({ email: user.email })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1)
+  if (!target) return
+
+  await auth.api.requestPasswordReset({
+    body: {
+      email: target.email,
+      redirectTo: `${appBaseUrl()}/${await getLocale()}/reset-password`,
+    },
+    headers: await headers(),
+  })
 }
 
 export async function toggleUserBan(userId: string): Promise<void> {

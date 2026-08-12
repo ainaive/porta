@@ -40,6 +40,7 @@ const {
   deleteChapter,
   createInvite,
   deleteInvite,
+  sendUserResetEmail,
   setUserRole,
   toggleUserBan,
 } = await import('@/lib/admin-actions')
@@ -183,6 +184,7 @@ describe('every mutation is gated', () => {
       ['deleteInvite', () => deleteInvite(uuid)],
       ['setUserRole', () => setUserRole(uuid, form())],
       ['toggleUserBan', () => toggleUserBan(uuid)],
+      ['sendUserResetEmail', () => sendUserResetEmail(uuid)],
     ]
     for (const [name, call] of calls) {
       await expect(call(), name).rejects.toThrow('DENIED')

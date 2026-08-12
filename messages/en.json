@@ -185,7 +185,8 @@
     "pagination": "Pagination",
     "prevPage": "Previous",
     "nextPage": "Next",
-    "pageOf": "Page {page} of {total}"
+    "pageOf": "Page {page} of {total}",
+    "sendReset": "Send reset"
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -204,7 +205,21 @@
     "signUpFailed": "Sign-up failed",
     "inviteRequiredTitle": "Invitation required",
     "inviteInvalid": "This invitation link is invalid, expired, or already used. Ask an administrator for a new one.",
-    "inviteMissing": "Sign-up is invite-only. Ask an administrator for an invitation link."
+    "inviteMissing": "Sign-up is invite-only. Ask an administrator for an invitation link.",
+    "forgotLink": "Forgot your password?",
+    "forgotTitle": "Reset your password",
+    "forgotDescription": "Enter your email and we'll send a reset link.",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending…",
+    "resetEmailSent": "If that email is registered, a reset link is on its way.",
+    "resetTitle": "Set a new password",
+    "resetDescription": "Choose a new password for your account.",
+    "resetAction": "Reset password",
+    "resetting": "Resetting…",
+    "resetSuccess": "Password reset — please sign in.",
+    "resetFailed": "Could not reset the password. The link may have expired.",
+    "resetLinkInvalid": "This reset link is invalid or has expired.",
+    "newPassword": "New password"
   },
   "account": {
     "title": "Account",

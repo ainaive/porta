@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Link } from '@/i18n/navigation'
 import { authClient } from '@/lib/auth-client'
 import { hardNavigate } from '@/lib/hard-navigate'
 import { safeNextPath } from '@/lib/safe-redirect'
@@ -60,6 +61,12 @@ export function SignInForm() {
         <Button type="submit" disabled={pending}>
           {pending ? t('signingIn') : t('signInAction')}
         </Button>
+        <Link
+          href="/forgot-password"
+          className="text-center text-sm text-muted-foreground hover:text-foreground"
+        >
+          {t('forgotLink')}
+        </Link>
       </FieldGroup>
     </form>
   )

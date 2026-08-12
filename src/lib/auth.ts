@@ -6,6 +6,7 @@ import { admin } from 'better-auth/plugins'
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '@/db'
 import { invites, user } from '@/db/schema'
+import { sendEmail } from '@/lib/email'
 import { claimInvite, findValidInvite, hasAnyUser } from '@/lib/invites'
 
 // Sign-up is invite-only. The gate lives here — in the API hooks — rather than
@@ -16,6 +17,18 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
   emailAndPassword: {
     enabled: true,
+    // A user who forgets their password can recover without an admin. The
+    // reset URL bounces through /api/auth/reset-password/:token, which
+    // redirects to the reset page with the token. Bilingual, since the email
+    // doesn't know the recipient's chosen locale.
+    sendResetPassword: async ({ user: recipient, url }) => {
+      await sendEmail({
+        to: recipient.email,
+        subject: 'Reset your password · 重置密码',
+        text: `Reset your password: ${url}\n\n重置你的密码：${url}\n\nIf you didn't request this, you can ignore this email.`,
+        html: `<p>Reset your password / 重置你的密码:</p><p><a href="${url}">${url}</a></p><p>If you didn't request this, you can ignore this email.</p>`,
+      })
+    },
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
