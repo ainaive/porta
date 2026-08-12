@@ -11,7 +11,8 @@
     "admin": "Admin",
     "signIn": "Sign in",
     "signOut": "Sign out",
-    "menu": "Menu"
+    "menu": "Menu",
+    "account": "Account"
   },
   "home": {
     "subtitle": "Internal tools, model API resources, courses, and teaching videos — catalogued in one place, in both languages.",
@@ -204,5 +205,21 @@
     "inviteRequiredTitle": "Invitation required",
     "inviteInvalid": "This invitation link is invalid, expired, or already used. Ask an administrator for a new one.",
     "inviteMissing": "Sign-up is invite-only. Ask an administrator for an invitation link."
+  },
+  "account": {
+    "title": "Account",
+    "profileSection": "Profile",
+    "passwordSection": "Password",
+    "emailLabel": "Email",
+    "nameField": "Name",
+    "save": "Save",
+    "profileSaved": "Profile updated",
+    "nameRequired": "Name is required",
+    "saveFailed": "Could not save changes",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "changePassword": "Change password",
+    "passwordChanged": "Password changed",
+    "passwordChangeFailed": "Could not change password"
   }
 }

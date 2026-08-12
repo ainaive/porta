@@ -19,12 +19,14 @@ export function UserMenu({
   name,
   email,
   isAdmin,
+  accountLabel,
   adminLabel,
   signOutLabel,
 }: {
   name: string
   email: string
   isAdmin: boolean
+  accountLabel: string
   adminLabel: string
   signOutLabel: string
 }) {
@@ -52,6 +54,9 @@ export function UserMenu({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/account">{accountLabel}</Link>
+        </DropdownMenuItem>
         {isAdmin ? (
           <DropdownMenuItem asChild>
             <Link href="/admin">{adminLabel}</Link>

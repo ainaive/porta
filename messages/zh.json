@@ -11,7 +11,8 @@
     "admin": "管理",
     "signIn": "登录",
     "signOut": "退出登录",
-    "menu": "菜单"
+    "menu": "菜单",
+    "account": "账户"
   },
   "home": {
     "subtitle": "内部工具、模型 API 资源、课程与教学视频——统一收录，中英双语。",
@@ -204,5 +205,21 @@
     "inviteRequiredTitle": "需要邀请",
     "inviteInvalid": "该邀请链接无效、已过期或已被使用。请向管理员索取新的邀请链接。",
     "inviteMissing": "注册仅限受邀用户。请向管理员索取邀请链接。"
+  },
+  "account": {
+    "title": "账户",
+    "profileSection": "个人资料",
+    "passwordSection": "密码",
+    "emailLabel": "邮箱",
+    "nameField": "姓名",
+    "save": "保存",
+    "profileSaved": "资料已更新",
+    "nameRequired": "姓名不能为空",
+    "saveFailed": "无法保存更改",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "changePassword": "修改密码",
+    "passwordChanged": "密码已修改",
+    "passwordChangeFailed": "无法修改密码"
   }
 }

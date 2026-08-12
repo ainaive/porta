@@ -97,4 +97,11 @@ test.describe('signed in', () => {
     await page.goto('/en/courses/prompt-engineering-101/1abc')
     await expect(page.getByText('Page not found')).toBeVisible()
   })
+
+  test('the account page updates the profile name', async ({ page }) => {
+    await page.goto('/en/account')
+    await page.getByLabel('Name').fill('Renamed Admin')
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByText('Profile updated')).toBeVisible()
+  })
 })
