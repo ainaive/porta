@@ -21,11 +21,13 @@ the self-hosted Docker container — with runtime env only.
 - **Call Resend over its REST API (`fetch`), not the SDK.** Node 24 and Vercel
   both have `fetch`, so `src/lib/email.ts` posts to `api.resend.com/emails`
   with no dependency to keep in sync and identical behaviour on both targets.
-- **Log instead of send when `RESEND_API_KEY` is unset.** Local dev, CI, and
+- **Skip (don't crash) when `RESEND_API_KEY` is unset.** Local dev, CI, and
   the window before the integration is provisioned all lack the key; rather
-  than crash the auth flow, `sendEmail` logs the message (the reset link
-  included) at warn level. The real send path activates the moment the key is
-  present.
+  than throw into the auth flow, `sendEmail` logs a redacted status (the
+  subject only — never the recipient or the body, which carries reset and
+  invite links) at warn level and returns. The real send path activates the
+  moment the key is present. The Resend call is also time-bounded so a hung
+  provider can't stall the request.
 - **Wiring.** better-auth's `emailAndPassword.sendResetPassword` sends the
   reset link; `createInvite` emails the addressed invite (open invites stay
   copy-link only); an admin `sendUserResetEmail` action triggers the same
@@ -42,5 +44,6 @@ the self-hosted Docker container — with runtime env only.
   for an internal tool; a delivery/retry queue is the escape hatch if it
   matters later.
 - Production must set `RESEND_API_KEY` and a verified `EMAIL_FROM`; a
-  misconfigured deploy degrades to logging reset links (a warn log flags it),
-  which is a security consideration to monitor.
+  misconfigured deploy degrades to *not sending* (a warn log flags it, with no
+  link or recipient exposed), so users silently can't recover — monitor for
+  the warn log rather than relying on the email arriving.

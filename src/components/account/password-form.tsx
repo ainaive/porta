@@ -17,19 +17,25 @@ export function PasswordForm() {
     const form = event.currentTarget
     const data = new FormData(form)
     setPending(true)
-    const { error } = await authClient.changePassword({
-      currentPassword: String(data.get('currentPassword')),
-      newPassword: String(data.get('newPassword')),
-      // Sign other sessions out — a password change should invalidate them.
-      revokeOtherSessions: true,
-    })
-    setPending(false)
-    if (error) {
-      toast.error(error.message ?? t('passwordChangeFailed'))
-      return
+    try {
+      const { error } = await authClient.changePassword({
+        currentPassword: String(data.get('currentPassword')),
+        newPassword: String(data.get('newPassword')),
+        // Sign other sessions out — a password change should invalidate them.
+        revokeOtherSessions: true,
+      })
+      if (error) {
+        toast.error(error.message ?? t('passwordChangeFailed'))
+        return
+      }
+      form.reset()
+      toast.success(t('passwordChanged'))
+    } catch {
+      toast.error(t('passwordChangeFailed'))
+    } finally {
+      // finally, so a rejected request doesn't leave the button stuck disabled.
+      setPending(false)
     }
-    form.reset()
-    toast.success(t('passwordChanged'))
   }
 
   return (

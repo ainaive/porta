@@ -23,10 +23,10 @@ export async function sendEmail(email: Email): Promise<void> {
     process.env.EMAIL_FROM ?? 'Silicon Ecosystem <onboarding@resend.dev>'
 
   if (!apiKey) {
-    logger.warn('email skipped: RESEND_API_KEY unset — logging instead', {
-      to: email.to,
+    // Log only a non-sensitive status. The body carries reset/invite links
+    // (and `to` is a recipient address), so neither goes to the logs.
+    logger.warn('email skipped: RESEND_API_KEY unset', {
       subject: email.subject,
-      text: email.text,
     })
     return
   }
@@ -39,15 +39,13 @@ export async function sendEmail(email: Email): Promise<void> {
         'content-type': 'application/json',
       },
       body: JSON.stringify({ from, ...email }),
+      // Bound the call so a hung Resend can't stall the auth request.
+      signal: AbortSignal.timeout(10_000),
     })
     if (!response.ok) {
-      logger.error('email send failed', {
-        to: email.to,
-        status: response.status,
-        body: (await response.text()).slice(0, 500),
-      })
+      logger.error('email send failed', { status: response.status })
     }
   } catch (error) {
-    logger.error('email send threw', { to: email.to, ...errorFields(error) })
+    logger.error('email send threw', errorFields(error))
   }
 }

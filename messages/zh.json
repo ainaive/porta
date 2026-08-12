@@ -219,7 +219,8 @@
     "resetSuccess": "密码已重置，请登录。",
     "resetFailed": "无法重置密码，链接可能已过期。",
     "resetLinkInvalid": "此重置链接无效或已过期。",
-    "newPassword": "新密码"
+    "newPassword": "新密码",
+    "sendFailed": "出了点问题，请重试。"
   },
   "account": {
     "title": "账户",

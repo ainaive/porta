@@ -20,13 +20,18 @@ export function ProfileForm({ initialName }: { initialName: string }) {
       return
     }
     setPending(true)
-    const { error } = await authClient.updateUser({ name })
-    setPending(false)
-    if (error) {
-      toast.error(error.message ?? t('saveFailed'))
-      return
+    try {
+      const { error } = await authClient.updateUser({ name })
+      if (error) {
+        toast.error(error.message ?? t('saveFailed'))
+        return
+      }
+      toast.success(t('profileSaved'))
+    } catch {
+      toast.error(t('saveFailed'))
+    } finally {
+      setPending(false)
     }
-    toast.success(t('profileSaved'))
   }
 
   return (

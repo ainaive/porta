@@ -26,17 +26,22 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
       new FormData(event.currentTarget).get('password'),
     )
     setPending(true)
-    const { error } = await authClient.resetPassword({
-      newPassword,
-      token: token as string,
-    })
-    setPending(false)
-    if (error) {
-      toast.error(error.message ?? t('resetFailed'))
-      return
+    try {
+      const { error } = await authClient.resetPassword({
+        newPassword,
+        token: token as string,
+      })
+      if (error) {
+        toast.error(error.message ?? t('resetFailed'))
+        return
+      }
+      toast.success(t('resetSuccess'))
+      hardNavigate(`/${locale}/sign-in`)
+    } catch {
+      toast.error(t('resetFailed'))
+    } finally {
+      setPending(false)
     }
-    toast.success(t('resetSuccess'))
-    hardNavigate(`/${locale}/sign-in`)
   }
 
   return (

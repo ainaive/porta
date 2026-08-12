@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -17,14 +18,19 @@ export function ForgotPasswordForm() {
     event.preventDefault()
     const email = String(new FormData(event.currentTarget).get('email'))
     setPending(true)
-    await authClient.requestPasswordReset({
-      email,
-      redirectTo: `${window.location.origin}/${locale}/reset-password`,
-    })
-    setPending(false)
-    // Always the same outcome — better-auth never reveals whether the address
-    // is registered, so neither do we.
-    setSent(true)
+    try {
+      await authClient.requestPasswordReset({
+        email,
+        redirectTo: `${window.location.origin}/${locale}/reset-password`,
+      })
+      // Always the same outcome — better-auth never reveals whether the
+      // address is registered, so neither do we.
+      setSent(true)
+    } catch {
+      toast.error(t('sendFailed'))
+    } finally {
+      setPending(false)
+    }
   }
 
   if (sent) {
