@@ -64,6 +64,22 @@ test.describe('public smoke', () => {
     await expect(page.getByText('Secret draft tool')).toHaveCount(0)
   })
 
+  test('forgot-password shows a non-committal confirmation', async ({
+    page,
+  }) => {
+    await page.goto('/en/sign-in')
+    await page.getByRole('link', { name: 'Forgot your password?' }).click()
+    await expect(page).toHaveURL(/\/forgot-password$/)
+    await page.getByLabel('Email').fill('someone@example.test')
+    await page.getByRole('button', { name: 'Send reset link' }).click()
+    await expect(page.getByText(/reset link is on its way/)).toBeVisible()
+  })
+
+  test('reset-password without a token is rejected', async ({ page }) => {
+    await page.goto('/en/reset-password')
+    await expect(page.getByText(/invalid or has expired/)).toBeVisible()
+  })
+
   test('section search filters the listing', async ({ page }) => {
     await page.goto('/en/tools?q=dashboard')
     await expect(page.getByText('CI Dashboard')).toBeVisible()
@@ -96,5 +112,12 @@ test.describe('signed in', () => {
     // the not-found UI renders (the codebase's convention) rather than status.
     await page.goto('/en/courses/prompt-engineering-101/1abc')
     await expect(page.getByText('Page not found')).toBeVisible()
+  })
+
+  test('the account page updates the profile name', async ({ page }) => {
+    await page.goto('/en/account')
+    await page.getByLabel('Name').fill('Renamed Admin')
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByText('Profile updated')).toBeVisible()
   })
 })

@@ -1,0 +1,60 @@
+import { errorFields, logger } from '@/lib/logger'
+
+// Outbound mail via Resend's REST API — no SDK, so it behaves identically on
+// Vercel and the self-hosted Docker runtime (both have fetch). RESEND_API_KEY
+// is provisioned by the Vercel Marketplace integration; EMAIL_FROM must be an
+// address on a Resend-verified domain in production.
+//
+// Without RESEND_API_KEY (local dev, CI, or before the integration is
+// provisioned) it skips the send — logging only a redacted status (the subject,
+// never the link, which carries a token) — so the auth flows are testable and
+// never crash on a missing key.
+const RESEND_ENDPOINT = 'https://api.resend.com/emails'
+
+export type Email = {
+  to: string
+  subject: string
+  html: string
+  text: string
+}
+
+export async function sendEmail(email: Email): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    // Log only a non-sensitive status. The body carries reset/invite links
+    // (and `to` is a recipient address), so neither goes to the logs.
+    logger.warn('email skipped: RESEND_API_KEY unset', {
+      subject: email.subject,
+    })
+    return
+  }
+
+  // No implicit onboarding@resend.dev fallback: Resend restricts that testing
+  // sender to the account owner, so mail to anyone else 403s while the send
+  // would otherwise look successful. Require an explicit, verified sender.
+  const from = process.env.EMAIL_FROM
+  if (!from) {
+    logger.error(
+      'email skipped: EMAIL_FROM required when RESEND_API_KEY is set',
+    )
+    return
+  }
+
+  try {
+    const response = await fetch(RESEND_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ from, ...email }),
+      // Bound the call so a hung Resend can't stall the auth request.
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!response.ok) {
+      logger.error('email send failed', { status: response.status })
+    }
+  } catch (error) {
+    logger.error('email send threw', errorFields(error))
+  }
+}

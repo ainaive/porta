@@ -30,7 +30,9 @@ in later at exactly two points — invite creation and password reset).
 
 - `curl` against the signup endpoint is part of the contract and is locked
   down by tests (`tests/db/auth-signup.test.ts`).
-- No self-service password reset until email lands; admins reset via the
-  admin plugin.
+- Email landed in Phase 4 at the two anticipated points — invite creation and
+  password reset (see [ADR 0012](./0012-email-delivery.md)). Self-service reset
+  now exists; admins can also trigger a reset email. Copy-link invites remain
+  for open (email-less) invites.
 - The bootstrap rule means an empty database is momentarily open — fine for
   fresh deploys, worth knowing during database resets.

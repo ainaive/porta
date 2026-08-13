@@ -22,6 +22,8 @@ describe('isGatedPath', () => {
     '/en/admin',
     '/zh/admin/',
     '/admin/resources/abc',
+    '/en/account',
+    '/zh/account/',
   ])('gates %s', (path) => {
     expect(isGatedPath(path)).toBe(true)
   })
@@ -34,6 +36,7 @@ describe('isGatedPath', () => {
     '/en/sign-in',
     '/zh/sign-up',
     '/en/administrator',
+    '/en/accountant',
   ])('leaves %s public', (path) => {
     expect(isGatedPath(path)).toBe(false)
   })

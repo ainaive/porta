@@ -14,7 +14,11 @@ import {
 } from '@/components/ui/table'
 import { db } from '@/db'
 import { user } from '@/db/schema'
-import { setUserRole, toggleUserBan } from '@/lib/admin-actions'
+import {
+  sendUserResetEmail,
+  setUserRole,
+  toggleUserBan,
+} from '@/lib/admin-actions'
 import { requireAdmin } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
@@ -80,7 +84,12 @@ export default async function AdminUsersPage() {
                   </TableCell>
                   <TableCell>
                     {!isSelf ? (
-                      <div className="flex justify-end">
+                      <div className="flex items-center justify-end gap-2">
+                        <form action={sendUserResetEmail.bind(null, row.id)}>
+                          <Button type="submit" size="sm" variant="ghost">
+                            {t('sendReset')}
+                          </Button>
+                        </form>
                         <ConfirmButton
                           action={toggleUserBan.bind(null, row.id)}
                           confirmLabel={

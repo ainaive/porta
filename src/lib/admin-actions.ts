@@ -3,6 +3,7 @@
 import { and, asc, eq, max, ne } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
 import { db } from '@/db'
@@ -17,6 +18,9 @@ import {
 } from '@/db/schema'
 import { redirect } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
+import { auth, canonicalBaseURL } from '@/lib/auth'
+import { sendEmail } from '@/lib/email'
+import { logger } from '@/lib/logger'
 import {
   formString,
   parseMeta,
@@ -60,6 +64,13 @@ function submittedValues(formData: FormData): Record<string, string> {
 const localeSchema = z.enum(['en', 'zh'])
 const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
 const uuidSchema = z.uuid()
+
+// Invite links are built by hand (they carry our own sign-up token, not a
+// better-auth one), so resolve the same canonical origin better-auth uses for
+// its emailed links — keeping invite and reset links pointed at one place.
+function appBaseUrl(): string {
+  return canonicalBaseURL() ?? ''
+}
 
 // Drizzle wraps driver errors, so the postgres SQLSTATE lives on a cause a
 // level or two down, not the top-level error — walk the chain to find it.
@@ -420,13 +431,33 @@ export async function createInvite(
   }
   const role = formString(formData, 'role') === 'admin' ? 'admin' : 'member'
 
+  const token = nanoid(32)
   await db.insert(invites).values({
-    token: nanoid(32),
+    token,
     email: email === '' ? null : email.toLowerCase(),
     role,
     invitedBy: session.user.id,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   })
+
+  // Email the link when the invite is addressed to someone (open invites are
+  // copy-link only). Copy-link still works either way — and if there's no
+  // absolute base URL, skip the email rather than send an unresolvable
+  // relative link.
+  const base = appBaseUrl()
+  if (email !== '' && base) {
+    const url = `${base}/${await getLocale()}/sign-up?token=${token}`
+    await sendEmail({
+      to: email.toLowerCase(),
+      subject: "You've been invited · 邀请你加入",
+      text: `You've been invited to join. Sign up: ${url}\n\n你被邀请加入。注册：${url}`,
+      html: `<p>You've been invited to join / 你被邀请加入:</p><p><a href="${url}">${url}</a></p>`,
+    })
+  } else if (email !== '') {
+    logger.error(
+      'invite email skipped: no absolute base URL (set BETTER_AUTH_URL)',
+    )
+  }
 
   revalidatePath('/', 'layout')
   return { ok: true }
@@ -451,6 +482,29 @@ export async function setUserRole(
   const role = formString(formData, 'role') === 'admin' ? 'admin' : 'member'
   await db.update(user).set({ role }).where(eq(user.id, userId))
   revalidatePath('/', 'layout')
+}
+
+// Admin-triggered recovery for a member who can't self-serve: sends the same
+// password-reset email the forgot-password flow does. Same non-committal
+// response whether or not the user exists.
+export async function sendUserResetEmail(userId: string): Promise<void> {
+  await requireAdmin()
+  const [target] = await db
+    .select({ email: user.email })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1)
+  if (!target) return
+
+  await auth.api.requestPasswordReset({
+    body: {
+      email: target.email,
+      // Relative: better-auth resolves it against its canonical base URL, so the
+      // callback stays same-origin as the emailed link (see forgot-password-form).
+      redirectTo: `/${await getLocale()}/reset-password`,
+    },
+    headers: await headers(),
+  })
 }
 
 export async function toggleUserBan(userId: string): Promise<void> {

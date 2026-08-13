@@ -1,8 +1,13 @@
 import { routing } from '@/i18n/routing'
 
-// Resource detail pages and the whole admin area require sign-in; listings
-// stay public. Keep in sync with docs/architecture.md's gating tiers.
-const GATED = [/^\/(tools|courses|videos|models)\/.+/, /^\/admin(\/|$)/]
+// Resource detail pages, the whole admin area, and the account page require
+// sign-in; listings stay public. Keep in sync with docs/architecture.md's
+// gating tiers.
+const GATED = [
+  /^\/(tools|courses|videos|models)\/.+/,
+  /^\/admin(\/|$)/,
+  /^\/account(\/|$)/,
+]
 
 export function splitLocale(pathname: string): {
   locale: string

@@ -4,9 +4,48 @@ import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { nextCookies } from 'better-auth/next-js'
 import { admin } from 'better-auth/plugins'
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
+import { after } from 'next/server'
 import { db } from '@/db'
 import { invites, user } from '@/db/schema'
+import { type Email, sendEmail } from '@/lib/email'
 import { claimInvite, findValidInvite, hasAnyUser } from '@/lib/invites'
+
+// The canonical, absolute origin better-auth stamps into emailed links (reset,
+// verify). BETTER_AUTH_URL is set on production and the self-hosted Docker
+// target; it's intentionally unset on Vercel previews. Left unset, better-auth
+// resolves the base per-request only on the HTTP-handler path — so admin resets
+// (which call auth.api.* directly) would email a *relative* link no inbox can
+// open. Falling back to the Vercel production domain keeps those links absolute
+// and, better, pointed at the real deployment rather than an ephemeral preview
+// (the database is shared, so the token resolves there). Returns undefined only
+// when neither is set (e.g. local dev without env), matching prior behaviour.
+export function canonicalBaseURL(): string | undefined {
+  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  return prod ? `https://${prod}` : undefined
+}
+
+// With baseURL pinned to the canonical origin (above), a Vercel preview serves
+// auth from its own ephemeral host — so its POSTs would fail better-auth's
+// origin check unless we trust that host too. Empty off Vercel (Docker), where
+// baseURL already matches the request origin.
+function previewOrigins(): string[] {
+  return [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+    .filter((host): host is string => Boolean(host))
+    .map((host) => `https://${host}`)
+}
+
+// Send without blocking the response. `after()` defers the send past the
+// response (the point — see sendResetPassword), but it throws outside a Next
+// request scope (e.g. the DB tests call auth.api directly). There, fall back to
+// fire-and-forget: still non-blocking, so the timing behaviour is identical.
+function scheduleEmail(email: Email): void {
+  try {
+    after(() => sendEmail(email))
+  } catch {
+    void sendEmail(email)
+  }
+}
 
 // Sign-up is invite-only. The gate lives here — in the API hooks — rather than
 // in the sign-up page, so posting directly to /api/auth/sign-up/email cannot
@@ -14,8 +53,30 @@ import { claimInvite, findValidInvite, hasAnyUser } from '@/lib/invites'
 // allowed without an invite and becomes the admin (bootstrap).
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
+  baseURL: canonicalBaseURL(),
+  // Preview deployments serve from an ephemeral host that isn't the (canonical)
+  // baseURL — trust it so sign-in/reset POSTs pass the origin check there.
+  trustedOrigins: previewOrigins(),
   emailAndPassword: {
     enabled: true,
+    // A reset means the account may be compromised — drop every existing
+    // session so a stolen one can't outlive the reset.
+    revokeSessionsOnPasswordReset: true,
+    // A user who forgets their password can recover without an admin. The
+    // reset URL bounces through /api/auth/reset-password/:token, which
+    // redirects to the reset page with the token. Bilingual, since the email
+    // doesn't know the recipient's chosen locale.
+    sendResetPassword: async ({ user: recipient, url }) => {
+      // Schedule after the response: awaiting the (up to 10s) send here would
+      // make a registered account respond slower than an unknown one — a
+      // timing oracle for account existence.
+      scheduleEmail({
+        to: recipient.email,
+        subject: 'Reset your password · 重置密码',
+        text: `Reset your password: ${url}\n\n重置你的密码：${url}\n\nIf you didn't request this, you can ignore this email.`,
+        html: `<p>Reset your password / 重置你的密码:</p><p><a href="${url}">${url}</a></p><p>If you didn't request this, you can ignore this email.</p>`,
+      })
+    },
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {

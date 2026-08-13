@@ -61,6 +61,7 @@ export async function SiteHeader() {
               name={session.user.name}
               email={session.user.email}
               isAdmin={session.user.role === 'admin'}
+              accountLabel={t('account')}
               adminLabel={t('admin')}
               signOutLabel={t('signOut')}
             />
