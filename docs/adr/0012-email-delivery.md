@@ -37,6 +37,13 @@ the self-hosted Docker container — with runtime env only.
   every existing session. When `RESEND_API_KEY` is set, `EMAIL_FROM` is
   **required** and must be a verified sender; there is no
   `onboarding@resend.dev` fallback (it 403s for anyone but the account owner).
+- **Absolute links.** better-auth stamps reset links from its `baseURL`, and
+  the admin (`auth.api.*`) path doesn't re-derive it per request — so a preview
+  with `BETTER_AUTH_URL` unset would email a relative, unopenable link. `auth`
+  pins `baseURL` to a canonical origin (`BETTER_AUTH_URL`, else the Vercel
+  production URL) so every emailed link is absolute and points at the real
+  deployment, and trusts the preview's own origin so its sign-in still passes
+  the origin check. Hand-built invite links resolve the same origin.
 
 ## Consequences
 

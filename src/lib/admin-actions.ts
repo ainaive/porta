@@ -18,7 +18,7 @@ import {
 } from '@/db/schema'
 import { redirect } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { auth } from '@/lib/auth'
+import { auth, canonicalBaseURL } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import {
@@ -65,14 +65,11 @@ const localeSchema = z.enum(['en', 'zh'])
 const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
 const uuidSchema = z.uuid()
 
-// Absolute origin for emailed links (no window here). BETTER_AUTH_URL is the
-// canonical URL both deploy targets set — but it's intentionally unset on
-// Vercel previews, so fall back to the (trusted, not header-derived) Vercel
-// production URL rather than emitting a relative link no mail client resolves.
+// Invite links are built by hand (they carry our own sign-up token, not a
+// better-auth one), so resolve the same canonical origin better-auth uses for
+// its emailed links — keeping invite and reset links pointed at one place.
 function appBaseUrl(): string {
-  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL
-  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL
-  return vercel ? `https://${vercel}` : ''
+  return canonicalBaseURL() ?? ''
 }
 
 // Drizzle wraps driver errors, so the postgres SQLSTATE lives on a cause a

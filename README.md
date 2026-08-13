@@ -59,7 +59,17 @@ in the project environment. Use a plain TCP Postgres URL (Neon works; set
 preview builds skip the step and expect an already-migrated database, so
 they never write to the database production shares. Leave `BETTER_AUTH_URL`
 unset for Preview: pinning it to the production origin makes preview
-deployments fail better-auth's origin check.
+deployments fail better-auth's origin check. Previews still emit absolute
+email links — auth falls back to `VERCEL_PROJECT_PRODUCTION_URL` (a system
+variable; keep "Automatically expose System Environment Variables" on) and
+trusts the preview's own origin so sign-in keeps working.
+
+Email (password reset, invites) needs two more variables. The Resend
+Marketplace integration provisions `RESEND_API_KEY`; you must also set
+`EMAIL_FROM` to a sender on a Resend-verified domain — **it is required
+whenever `RESEND_API_KEY` is set** (there's no implicit fallback sender, so a
+missing `EMAIL_FROM` makes every invite and reset email silently skip). Leave
+both unset to disable email (the flows log the link instead of sending).
 
 **Docker** — the app also runs as a self-hosted container (Next.js standalone
 output, migrations applied on start):
@@ -67,6 +77,10 @@ output, migrations applied on start):
 ```bash
 BETTER_AUTH_SECRET=$(openssl rand -base64 32) docker compose up --build
 ```
+
+To send email from the container, pass `RESEND_API_KEY` and `EMAIL_FROM`
+through (see `.env.example`); `docker-compose.yml` already forwards both.
+Without them, email is skipped rather than sent.
 
 Constraint to preserve: no Vercel-only service dependencies, and no
 `NEXT_PUBLIC_*` env vars for environment-dependent values — all config is

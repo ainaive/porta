@@ -10,6 +10,31 @@ import { invites, user } from '@/db/schema'
 import { type Email, sendEmail } from '@/lib/email'
 import { claimInvite, findValidInvite, hasAnyUser } from '@/lib/invites'
 
+// The canonical, absolute origin better-auth stamps into emailed links (reset,
+// verify). BETTER_AUTH_URL is set on production and the self-hosted Docker
+// target; it's intentionally unset on Vercel previews. Left unset, better-auth
+// resolves the base per-request only on the HTTP-handler path — so admin resets
+// (which call auth.api.* directly) would email a *relative* link no inbox can
+// open. Falling back to the Vercel production domain keeps those links absolute
+// and, better, pointed at the real deployment rather than an ephemeral preview
+// (the database is shared, so the token resolves there). Returns undefined only
+// when neither is set (e.g. local dev without env), matching prior behaviour.
+export function canonicalBaseURL(): string | undefined {
+  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  return prod ? `https://${prod}` : undefined
+}
+
+// With baseURL pinned to the canonical origin (above), a Vercel preview serves
+// auth from its own ephemeral host — so its POSTs would fail better-auth's
+// origin check unless we trust that host too. Empty off Vercel (Docker), where
+// baseURL already matches the request origin.
+function previewOrigins(): string[] {
+  return [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+    .filter((host): host is string => Boolean(host))
+    .map((host) => `https://${host}`)
+}
+
 // Send without blocking the response. `after()` defers the send past the
 // response (the point — see sendResetPassword), but it throws outside a Next
 // request scope (e.g. the DB tests call auth.api directly). There, fall back to
@@ -28,6 +53,10 @@ function scheduleEmail(email: Email): void {
 // allowed without an invite and becomes the admin (bootstrap).
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
+  baseURL: canonicalBaseURL(),
+  // Preview deployments serve from an ephemeral host that isn't the (canonical)
+  // baseURL — trust it so sign-in/reset POSTs pass the origin check there.
+  trustedOrigins: previewOrigins(),
   emailAndPassword: {
     enabled: true,
     // A reset means the account may be compromised — drop every existing
