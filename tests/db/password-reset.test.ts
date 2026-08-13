@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
 import { like } from 'drizzle-orm'
 import { db } from '@/db'
-import { verification } from '@/db/schema'
+import { session, verification } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { resetDb } from './harness'
 
@@ -74,6 +74,22 @@ describe('password reset', () => {
       .from(verification)
       .where(like(verification.identifier, 'reset-password:%'))
     expect(remaining).toHaveLength(0)
+  })
+
+  test('a reset revokes existing sessions', async () => {
+    // signUp auto-signs-in, leaving a live session row.
+    await signUp('founder@example.test', 'password-123')
+    expect(await db.$count(session)).toBeGreaterThan(0)
+
+    await requestReset('founder@example.test')
+    await auth.api.resetPassword({
+      body: { newPassword: 'new-password-456', token: await resetToken() },
+      headers: headers(),
+    })
+
+    // revokeSessionsOnPasswordReset: the pre-reset session is gone, so a
+    // stolen/leaked cookie can't outlive the reset that was meant to lock it out.
+    expect(await db.$count(session)).toBe(0)
   })
 
   test('requesting a reset for an unknown email does not error or leak', async () => {

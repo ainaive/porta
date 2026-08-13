@@ -19,12 +19,17 @@ export function ForgotPasswordForm() {
     const email = String(new FormData(event.currentTarget).get('email'))
     setPending(true)
     try {
-      await authClient.requestPasswordReset({
+      const { error } = await authClient.requestPasswordReset({
         email,
         redirectTo: `${window.location.origin}/${locale}/reset-password`,
       })
-      // Always the same outcome — better-auth never reveals whether the
-      // address is registered, so neither do we.
+      // An unknown address still returns success (better-auth never reveals
+      // whether it's registered), so a returned error is a real failure —
+      // surface it rather than falsely claiming the link was sent.
+      if (error) {
+        toast.error(t('sendFailed'))
+        return
+      }
       setSent(true)
     } catch {
       toast.error(t('sendFailed'))

@@ -23,6 +23,9 @@ services:
       BETTER_AUTH_URL: http://localhost:3000
       # Generate one with: openssl rand -base64 32
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in the environment or a .env file}
+      # Email (optional): without these, mail is skipped rather than sent.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
     depends_on:
       db:
         condition: service_healthy

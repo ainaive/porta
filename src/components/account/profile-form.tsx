@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -10,6 +11,7 @@ import { authClient } from '@/lib/auth-client'
 
 export function ProfileForm({ initialName }: { initialName: string }) {
   const t = useTranslations('account')
+  const router = useRouter()
   const [pending, setPending] = useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -27,6 +29,9 @@ export function ProfileForm({ initialName }: { initialName: string }) {
         return
       }
       toast.success(t('profileSaved'))
+      // The header (a server component in the persistent layout) shows the
+      // name — re-render it with the new value instead of waiting for a reload.
+      router.refresh()
     } catch {
       toast.error(t('saveFailed'))
     } finally {

@@ -20,6 +20,7 @@ import { redirect } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { auth } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
+import { logger } from '@/lib/logger'
 import {
   formString,
   parseMeta,
@@ -64,10 +65,14 @@ const localeSchema = z.enum(['en', 'zh'])
 const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
 const uuidSchema = z.uuid()
 
-// Server-side origin for emailed links (no window here). BETTER_AUTH_URL is the
-// canonical URL both deploy targets already set.
+// Absolute origin for emailed links (no window here). BETTER_AUTH_URL is the
+// canonical URL both deploy targets set — but it's intentionally unset on
+// Vercel previews, so fall back to the (trusted, not header-derived) Vercel
+// production URL rather than emitting a relative link no mail client resolves.
 function appBaseUrl(): string {
-  return process.env.BETTER_AUTH_URL ?? ''
+  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  return vercel ? `https://${vercel}` : ''
 }
 
 // Drizzle wraps driver errors, so the postgres SQLSTATE lives on a cause a
@@ -439,15 +444,22 @@ export async function createInvite(
   })
 
   // Email the link when the invite is addressed to someone (open invites are
-  // copy-link only). Copy-link still works either way.
-  if (email !== '') {
-    const url = `${appBaseUrl()}/${await getLocale()}/sign-up?token=${token}`
+  // copy-link only). Copy-link still works either way — and if there's no
+  // absolute base URL, skip the email rather than send an unresolvable
+  // relative link.
+  const base = appBaseUrl()
+  if (email !== '' && base) {
+    const url = `${base}/${await getLocale()}/sign-up?token=${token}`
     await sendEmail({
       to: email.toLowerCase(),
       subject: "You've been invited · 邀请你加入",
       text: `You've been invited to join. Sign up: ${url}\n\n你被邀请加入。注册：${url}`,
       html: `<p>You've been invited to join / 你被邀请加入:</p><p><a href="${url}">${url}</a></p>`,
     })
+  } else if (email !== '') {
+    logger.error(
+      'invite email skipped: no absolute base URL (set BETTER_AUTH_URL)',
+    )
   }
 
   revalidatePath('/', 'layout')

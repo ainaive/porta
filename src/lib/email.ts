@@ -19,15 +19,23 @@ export type Email = {
 
 export async function sendEmail(email: Email): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
-  const from =
-    process.env.EMAIL_FROM ?? 'Silicon Ecosystem <onboarding@resend.dev>'
-
   if (!apiKey) {
     // Log only a non-sensitive status. The body carries reset/invite links
     // (and `to` is a recipient address), so neither goes to the logs.
     logger.warn('email skipped: RESEND_API_KEY unset', {
       subject: email.subject,
     })
+    return
+  }
+
+  // No implicit onboarding@resend.dev fallback: Resend restricts that testing
+  // sender to the account owner, so mail to anyone else 403s while the send
+  // would otherwise look successful. Require an explicit, verified sender.
+  const from = process.env.EMAIL_FROM
+  if (!from) {
+    logger.error(
+      'email skipped: EMAIL_FROM required when RESEND_API_KEY is set',
+    )
     return
   }
 

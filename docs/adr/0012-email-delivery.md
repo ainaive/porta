@@ -31,8 +31,12 @@ the self-hosted Docker container — with runtime env only.
 - **Wiring.** better-auth's `emailAndPassword.sendResetPassword` sends the
   reset link; `createInvite` emails the addressed invite (open invites stay
   copy-link only); an admin `sendUserResetEmail` action triggers the same
-  reset email for a locked-out member. `EMAIL_FROM` must be on a
-  Resend-verified domain in production.
+  reset email for a locked-out member. Reset emails are scheduled with
+  `after()` (not awaited) so a slow send can't make a registered address
+  respond slower than an unknown one — a timing oracle — and a reset revokes
+  every existing session. When `RESEND_API_KEY` is set, `EMAIL_FROM` is
+  **required** and must be a verified sender; there is no
+  `onboarding@resend.dev` fallback (it 403s for anyone but the account owner).
 
 ## Consequences
 
