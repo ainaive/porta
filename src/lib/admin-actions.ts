@@ -499,7 +499,9 @@ export async function sendUserResetEmail(userId: string): Promise<void> {
   await auth.api.requestPasswordReset({
     body: {
       email: target.email,
-      redirectTo: `${appBaseUrl()}/${await getLocale()}/reset-password`,
+      // Relative: better-auth resolves it against its canonical base URL, so the
+      // callback stays same-origin as the emailed link (see forgot-password-form).
+      redirectTo: `/${await getLocale()}/reset-password`,
     },
     headers: await headers(),
   })

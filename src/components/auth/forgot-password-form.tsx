@@ -20,8 +20,12 @@ export function ForgotPasswordForm() {
     setPending(true)
     try {
       const { error } = await authClient.requestPasswordReset({
+        // A relative path, not window.location.origin: better-auth resolves the
+        // callback against its own (canonical) base URL, so the emailed link and
+        // its callback always land on the same deployment. An absolute preview
+        // origin here would reach production and fail its callback origin check.
         email,
-        redirectTo: `${window.location.origin}/${locale}/reset-password`,
+        redirectTo: `/${locale}/reset-password`,
       })
       // An unknown address still returns success (better-auth never reveals
       // whether it's registered), so a returned error is a real failure —

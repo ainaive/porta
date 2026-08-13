@@ -69,7 +69,9 @@ Marketplace integration provisions `RESEND_API_KEY`; you must also set
 `EMAIL_FROM` to a sender on a Resend-verified domain — **it is required
 whenever `RESEND_API_KEY` is set** (there's no implicit fallback sender, so a
 missing `EMAIL_FROM` makes every invite and reset email silently skip). Leave
-both unset to disable email (the flows log the link instead of sending).
+both unset to disable email — the flows then log a redacted skip status (the
+subject only, never the link, which carries a token) instead of sending. To
+inspect reset/invite links locally, point Resend at a dev mail catcher.
 
 **Docker** — the app also runs as a self-hosted container (Next.js standalone
 output, migrations applied on start):

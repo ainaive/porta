@@ -6,8 +6,9 @@ import { errorFields, logger } from '@/lib/logger'
 // address on a Resend-verified domain in production.
 //
 // Without RESEND_API_KEY (local dev, CI, or before the integration is
-// provisioned) it logs the message instead of sending, so the auth flows are
-// testable and never crash on a missing key.
+// provisioned) it skips the send — logging only a redacted status (the subject,
+// never the link, which carries a token) — so the auth flows are testable and
+// never crash on a missing key.
 const RESEND_ENDPOINT = 'https://api.resend.com/emails'
 
 export type Email = {
