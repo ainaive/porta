@@ -1,25 +1,6 @@
-import { ResourceListing } from '@/components/resource/listing'
-import type { Locale } from '@/i18n/routing'
-import { firstParam, parsePageParam } from '@/lib/utils'
+// Route mount: the page itself belongs to the module that owns this section.
+// `dynamic` is declared here rather than re-exported because route segment
+// config is read from the route file (ADR 0013, ADR 0005 — no DB at build).
+export { default } from '@/modules/help/pages/video-listing'
 
 export const dynamic = 'force-dynamic'
-
-export default async function VideosPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ locale: Locale }>
-  searchParams: Promise<{
-    q?: string | string[]
-    tag?: string | string[]
-    page?: string | string[]
-  }>
-}) {
-  const [{ locale }, sp] = await Promise.all([params, searchParams])
-  const q = firstParam(sp.q)
-  const tag = firstParam(sp.tag)
-  const page = parsePageParam(sp.page)
-  return (
-    <ResourceListing type="video" locale={locale} q={q} tag={tag} page={page} />
-  )
-}
