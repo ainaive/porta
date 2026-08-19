@@ -12,65 +12,23 @@ import { dirname, join } from 'node:path'
 const ROOT = new URL('..', import.meta.url).pathname
 const REGISTRY = join(ROOT, 'src/core/module/registry.ts')
 
-// The id must be kebab-case AND survive camelCasing into a legal, non-reserved
-// TypeScript identifier — it becomes an exported binding in the manifest, so
-// `2fa` or `default` would generate a file that cannot parse.
+// The id must be kebab-case AND survive camelCasing into a legal binding —
+// it becomes an exported `const` in the manifest.
 const KEBAB = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 const SNAKE = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/
-const RESERVED = new Set([
-  'break',
-  'case',
-  'catch',
-  'class',
-  'const',
-  'continue',
-  'debugger',
-  'default',
-  'delete',
-  'do',
-  'else',
-  'enum',
-  'export',
-  'extends',
-  'false',
-  'finally',
-  'for',
-  'function',
-  'if',
-  'import',
-  'in',
-  'instanceof',
-  'new',
-  'null',
-  'return',
-  'super',
-  'switch',
-  'this',
-  'throw',
-  'true',
-  'try',
-  'typeof',
-  'var',
-  'void',
-  'while',
-  'with',
-  'as',
-  'implements',
-  'interface',
-  'let',
-  'package',
-  'private',
-  'protected',
-  'public',
-  'static',
-  'yield',
-  'any',
-  'boolean',
-  'number',
-  'string',
-  'symbol',
-  'await',
-])
+
+// Ask the engine instead of maintaining a keyword list: a list forgets
+// `arguments` and `eval` (illegal as bindings only under strict mode, which
+// ES modules always are) while wrongly rejecting `any` and `type`, which are
+// contextual keywords and perfectly legal const names.
+function isLegalBinding(name: string): boolean {
+  try {
+    new Function(`"use strict"; let ${name};`)
+    return true
+  } catch {
+    return false
+  }
+}
 
 function camel(id: string): string {
   return id.replace(/-(\w)/g, (_, c: string) => c.toUpperCase())
@@ -135,10 +93,10 @@ if (!id || !KEBAB.test(id)) {
   )
   process.exit(1)
 }
-if (RESERVED.has(camel(id))) {
+if (!isLegalBinding(camel(id))) {
   console.error(
-    `"${id}" camel-cases to "${camel(id)}", which is a reserved word — the ` +
-      'manifest exports it as a binding. Pick another id.',
+    `"${id}" camel-cases to "${camel(id)}", which is not a legal binding name — ` +
+      'the manifest exports it as a const. Pick another id.',
   )
   process.exit(1)
 }
@@ -149,9 +107,9 @@ if (!SNAKE.test(section)) {
   )
   process.exit(1)
 }
-if (RESERVED.has(camel(section))) {
+if (!isLegalBinding(`${camel(section)}Meta`)) {
   console.error(
-    `"${section}" camel-cases to a reserved word — it is exported as a zod schema binding. Pick another key.`,
+    `"${section}" camel-cases to an illegal binding name — it is exported as a zod schema. Pick another key.`,
   )
   process.exit(1)
 }
@@ -177,6 +135,35 @@ for (const path of destinations) {
 if ((await readFile(REGISTRY, 'utf8')).includes(`@/modules/${id}/module`)) {
   clashes.push('src/core/module/registry.ts (already registers this module)')
 }
+
+// Preflight the registry's invariants too, not just the filesystem. A
+// duplicate section key or a module id shadowing a core message namespace
+// scaffolds cleanly and then fails registry.test.ts, which breaks the
+// promise that a generated module is green.
+const { modules } = await import('../src/core/module/registry')
+const coreMessages = await import('../messages/en.json')
+
+if (modules.some((feature) => feature.id === id)) {
+  clashes.push(`module id "${id}" is already registered`)
+}
+if (Object.keys(coreMessages.default).includes(id)) {
+  clashes.push(
+    `module id "${id}" would shadow the core "${id}" message namespace`,
+  )
+}
+for (const feature of modules) {
+  for (const registered of feature.sections) {
+    if (registered.key === section) {
+      clashes.push(
+        `section key "${section}" is already used by "${feature.id}"`,
+      )
+    }
+    if (registered.path === base) {
+      clashes.push(`path "${base}" is already served by "${feature.id}"`)
+    }
+  }
+}
+
 if (clashes.length > 0) {
   console.error(
     `Refusing to scaffold "${id}" — these already exist:\n  ${clashes.join('\n  ')}`,
