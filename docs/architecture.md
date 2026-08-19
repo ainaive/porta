@@ -231,6 +231,9 @@ missing.
 
 ## Adding a module
 
+`bun run module:new <id>` scaffolds all of this and leaves the tree green;
+what it generates is:
+
 1. `src/modules/<id>/` with `module.ts`, `messages/{en,zh}.json`, `pages/`.
    The manifest needs `id` (also its i18n namespace), `nav`, `sections` and
    `messages`; add `redirects` if it is taking over existing paths.
