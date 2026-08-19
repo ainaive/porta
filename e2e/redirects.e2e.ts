@@ -28,3 +28,20 @@ test('a moved detail link lands on the new gated URL, not the old one', async ({
     /\/en\/sign-in\?next=%2Fen%2Fevals%2Fmodels%2Fclaude-api$/,
   )
 })
+
+test('the old course and video paths redirect into Help & Tutorials', async ({
+  page,
+}) => {
+  await page.goto('/en/courses')
+  await expect(page).toHaveURL(/\/en\/help\/courses$/)
+
+  await page.goto('/en/videos')
+  await expect(page).toHaveURL(/\/en\/help\/videos$/)
+})
+
+test('a positional chapter URL survives the move', async ({ page }) => {
+  await page.goto('/en/courses/prompt-engineering-101/2')
+  await expect(page).toHaveURL(
+    /\/en\/sign-in\?next=%2Fen%2Fhelp%2Fcourses%2Fprompt-engineering-101%2F2$/,
+  )
+})

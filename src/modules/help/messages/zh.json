@@ -1,7 +1,10 @@
 {
   "nav": {
-    "courses": "课程",
-    "videos": "视频"
+    "title": "帮助与教程"
+  },
+  "index": {
+    "title": "帮助与教程",
+    "description": "上手这套工具链：视频课程、内部分享录像与文字指南。"
   },
   "courses": {
     "title": "课程",
@@ -10,6 +13,10 @@
   "videos": {
     "title": "视频",
     "description": "教学视频与内部分享录像。"
+  },
+  "guides": {
+    "title": "指南",
+    "description": "针对高频问题写下的操作说明。"
   },
   "chapters": "章节",
   "previousChapter": "上一章",
@@ -21,11 +28,13 @@
     "advanced": "高级"
   },
   "estimatedHours": "约 {hours} 小时",
+  "source": "来源",
   "meta": {
     "level": "难度",
     "hours": "预计学时",
     "provider": "提供方",
     "embedUrl": "嵌入 URL",
-    "duration": "时长"
+    "duration": "时长",
+    "sourceUrl": "来源 URL"
   }
 }

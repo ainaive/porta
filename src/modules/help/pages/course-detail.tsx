@@ -26,7 +26,7 @@ export default async function CourseDetailPage({
   params: Promise<{ locale: Locale; slug: string }>
 }) {
   const { locale, slug } = await params
-  await requireSession(`/${locale}/courses/${slug}`)
+  await requireSession(`/${locale}/help/courses/${slug}`)
 
   const resource = await getPublishedBySlug('course', slug, locale)
   if (!resource) notFound()
@@ -64,7 +64,7 @@ export default async function CourseDetailPage({
         {chapters.map((chapter) => (
           <li key={chapter.id}>
             <Link
-              href={`/courses/${slug}/${chapter.position}`}
+              href={`/help/courses/${slug}/${chapter.position}`}
               className="flex items-center gap-4 px-4 py-3 hover:bg-accent"
             >
               <span className="w-8 text-sm text-muted-foreground tabular-nums">

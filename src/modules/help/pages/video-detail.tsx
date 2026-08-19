@@ -22,7 +22,7 @@ export default async function VideoDetailPage({
   params: Promise<{ locale: Locale; slug: string }>
 }) {
   const { locale, slug } = await params
-  await requireSession(`/${locale}/videos/${slug}`)
+  await requireSession(`/${locale}/help/videos/${slug}`)
 
   const resource = await getPublishedBySlug('video', slug, locale)
   if (!resource) notFound()

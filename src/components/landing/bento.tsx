@@ -223,7 +223,7 @@ export async function Bento({
             label={label(sectionTitleKey('course'))}
             title={t('bento.courses.title')}
             description={t('bento.courses.description')}
-            href="/courses"
+            href="/help/courses"
           />
           <div className="mt-6 flex gap-10">
             <Stat
@@ -240,7 +240,7 @@ export async function Bento({
             label={label(sectionTitleKey('video'))}
             title={t('bento.videos.title')}
             description={t('bento.videos.description')}
-            href="/videos"
+            href="/help/videos"
           />
           <div className="mt-6 flex items-end gap-6">
             <Stat

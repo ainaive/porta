@@ -15,7 +15,7 @@ export default async function CourseChapterPage({
   params: Promise<{ locale: Locale; slug: string; chapter: string }>
 }) {
   const { locale, slug, chapter } = await params
-  await requireSession(`/${locale}/courses/${slug}/${chapter}`)
+  await requireSession(`/${locale}/help/courses/${slug}/${chapter}`)
 
   // Strict digits only: parseInt('3abc') is 3, which would render chapter 3
   // at a non-canonical URL. Positions are 1..n, so no leading zeros either.
@@ -41,7 +41,7 @@ export default async function CourseChapterPage({
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <Link
-        href={`/courses/${slug}`}
+        href={`/help/courses/${slug}`}
         className="text-sm text-muted-foreground hover:text-foreground"
       >
         ← {course.title}
@@ -64,7 +64,7 @@ export default async function CourseChapterPage({
       <div className="mt-10 flex justify-between gap-4 border-t pt-6">
         {previous ? (
           <Button asChild variant="outline">
-            <Link href={`/courses/${slug}/${previous.position}`}>
+            <Link href={`/help/courses/${slug}/${previous.position}`}>
               ← {t('previousChapter')}
             </Link>
           </Button>
@@ -73,7 +73,7 @@ export default async function CourseChapterPage({
         )}
         {next ? (
           <Button asChild>
-            <Link href={`/courses/${slug}/${next.position}`}>
+            <Link href={`/help/courses/${slug}/${next.position}`}>
               {t('nextChapter')} →
             </Link>
           </Button>
