@@ -287,6 +287,47 @@ describe('getHomeOverview', () => {
   })
 })
 
+describe('retired sections', () => {
+  // resources.type is text and only the write path checks it against the
+  // registry (ADR 0013). A section removed from a manifest after its rows
+  // were published leaves them behind, and the landing page is the one public
+  // surface that queries across every type — so an orphan used to reach
+  // ResourceCard and take the homepage down with it.
+  async function insertOrphan(): Promise<void> {
+    const [row] = await db
+      .insert(resources)
+      .values({ type: 'retired_section', slug: 'ghost', status: 'published' })
+      .returning({ id: resources.id })
+    await db
+      .insert(resourceTranslations)
+      .values({ resourceId: row.id, locale: 'en', title: 'Ghost' })
+  }
+
+  test('an orphaned resource never reaches the landing page', async () => {
+    await insertOrphan()
+    await insertResource('real-tool', [{ locale: 'en', title: 'Real' }])
+
+    const overview = await getHomeOverview('en')
+    expect(overview.latest.map((item) => item.slug)).toEqual(['real-tool'])
+    expect(overview.tags).not.toContain('ghost')
+  })
+
+  test('an orphaned resource is not counted in any section', async () => {
+    await insertOrphan()
+    const overview = await getHomeOverview('en')
+    const counts = Object.values(overview.sections).map(
+      (section) => section.count,
+    )
+    expect(counts.every((count) => count === 0)).toBe(true)
+  })
+
+  test('admin still lists it, so it can be found and fixed', async () => {
+    await insertOrphan()
+    const { items } = await adminListResources('en')
+    expect(items.map((item) => item.type)).toEqual(['retired_section'])
+  })
+})
+
 describe('admin queries', () => {
   test('adminListResources includes drafts and untranslated resources', async () => {
     await insertResource('draft', [{ locale: 'en', title: 'Draft' }], {

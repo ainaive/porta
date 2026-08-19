@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm'
 import { cache } from 'react'
 import { z } from 'zod'
+import { isSectionKey } from '@/core/module/derive'
 import { db } from '@/db'
 import { resources, resourceTranslations } from '@/db/schema'
 import type { Locale } from '@/i18n/routing'
@@ -182,7 +183,15 @@ export async function getHomeOverview(
     .orderBy(desc(resources.createdAt))
   // groupResources drops resources with no translation at all, so counts and
   // tags below describe what a visitor can actually reach.
-  const published = groupResources(rows, locale)
+  //
+  // `resources.type` is text and only the write path checks it against the
+  // registry (ADR 0013), so a section retired after its rows were published
+  // leaves orphans behind. This query is the one public path that does not
+  // already filter by a known type, so it is where they are dropped —
+  // everything downstream may assume a resource's section is registered.
+  const published = groupResources(rows, locale).filter((item) =>
+    isSectionKey(item.type),
+  )
 
   const sections = Object.fromEntries(
     resourceTypes.map((type) => {

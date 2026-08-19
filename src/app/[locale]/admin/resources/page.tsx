@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table'
 import { type ResourceType, resourceTypes } from '@/core/content/meta'
 import { adminListResources } from '@/core/content/queries'
-import { sectionPath } from '@/core/module/derive'
+import { findSection } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { requireAdmin } from '@/lib/session'
@@ -146,7 +146,11 @@ export default async function AdminResourcesPage({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {sectionPath(resource.type as ResourceType)}/{resource.slug}
+                  {/* Admin deliberately lists resources whose section was
+                      retired — this is the only place they can be found and
+                      fixed — so show the slug rather than a path that no
+                      longer resolves. */}
+                  {findSection(resource.type)?.path ?? '—'}/{resource.slug}
                 </TableCell>
               </TableRow>
             ))}
