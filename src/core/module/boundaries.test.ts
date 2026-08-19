@@ -54,27 +54,33 @@ function specifiers(file: string, source: string): string[] {
   )
   const found: string[] = []
 
+  // `isStringLiteralLike`, not `isStringLiteral`: a backtick path with no
+  // substitution is a NoSubstitutionTemplateLiteral, and `import(`../help`)`
+  // is every bit as much a dependency as `import('../help')`.
+  const push = (node: ts.Node | undefined): void => {
+    if (node && ts.isStringLiteralLike(node)) found.push(node.text)
+  }
+
   const visit = (node: ts.Node): void => {
     // `import x from 'y'`, `import 'y'`, `import type { x } from 'y'`
-    if (ts.isImportDeclaration(node)) {
-      if (ts.isStringLiteral(node.moduleSpecifier)) {
-        found.push(node.moduleSpecifier.text)
-      }
-    }
+    if (ts.isImportDeclaration(node)) push(node.moduleSpecifier)
     // `export { x } from 'y'`, `export * from 'y'`
-    if (ts.isExportDeclaration(node) && node.moduleSpecifier) {
-      if (ts.isStringLiteral(node.moduleSpecifier)) {
-        found.push(node.moduleSpecifier.text)
-      }
-    }
+    if (ts.isExportDeclaration(node)) push(node.moduleSpecifier)
     // `import('y')` and `require('y')`
     if (ts.isCallExpression(node)) {
       const callee = node.expression
       const isDynamic = callee.kind === ts.SyntaxKind.ImportKeyword
       const isRequire = ts.isIdentifier(callee) && callee.text === 'require'
-      const [first] = node.arguments
-      if ((isDynamic || isRequire) && first && ts.isStringLiteral(first)) {
-        found.push(first.text)
+      if (isDynamic || isRequire) {
+        const [first] = node.arguments
+        push(first)
+        // An interpolated path cannot be resolved, so judge it by its literal
+        // head: `import(`../${name}/module`)` from a module directory still
+        // aims at a sibling. src/i18n/request.ts uses this form legitimately,
+        // and its head (`../../messages/`) is nowhere near src/modules.
+        if (first && ts.isTemplateExpression(first)) {
+          found.push(first.head.text)
+        }
       }
     }
     ts.forEachChild(node, visit)
@@ -105,6 +111,14 @@ function edgesOf(file: string): Edge[] {
 
 function moduleOf(path: string): string | null {
   return path.match(/^src\/modules\/([^/]+)/)?.[1] ?? null
+}
+
+/** An interpolated path resolves only as far as its literal head, so
+ *  `import(`../${name}/module`)` from a module lands on `src/modules` itself.
+ *  Nothing legitimately imports the modules root, so treat it as aimed at
+ *  whatever the substitution names. */
+function aimsAtModuleRoot(path: string): boolean {
+  return path === 'src/modules'
 }
 
 const moduleFiles = sourceFiles('src/modules/**/*.{ts,tsx}')
@@ -145,7 +159,8 @@ describe('module boundaries', () => {
     const crossing = moduleEdges.filter((edge) => {
       const from = moduleOf(edge.file)
       const to = moduleOf(edge.target)
-      return to !== null && from !== null && to !== from
+      if (to === null) return aimsAtModuleRoot(edge.target)
+      return from !== null && to !== from
     })
     expect(crossing).toEqual([])
   })
@@ -163,7 +178,8 @@ describe('module boundaries', () => {
   test('only the registry names a module from outside src/app', () => {
     const naming = platformEdges.filter(
       (edge) =>
-        moduleOf(edge.target) !== null && edge.file !== MAY_NAME_A_MODULE,
+        (moduleOf(edge.target) !== null || aimsAtModuleRoot(edge.target)) &&
+        edge.file !== MAY_NAME_A_MODULE,
     )
     expect(naming).toEqual([])
   })
