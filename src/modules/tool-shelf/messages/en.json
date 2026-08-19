@@ -1,9 +1,9 @@
 {
   "nav": {
-    "tools": "Tools"
+    "title": "Tool Shelf"
   },
   "tools": {
-    "title": "Tools",
+    "title": "Tool Shelf",
     "description": "Internal and ecosystem tools, ready to use."
   },
   "openTool": "Open tool",

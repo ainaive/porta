@@ -1,9 +1,9 @@
 {
   "nav": {
-    "tools": "工具"
+    "title": "工具货架"
   },
   "tools": {
-    "title": "工具",
+    "title": "工具货架",
     "description": "开箱即用的内部与生态工具。"
   },
   "openTool": "打开工具",

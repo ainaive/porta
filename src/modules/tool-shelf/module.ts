@@ -10,7 +10,7 @@ export type ToolMeta = z.infer<typeof toolMeta>
 
 export const toolShelf = defineModule({
   id: 'tool-shelf',
-  nav: [{ href: '/tools', labelKey: 'nav.tools', order: 10 }],
+  nav: [{ href: '/tools', labelKey: 'nav.title', order: 10 }],
   sections: [
     {
       key: 'tool',

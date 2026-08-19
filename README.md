@@ -2,12 +2,17 @@
 
 Ecosystem toolchain portal — a public-facing website whose primary users are
 internal employees. The repository, package, and databases are named `porta`,
-which is the codename rather than the product name (ADR 0009). V1 hosts four sections built on one generic content model:
+which is the codename rather than the product name (ADR 0009). It is built as
+three feature modules over one generic content model, each owned end to end by
+a different team and wired in by a single line of a registry (ADR 0013):
 
-- **Tools** — internal and ecosystem tools directory
-- **Courses** — structured learning paths with ordered chapters
-- **Videos** — teaching videos (embedded YouTube/Bilibili, no hosting)
-- **Model APIs** — model API docs, endpoints, and usage guides
+- **Tool Shelf** (工具货架) `/tools` — internal and ecosystem tools directory
+- **AI Evaluation** (AI 评测) `/evals` — agent and model evaluations, plus
+  reports; carries the model API docs, endpoints, and usage guides
+- **Help & Tutorials** (帮助与教程) `/help` — courses with ordered chapters,
+  teaching videos (embedded YouTube/Bilibili, no hosting), and written guides
+
+More modules are expected; adding one touches no core file.
 
 Public visitors can browse the landing page and section listings; opening a
 resource's full content requires sign-in. Sign-up is invite-only (admins
@@ -92,5 +97,5 @@ read from server env at runtime so one image runs anywhere.
 
 - [CONTEXT.md](./CONTEXT.md) — domain vocabulary
 - [docs/architecture.md](./docs/architecture.md) — system overview,
-  conventions, deployment constraints, and how to add a new section
+  conventions, deployment constraints, and how to add a module or a section
 - [docs/adr/](./docs/adr/) — decision records

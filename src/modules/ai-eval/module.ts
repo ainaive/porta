@@ -42,7 +42,7 @@ const linksField = {
 
 export const aiEval = defineModule({
   id: 'ai-eval',
-  nav: [{ href: '/evals', labelKey: 'nav.title', order: 40 }],
+  nav: [{ href: '/evals', labelKey: 'nav.title', order: 20 }],
   sections: [
     {
       key: 'agent',
