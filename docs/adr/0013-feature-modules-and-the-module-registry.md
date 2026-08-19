@@ -47,13 +47,21 @@ SQL — declares its own tables in `src/modules/<id>/schema.ts`. This amends
 ADR 0001 rather than reversing it: one kernel, plus module-owned tables where
 the kernel genuinely does not fit.
 
-Boundaries are enforced by `no-restricted-imports` in `eslint.config.mjs`, a
-core ESLint rule, so ADR 0010's pinning of the `eslint-config-next` bundle is
-untouched and `--max-warnings 0` makes a violation fail `bun run verify`:
-only `src/core/module/registry.ts` and `src/app/**` may name a module; a
-module may not import another module or a platform internal (`auth`,
-`invites`, `email`, `admin-actions`). `@/db` stays open to modules on
-purpose — owning tables is a supported seam, not a leak.
+Boundaries are enforced twice over, because one mechanism is not enough.
+`no-restricted-imports` in `eslint.config.mjs` is a core ESLint rule — so
+ADR 0010's pinning of the `eslint-config-next` bundle is untouched, and
+`--max-warnings 0` makes a violation fail the gate — but it matches the
+import *string*, so it sees `@/modules/other/thing` and is blind to
+`../../other/thing`. Relative imports are the house style inside a module,
+which makes that escape a plausible slip rather than a contrivance.
+`src/core/module/boundaries.test.ts` therefore resolves every in-repo import
+to a repo-relative path first, which makes the two forms indistinguishable,
+and covers the core→module direction as well. It globs the module
+directories, so it needs no per-module list. The rules either way: only
+`src/core/module/registry.ts` and `src/app/**` may name a module; a module
+may not import another module or a platform internal (`auth`, `invites`,
+`email`, `admin-actions`). `@/db` stays open to modules on purpose — owning
+tables is a supported seam, not a leak.
 
 Rejected: **workspace packages** per module (strongest boundary, but it
 restructures the repo root and reworks the Dockerfile, Vercel build, drizzle,

@@ -71,12 +71,16 @@ flowchart LR
 - `src/core/module/registry.test.ts` is the contract: duplicate section keys
   or paths, a module id shadowing a core namespace, a gated listing, or a
   manifest naming a message key it does not ship all fail `bun run verify`.
-- **Boundaries are lint-enforced** (`eslint.config.mjs`, `no-restricted-imports`,
-  and `bun run lint` is `--max-warnings 0`): only the registry and
+- **Boundaries are enforced, not documented.** Only the registry and
   `src/app/**` may name a module; a module may not import another module or a
-  platform internal (`auth`, `invites`, `email`, `admin-actions`). Inside a
-  module, imports are relative. `@/db` is open to modules on purpose — owning
-  tables is a supported seam.
+  platform internal (`auth`, `invites`, `email`, `admin-actions`). `@/db` is
+  open to modules on purpose — owning tables is a supported seam.
+  - `no-restricted-imports` (`eslint.config.mjs`, `--max-warnings 0`) catches
+    the alias form in the editor.
+  - `src/core/module/boundaries.test.ts` catches it however it is written: it
+    resolves imports to repo-relative paths, so `../../other-module/thing`
+    fails the same way `@/modules/other-module/thing` does. ESLint alone
+    cannot see that, and relative imports are the house style inside a module.
 
 ## Content model & locale fallback
 
