@@ -18,12 +18,19 @@ const KEBAB = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 const SNAKE = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/
 
 // Ask the engine instead of maintaining a keyword list: a list forgets
-// `arguments` and `eval` (illegal as bindings only under strict mode, which
-// ES modules always are) while wrongly rejecting `any` and `type`, which are
-// contextual keywords and perfectly legal const names.
+// `arguments` and `eval` (illegal as bindings only under strict mode) while
+// wrongly rejecting `any` and `type`, which are contextual keywords and
+// perfectly legal const names.
+//
+// The binding has to be judged the way a *module* would judge it, and
+// `new Function` always parses a script. Strict mode covers every reservation
+// a module makes except one — `await` — and an async body reserves exactly
+// that, so the two together match module rules without naming a single
+// keyword. TypeScript's own parser is not an option here: it accepts
+// `export const await`, deferring the error to the checker.
 function isLegalBinding(name: string): boolean {
   try {
-    new Function(`"use strict"; let ${name};`)
+    new Function(`"use strict"; return async () => { let ${name}; }`)
     return true
   } catch {
     return false
@@ -244,8 +251,9 @@ await register(id)
 
 console.log(`
 Done. Next:
-  1. Replace the TODO copy in src/modules/${id}/messages/*.json — both locales,
-     or bun run i18n:check will fail.
+  1. Replace the TODO copy in src/modules/${id}/messages/*.json — both
+     locales. Nothing will stop you shipping it: i18n:check compares key
+     sets, not values, so "TODO" would go out as the section's title.
   2. Give the section a real meta schema and metaFields in module.ts.
   3. Add a detail page if resources in this section have their own page.
   4. bun run format && bun run verify
