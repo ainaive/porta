@@ -32,9 +32,12 @@ platform used to hand-maintain: navigation, gated-path regexes, section/path
 lookups, meta validation, message merging, redirects.
 
 Manifests carry **no JSX, no database and no server-only imports**:
-`src/proxy.ts` reaches the registry through `gating.ts`, and `next.config.ts`
-will read it for redirects, so both need it to stay light and importable
-without path aliases (hence the registry's relative imports).
+`src/proxy.ts` reaches the registry through `gating.ts`, so whatever a
+manifest drags in lands in the middleware bundle. Path moves a module
+declares are applied in the proxy for the same reason — `next.config.ts` is
+compiled without tsconfig path aliases and so cannot import the registry at
+all, and one source of truth beats a CDN-level redirect when there is a
+self-hosted target to serve as well (ADR 0005).
 
 The shared kernel stays: modules register sections against the existing
 `resources` / `resource_translations` tables and inherit search, pagination,
