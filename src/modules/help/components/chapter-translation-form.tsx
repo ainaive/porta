@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { type ActionState } from '@/core/content/actions'
 import type { Locale } from '@/i18n/routing'
-import { saveChapterTranslation } from '@/lib/admin-actions'
+import { saveChapterTranslation } from '../actions'
 
 export function ChapterTranslationForm({
   chapterId,

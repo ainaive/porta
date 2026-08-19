@@ -1,20 +1,15 @@
 // Locale-fallback policy: content is shown in the requested locale when a
 // translation exists, otherwise in the other locale flagged `isFallback`
 // (rendered as an "Untranslated / 未翻译" badge). Rows with no translation at
-// all are dropped entirely. Pure functions — the DB queries live in content.ts.
-import type {
-  courseChapters,
-  courseChapterTranslations,
-  resources,
-  resourceTranslations,
-} from '@/db/schema'
+// all are dropped entirely. Pure functions — the DB queries live in queries.ts.
+//
+// `pickTranslation` is the primitive a module reuses when grouping its own
+// translated rows (see src/modules/help/chapters.ts).
+import type { resources, resourceTranslations } from '@/db/schema'
 import type { Locale } from '@/i18n/routing'
 
 export type ResourceRow = typeof resources.$inferSelect
 export type TranslationRow = typeof resourceTranslations.$inferSelect
-export type ChapterRow = typeof courseChapters.$inferSelect
-export type ChapterTranslationRow =
-  typeof courseChapterTranslations.$inferSelect
 
 export type TranslatedResource = ResourceRow & {
   title: string
@@ -22,12 +17,6 @@ export type TranslatedResource = ResourceRow & {
   body: string
   // True when the requested locale has no translation and the other locale's
   // content is shown instead.
-  isFallback: boolean
-}
-
-export type TranslatedChapter = ChapterRow & {
-  title: string
-  body: string
   isFallback: boolean
 }
 
@@ -67,32 +56,4 @@ export function groupResources(
     })
   }
   return result
-}
-
-export function groupChapters(
-  rows: { chapter: ChapterRow; translation: ChapterTranslationRow | null }[],
-  locale: Locale,
-): TranslatedChapter[] {
-  const byId = new Map<
-    string,
-    { chapter: ChapterRow; translations: ChapterTranslationRow[] }
-  >()
-  for (const { chapter, translation } of rows) {
-    const entry = byId.get(chapter.id) ?? { chapter, translations: [] }
-    if (translation) entry.translations.push(translation)
-    byId.set(chapter.id, entry)
-  }
-
-  const result: TranslatedChapter[] = []
-  for (const { chapter, translations } of byId.values()) {
-    const picked = pickTranslation(translations, locale)
-    if (!picked) continue
-    result.push({
-      ...chapter,
-      title: picked.title,
-      body: picked.body,
-      isFallback: picked.isFallback,
-    })
-  }
-  return result.sort((a, b) => a.position - b.position)
 }

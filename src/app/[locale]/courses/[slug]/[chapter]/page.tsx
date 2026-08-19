@@ -3,10 +3,11 @@ import { getTranslations } from 'next-intl/server'
 import { Markdown } from '@/components/resource/markdown'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { getPublishedBySlug, listChapters } from '@/core/content/queries'
+import { getPublishedBySlug } from '@/core/content/queries'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { requireSession } from '@/lib/session'
+import { listChapters } from '@/modules/help/chapters'
 
 export const dynamic = 'force-dynamic'
 

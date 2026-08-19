@@ -1,6 +1,6 @@
 'use server'
 
-import { and, asc, eq, max, ne } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
@@ -23,8 +23,6 @@ import {
 } from '@/core/content/meta'
 import { db } from '@/db'
 import {
-  courseChapters,
-  courseChapterTranslations,
   invites,
   resources,
   resourceTranslations,
@@ -234,143 +232,6 @@ export async function deleteResource(resourceId: string): Promise<void> {
   await db.delete(resources).where(eq(resources.id, resourceId))
   revalidatePath('/', 'layout')
   redirect({ href: '/admin/resources', locale: await getLocale() })
-}
-
-// ---------- Course chapters ----------
-
-export async function addChapter(courseId: string): Promise<void> {
-  await requireAdmin()
-
-  const [row] = await db
-    .select({ maxPosition: max(courseChapters.position) })
-    .from(courseChapters)
-    .where(eq(courseChapters.courseId, courseId))
-  const position = (row?.maxPosition ?? 0) + 1
-
-  const [created] = await db
-    .insert(courseChapters)
-    .values({ courseId, position })
-    .returning({ id: courseChapters.id })
-
-  revalidatePath('/', 'layout')
-  redirect({
-    href: `/admin/resources/${courseId}/chapters/${created.id}`,
-    locale: await getLocale(),
-  })
-}
-
-export async function saveChapterTranslation(
-  chapterId: string,
-  locale: Locale,
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  await requireAdmin()
-  localeSchema.parse(locale)
-  if (!uuidSchema.safeParse(chapterId).success) {
-    return { error: 'resourceNotFound' }
-  }
-
-  const title = formString(formData, 'title')
-  if (!title) {
-    return { error: 'titleRequired', values: submittedValues(formData) }
-  }
-
-  try {
-    await db
-      .insert(courseChapterTranslations)
-      .values({ chapterId, locale, title, body: formString(formData, 'body') })
-      .onConflictDoUpdate({
-        target: [
-          courseChapterTranslations.chapterId,
-          courseChapterTranslations.locale,
-        ],
-        set: { title, body: formString(formData, 'body') },
-      })
-  } catch (e) {
-    if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
-    throw e
-  }
-
-  revalidatePath('/', 'layout')
-  return { ok: true }
-}
-
-export async function moveChapter(
-  chapterId: string,
-  direction: 'up' | 'down',
-): Promise<void> {
-  await requireAdmin()
-
-  await db.transaction(async (tx) => {
-    const [current] = await tx
-      .select()
-      .from(courseChapters)
-      .where(eq(courseChapters.id, chapterId))
-      .limit(1)
-    if (!current) return
-
-    const siblings = await tx
-      .select()
-      .from(courseChapters)
-      .where(eq(courseChapters.courseId, current.courseId))
-      .orderBy(asc(courseChapters.position))
-    const index = siblings.findIndex((c) => c.id === chapterId)
-    const swapWith = siblings[direction === 'up' ? index - 1 : index + 1]
-    if (!swapWith) return
-
-    // Two-phase swap to satisfy the unique (courseId, position) constraint.
-    await tx
-      .update(courseChapters)
-      .set({ position: 0 })
-      .where(eq(courseChapters.id, current.id))
-    await tx
-      .update(courseChapters)
-      .set({ position: current.position })
-      .where(eq(courseChapters.id, swapWith.id))
-    await tx
-      .update(courseChapters)
-      .set({ position: swapWith.position })
-      .where(eq(courseChapters.id, current.id))
-  })
-
-  revalidatePath('/', 'layout')
-}
-
-export async function deleteChapter(chapterId: string): Promise<void> {
-  await requireAdmin()
-
-  await db.transaction(async (tx) => {
-    const [current] = await tx
-      .select()
-      .from(courseChapters)
-      .where(eq(courseChapters.id, chapterId))
-      .limit(1)
-    if (!current) return
-
-    await tx.delete(courseChapters).where(eq(courseChapters.id, chapterId))
-
-    // Renumber sequentially so chapter URLs (/courses/slug/N) stay dense.
-    const remaining = await tx
-      .select()
-      .from(courseChapters)
-      .where(eq(courseChapters.courseId, current.courseId))
-      .orderBy(asc(courseChapters.position))
-    for (const [offset, chapter] of remaining.entries()) {
-      await tx
-        .update(courseChapters)
-        .set({ position: 1000 + offset })
-        .where(eq(courseChapters.id, chapter.id))
-    }
-    for (const [offset, chapter] of remaining.entries()) {
-      await tx
-        .update(courseChapters)
-        .set({ position: offset + 1 })
-        .where(eq(courseChapters.id, chapter.id))
-    }
-  })
-
-  revalidatePath('/', 'layout')
 }
 
 // ---------- Invites ----------

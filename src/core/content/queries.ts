@@ -1,7 +1,6 @@
 import {
   and,
   arrayContains,
-  asc,
   count,
   desc,
   eq,
@@ -15,27 +14,18 @@ import {
 import { cache } from 'react'
 import { z } from 'zod'
 import { db } from '@/db'
-import {
-  courseChapters,
-  courseChapterTranslations,
-  resources,
-  resourceTranslations,
-} from '@/db/schema'
+import { resources, resourceTranslations } from '@/db/schema'
 import type { Locale } from '@/i18n/routing'
 import {
-  type ChapterRow,
-  type ChapterTranslationRow,
-  groupChapters,
   groupResources,
   pickTranslation,
   type ResourceRow,
-  type TranslatedChapter,
   type TranslatedResource,
   type TranslationRow,
 } from './fallback'
 import { type ResourceType, resourceTypes } from './meta'
 
-export type { TranslatedChapter, TranslatedResource } from './fallback'
+export type { TranslatedResource } from './fallback'
 
 const uuidColumn = z.uuid()
 
@@ -167,61 +157,29 @@ export type HomeOverview = {
   latest: TranslatedResource[]
   sections: Record<ResourceType, HomeSection>
   tags: string[]
-  chapterCount: number
 }
 
 const SECTION_PREVIEW_LIMIT = 3
 
-// Everything the landing page needs, in two queries. The page shows counts,
-// per-section previews and a tag cloud alongside the latest additions, and
-// they all derive from the same set of published-and-translated resources —
-// splitting them into separate calls would re-run the same scan four times.
+// Everything the landing page needs about resources, in one query. The page
+// shows counts, per-section previews and a tag cloud alongside the latest
+// additions, and they all derive from the same set of published-and-
+// translated resources — splitting them would re-run the same scan four
+// times. Figures owned by a module (the chapter count) are fetched by the
+// page from the module that owns the table.
 export async function getHomeOverview(
   locale: Locale,
   latestLimit = 6,
 ): Promise<HomeOverview> {
-  const [rows, chapterRows] = await Promise.all([
-    db
-      .select({ resource: resources, translation: resourceTranslations })
-      .from(resources)
-      .leftJoin(
-        resourceTranslations,
-        eq(resourceTranslations.resourceId, resources.id),
-      )
-      .where(eq(resources.status, 'published'))
-      .orderBy(desc(resources.createdAt)),
-    // Every facet of "reachable" applied here rather than inherited: a draft
-    // course's chapters must not inflate a public number, nor an untranslated
-    // course's (groupResources drops it from the course count below), nor an
-    // untranslated *chapter* (groupChapters drops it from listChapters, so the
-    // course page never lists it and its position 404s). The publish action
-    // refuses to publish an untranslated course, but nothing in the schema
-    // enforces either rule, so this query does not lean on them.
-    db
-      .select({ value: count() })
-      .from(courseChapters)
-      .innerJoin(resources, eq(resources.id, courseChapters.courseId))
-      .where(
-        and(
-          eq(resources.status, 'published'),
-          exists(
-            db
-              .select({ one: sql`1` })
-              .from(resourceTranslations)
-              .where(eq(resourceTranslations.resourceId, resources.id)),
-          ),
-          exists(
-            db
-              .select({ one: sql`1` })
-              .from(courseChapterTranslations)
-              .where(
-                eq(courseChapterTranslations.chapterId, courseChapters.id),
-              ),
-          ),
-        ),
-      ),
-  ])
-
+  const rows = await db
+    .select({ resource: resources, translation: resourceTranslations })
+    .from(resources)
+    .leftJoin(
+      resourceTranslations,
+      eq(resourceTranslations.resourceId, resources.id),
+    )
+    .where(eq(resources.status, 'published'))
+    .orderBy(desc(resources.createdAt))
   // groupResources drops resources with no translation at all, so counts and
   // tags below describe what a visitor can actually reach.
   const published = groupResources(rows, locale)
@@ -240,7 +198,6 @@ export async function getHomeOverview(
     latest: published.slice(0, latestLimit),
     sections,
     tags: [...new Set(published.flatMap((item) => item.tags))].sort(),
-    chapterCount: chapterRows[0]?.value ?? 0,
   }
 }
 
@@ -365,56 +322,4 @@ export async function adminGetResource(id: string): Promise<{
     if (translation) translations[translation.locale as Locale] = translation
   }
   return { resource: rows[0].resource, translations }
-}
-
-export async function adminListChapters(courseId: string): Promise<
-  {
-    chapter: ChapterRow
-    translations: Partial<Record<Locale, ChapterTranslationRow>>
-  }[]
-> {
-  if (!uuidColumn.safeParse(courseId).success) return []
-  const rows = await db
-    .select({ chapter: courseChapters, translation: courseChapterTranslations })
-    .from(courseChapters)
-    .leftJoin(
-      courseChapterTranslations,
-      eq(courseChapterTranslations.chapterId, courseChapters.id),
-    )
-    .where(eq(courseChapters.courseId, courseId))
-    .orderBy(asc(courseChapters.position))
-
-  const byId = new Map<
-    string,
-    {
-      chapter: ChapterRow
-      translations: Partial<Record<Locale, ChapterTranslationRow>>
-    }
-  >()
-  for (const { chapter, translation } of rows) {
-    const entry = byId.get(chapter.id) ?? { chapter, translations: {} }
-    if (translation)
-      entry.translations[translation.locale as Locale] = translation
-    byId.set(chapter.id, entry)
-  }
-  return [...byId.values()].sort(
-    (a, b) => a.chapter.position - b.chapter.position,
-  )
-}
-
-export async function listChapters(
-  courseId: string,
-  locale: Locale,
-): Promise<TranslatedChapter[]> {
-  const rows = await db
-    .select({ chapter: courseChapters, translation: courseChapterTranslations })
-    .from(courseChapters)
-    .leftJoin(
-      courseChapterTranslations,
-      eq(courseChapterTranslations.chapterId, courseChapters.id),
-    )
-    .where(eq(courseChapters.courseId, courseId))
-    .orderBy(asc(courseChapters.position))
-
-  return groupChapters(rows, locale)
 }

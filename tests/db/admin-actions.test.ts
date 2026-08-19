@@ -8,7 +8,8 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import { asc, eq } from 'drizzle-orm'
 import { db } from '@/db'
-import { courseChapters, invites, resources } from '@/db/schema'
+import { invites, resources } from '@/db/schema'
+import { courseChapters } from '@/modules/help/schema'
 import { resetDb } from './harness'
 
 const FAKE_ADMIN = {
@@ -34,16 +35,16 @@ const {
   saveTranslation,
   saveSettings,
   deleteResource,
-  addChapter,
-  saveChapterTranslation,
-  moveChapter,
-  deleteChapter,
   createInvite,
   deleteInvite,
   sendUserResetEmail,
   setUserRole,
   toggleUserBan,
 } = await import('@/lib/admin-actions')
+// Chapter mutations moved to the help module, but they are gated by the
+// same mocked requireAdmin, so they stay in this suite's contract.
+const { addChapter, saveChapterTranslation, moveChapter, deleteChapter } =
+  await import('@/modules/help/actions')
 
 async function seedChapters(
   positions: number[],

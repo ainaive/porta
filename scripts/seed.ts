@@ -2,12 +2,11 @@
 // including zh-only and en-only entries to exercise the translation fallback,
 // and a draft that must never surface publicly. Run with `bun run db:seed`.
 import { db } from '../src/db'
+import { resources, resourceTranslations } from '../src/db/schema'
 import {
   courseChapters,
   courseChapterTranslations,
-  resources,
-  resourceTranslations,
-} from '../src/db/schema'
+} from '../src/modules/help/schema'
 
 // The seed starts by deleting all content, and bun auto-loads .env — so a
 // production DATABASE_URL sitting in the environment must not be enough to

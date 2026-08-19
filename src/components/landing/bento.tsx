@@ -105,7 +105,15 @@ function firstEndpoint(items: TranslatedResource[]) {
   return null
 }
 
-export async function Bento({ overview }: { overview: HomeOverview }) {
+export async function Bento({
+  overview,
+  chapterCount,
+}: {
+  overview: HomeOverview
+  // Owned by the help module, so the page fetches it and hands it over
+  // rather than core querying a table it does not own.
+  chapterCount: number
+}) {
   // `label` is unnamespaced: the tiles quote section titles that now live in
   // their owning modules' bundles. The landing still names specific sections
   // by hand — ADR 0008 holds its copy to shipped capability, so the tiles are
@@ -116,7 +124,7 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
     getTranslations('content'),
     getTranslations('common'),
   ])
-  const { sections: catalog, tags, chapterCount } = overview
+  const { sections: catalog, tags } = overview
   const endpoint = firstEndpoint(catalog.model_api.items)
   const latestVideo = catalog.video.items[0]
   const fallbackExample = overview.latest.find((item) => item.isFallback)

@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
-import { ChapterTranslationForm } from '@/components/admin/chapter-translation-form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { adminListChapters } from '@/core/content/queries'
 import { Link } from '@/i18n/navigation'
 import { requireAdmin } from '@/lib/session'
+import { adminListChapters } from '@/modules/help/chapters'
+import { ChapterTranslationForm } from '@/modules/help/components/chapter-translation-form'
 
 export const dynamic = 'force-dynamic'
 

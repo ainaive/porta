@@ -43,15 +43,20 @@ const eslintConfig = defineConfig([
               message:
                 'A module may not import another module. Use relative paths inside your own module.',
             },
+            // `@/db` and `@/db/schema` stay open on purpose: a module that
+            // outgrows the `meta` jsonb column declares its own tables in
+            // src/modules/<id>/schema.ts and needs both the client and the
+            // shared tables it references (ADR 0013).
             {
-              group: ['@/db', '@/db/*', '@/db/**'],
+              group: [
+                '@/lib/admin-actions',
+                '@/lib/auth',
+                '@/lib/auth-client',
+                '@/lib/invites',
+                '@/lib/email',
+              ],
               message:
-                'Modules reach the database through @/core/content, not the schema directly. A module that needs its own tables declares them in src/modules/<id>/schema.ts.',
-            },
-            {
-              group: ['@/lib/admin-actions', '@/lib/auth', '@/lib/invites'],
-              message:
-                'Platform internals are not a module API. Use @/core/* or @/lib/session.',
+                'Platform internals are not a module API. Use @/core/*, @/lib/session, or @/lib/logger.',
             },
           ],
         },

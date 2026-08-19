@@ -48,7 +48,9 @@ Boundaries are enforced by `no-restricted-imports` in `eslint.config.mjs`, a
 core ESLint rule, so ADR 0010's pinning of the `eslint-config-next` bundle is
 untouched and `--max-warnings 0` makes a violation fail `bun run verify`:
 only `src/core/module/registry.ts` and `src/app/**` may name a module; a
-module may not import another module, the database, or platform internals.
+module may not import another module or a platform internal (`auth`,
+`invites`, `email`, `admin-actions`). `@/db` stays open to modules on
+purpose — owning tables is a supported seam, not a leak.
 
 Rejected: **workspace packages** per module (strongest boundary, but it
 restructures the repo root and reworks the Dockerfile, Vercel build, drizzle,

@@ -10,10 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { adminGetResource, adminListChapters } from '@/core/content/queries'
+import { adminGetResource } from '@/core/content/queries'
 import { Link } from '@/i18n/navigation'
-import { addChapter, deleteChapter, moveChapter } from '@/lib/admin-actions'
 import { requireAdmin } from '@/lib/session'
+import { addChapter, deleteChapter, moveChapter } from '@/modules/help/actions'
+import { adminListChapters } from '@/modules/help/chapters'
 
 export const dynamic = 'force-dynamic'
 
