@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import { Glob } from 'bun'
+import ts from 'typescript'
+import { modules } from './registry'
 
 // ADR 0013 claims a cross-module or platform-internal import fails the verify
 // gate. The `no-restricted-imports` rules in eslint.config.mjs only see the
@@ -9,9 +11,10 @@ import { Glob } from 'bun'
 // `../../other/thing` — and relative imports are the house style inside a
 // module, so an escape is a plausible slip rather than a contrivance.
 //
-// This resolves every import to a repo-relative path first, which makes the
-// two forms indistinguishable, and covers the core→module direction as well.
-// It globs the module directories, so it needs no per-module list.
+// Imports are read with TypeScript's own parser rather than a regex: side
+// effect imports, re-exports, type-only imports and dynamic `import()` are all
+// import edges, and a pattern that covers four of five forms is worse than
+// useless because it reads as covered.
 
 const ROOT = new URL('../../..', import.meta.url).pathname
 
@@ -30,32 +33,70 @@ const INTERNALS = [
 // src/app mount module pages.
 const MAY_NAME_A_MODULE = 'src/core/module/registry.ts'
 
-type Import = { file: string; target: string }
+type Edge = { file: string; target: string }
 
-function sourceFiles(pattern: string): string[] {
-  return [...new Glob(pattern).scanSync({ cwd: ROOT })].map((p) =>
-    p.replaceAll('\\', '/'),
-  )
+function sourceFiles(...patterns: string[]): string[] {
+  return patterns
+    .flatMap((pattern) => [...new Glob(pattern).scanSync({ cwd: ROOT })])
+    .map((p) => p.replaceAll('\\', '/'))
+    .sort()
 }
 
-/** Every import in `file`, resolved to a repo-relative path. Bare package
- *  specifiers are dropped — only in-repo edges are boundaries. */
-function importsOf(file: string): Import[] {
-  const source = readFileSync(resolve(ROOT, file), 'utf8')
-  const specs = [
-    ...source.matchAll(/from\s+['"]([^'"]+)['"]/g),
-    ...source.matchAll(/import\(\s*['"]([^'"]+)['"]/g),
-  ].map((match) => match[1])
+/** Every module specifier in `file`, in any syntactic form. */
+function specifiers(file: string, source: string): string[] {
+  const kind = file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+  const tree = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    kind,
+  )
+  const found: string[] = []
 
-  const out: Import[] = []
-  for (const spec of specs) {
+  const visit = (node: ts.Node): void => {
+    // `import x from 'y'`, `import 'y'`, `import type { x } from 'y'`
+    if (ts.isImportDeclaration(node)) {
+      if (ts.isStringLiteral(node.moduleSpecifier)) {
+        found.push(node.moduleSpecifier.text)
+      }
+    }
+    // `export { x } from 'y'`, `export * from 'y'`
+    if (ts.isExportDeclaration(node) && node.moduleSpecifier) {
+      if (ts.isStringLiteral(node.moduleSpecifier)) {
+        found.push(node.moduleSpecifier.text)
+      }
+    }
+    // `import('y')` and `require('y')`
+    if (ts.isCallExpression(node)) {
+      const callee = node.expression
+      const isDynamic = callee.kind === ts.SyntaxKind.ImportKeyword
+      const isRequire = ts.isIdentifier(callee) && callee.text === 'require'
+      const [first] = node.arguments
+      if ((isDynamic || isRequire) && first && ts.isStringLiteral(first)) {
+        found.push(first.text)
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+
+  visit(tree)
+  return found
+}
+
+/** In-repo import edges, resolved to repo-relative paths so an alias and a
+ *  relative path to the same file become indistinguishable. */
+function edgesOf(file: string): Edge[] {
+  const source = readFileSync(resolve(ROOT, file), 'utf8')
+  const out: Edge[] = []
+  for (const spec of specifiers(file, source)) {
     let target: string
     if (spec.startsWith('@/')) {
       target = `src/${spec.slice(2)}`
     } else if (spec.startsWith('.')) {
       target = relative(ROOT, resolve(ROOT, dirname(file), spec))
     } else {
-      continue
+      continue // a package, not a boundary
     }
     out.push({ file, target: target.replaceAll('\\', '/') })
   }
@@ -66,27 +107,42 @@ function moduleOf(path: string): string | null {
   return path.match(/^src\/modules\/([^/]+)/)?.[1] ?? null
 }
 
-const moduleImports = sourceFiles('src/modules/**/*.{ts,tsx}').flatMap(
-  importsOf,
+const moduleFiles = sourceFiles('src/modules/**/*.{ts,tsx}')
+const moduleEdges = moduleFiles.flatMap(edgesOf)
+
+// Everything that is not a module and not a route mount: core, lib,
+// components, db, i18n, and the proxy. All of it is downstream of the
+// registry and none of it may depend on a module.
+const platformFiles = sourceFiles('src/**/*.{ts,tsx}').filter(
+  (file) => !file.startsWith('src/modules/') && !file.startsWith('src/app/'),
 )
-const platformImports = sourceFiles('src/{core,lib}/**/*.{ts,tsx}').flatMap(
-  importsOf,
-)
+const platformEdges = platformFiles.flatMap(edgesOf)
 
 describe('module boundaries', () => {
-  test('the glob actually found the modules', () => {
-    // A silently empty scan would make every assertion below vacuous.
-    const found = new Set(
-      sourceFiles('src/modules/**/*.{ts,tsx}')
-        .map(moduleOf)
-        .filter(Boolean) as string[],
+  test('discovery matches the registry', () => {
+    // Guards against a silently empty scan making every assertion below
+    // vacuous. Compared against the registry rather than a hardcoded list, so
+    // scaffolding a module does not fail the gate — and so a module directory
+    // nobody registered does.
+    const onDisk = new Set(
+      moduleFiles.map(moduleOf).filter(Boolean) as string[],
     )
-    expect([...found].sort()).toEqual(['ai-eval', 'help', 'tool-shelf'])
-    expect(moduleImports.length).toBeGreaterThan(20)
+    const registered = new Set(modules.map((feature) => feature.id))
+    expect([...onDisk].sort()).toEqual([...registered].sort())
+    expect(moduleEdges.length).toBeGreaterThan(20)
+  })
+
+  test('platform scan reaches beyond core and lib', () => {
+    // src/components and src/proxy.ts are as capable of importing a module as
+    // src/core is; an earlier version of this test only looked at core+lib.
+    expect(platformFiles).toContain('src/proxy.ts')
+    expect(platformFiles.some((f) => f.startsWith('src/components/'))).toBe(
+      true,
+    )
   })
 
   test('no module imports another module', () => {
-    const crossing = moduleImports.filter((edge) => {
+    const crossing = moduleEdges.filter((edge) => {
       const from = moduleOf(edge.file)
       const to = moduleOf(edge.target)
       return to !== null && from !== null && to !== from
@@ -95,7 +151,7 @@ describe('module boundaries', () => {
   })
 
   test('no module imports a platform internal', () => {
-    const reaching = moduleImports.filter((edge) =>
+    const reaching = moduleEdges.filter((edge) =>
       INTERNALS.some(
         (internal) =>
           edge.target === internal || edge.target.startsWith(`${internal}/`),
@@ -104,8 +160,8 @@ describe('module boundaries', () => {
     expect(reaching).toEqual([])
   })
 
-  test('only the registry names a module from core or lib', () => {
-    const naming = platformImports.filter(
+  test('only the registry names a module from outside src/app', () => {
+    const naming = platformEdges.filter(
       (edge) =>
         moduleOf(edge.target) !== null && edge.file !== MAY_NAME_A_MODULE,
     )
