@@ -7,9 +7,18 @@ import { headers } from 'next/headers'
 import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
 import {
+  type ActionState,
+  isForeignKeyViolation,
+  isUniqueViolation,
+  localeSchema,
+  submittedValues,
+  uuidSchema,
+} from '@/core/content/actions'
+import {
   formString,
   parseMeta,
   type ResourceType,
+  resourceTypes,
   slugSchema,
 } from '@/core/content/meta'
 import { db } from '@/db'
@@ -29,70 +38,17 @@ import { sendEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { requireAdmin } from '@/lib/session'
 
-// `error` is a message key under admin.errors (translated where rendered,
-// in ActionFeedback), with `detail` interpolated for technical specifics.
-// `values` echoes the submitted fields on error so forms can re-fill:
-// React 19 resets uncontrolled <form action> forms on every submit, error
-// included — without the echo a failed save discards everything typed.
-export type ActionErrorCode =
-  | 'slugFormat'
-  | 'typeInvalid'
-  | 'slugTaken'
-  | 'titleRequired'
-  | 'publishNeedsTranslation'
-  | 'resourceNotFound'
-  | 'emailInvalid'
-  | 'metaInvalid'
-
-export type ActionState = {
-  ok?: boolean
-  error?: ActionErrorCode
-  detail?: string
-  values?: Record<string, string>
-}
-
-function submittedValues(formData: FormData): Record<string, string> {
-  const values: Record<string, string> = {}
-  for (const [key, value] of formData.entries()) {
-    if (typeof value === 'string' && !key.startsWith('$ACTION')) {
-      values[key] = value
-    }
-  }
-  return values
-}
-
-const localeSchema = z.enum(['en', 'zh'])
-const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
-const uuidSchema = z.uuid()
+// Accepts exactly the sections the registry knows about, so an unregistered
+// type can never reach the database.
+const typeSchema = z.enum(
+  resourceTypes as unknown as [ResourceType, ...ResourceType[]],
+)
 
 // Invite links are built by hand (they carry our own sign-up token, not a
 // better-auth one), so resolve the same canonical origin better-auth uses for
 // its emailed links — keeping invite and reset links pointed at one place.
 function appBaseUrl(): string {
   return canonicalBaseURL() ?? ''
-}
-
-// Drizzle wraps driver errors, so the postgres SQLSTATE lives on a cause a
-// level or two down, not the top-level error — walk the chain to find it.
-function pgErrorCode(error: unknown): string | undefined {
-  let current: unknown = error
-  for (let depth = 0; depth < 5 && current; depth++) {
-    const code = (current as { code?: unknown }).code
-    if (typeof code === 'string') return code
-    current = (current as { cause?: unknown }).cause
-  }
-  return undefined
-}
-
-// A slug that raced past the pre-check surfaces as a unique violation; a
-// well-formed id whose parent row is missing (deleted concurrently, or a
-// crafted request) fails a foreign key. Both become handled errors, not 500s.
-function isUniqueViolation(error: unknown): boolean {
-  return pgErrorCode(error) === '23505'
-}
-
-function isForeignKeyViolation(error: unknown): boolean {
-  return pgErrorCode(error) === '23503'
 }
 
 // ---------- Resources ----------

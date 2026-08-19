@@ -7,7 +7,8 @@ import { NativeSelect } from '@/components/admin/native-select'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { type ActionState, createInvite } from '@/lib/admin-actions'
+import { type ActionState } from '@/core/content/actions'
+import { createInvite } from '@/lib/admin-actions'
 
 export function InviteForm() {
   const t = useTranslations('admin')

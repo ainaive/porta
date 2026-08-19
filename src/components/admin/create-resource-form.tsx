@@ -7,7 +7,8 @@ import { NativeSelect } from '@/components/admin/native-select'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { type ActionState, createResource } from '@/lib/admin-actions'
+import { type ActionState } from '@/core/content/actions'
+import { createResource } from '@/lib/admin-actions'
 
 export function CreateResourceForm({
   /** Registered section keys, in registry order. */

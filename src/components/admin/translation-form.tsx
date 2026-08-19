@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { type ActionState } from '@/core/content/actions'
 import type { Locale } from '@/i18n/routing'
-import { type ActionState, saveTranslation } from '@/lib/admin-actions'
+import { saveTranslation } from '@/lib/admin-actions'
 
 export function TranslationForm({
   resourceId,

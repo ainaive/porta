@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { type ActionState } from '@/core/content/actions'
 import type { Locale } from '@/i18n/routing'
-import { type ActionState, saveChapterTranslation } from '@/lib/admin-actions'
+import { saveChapterTranslation } from '@/lib/admin-actions'
 
 export function ChapterTranslationForm({
   chapterId,

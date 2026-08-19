@@ -8,8 +8,9 @@ import { NativeSelect } from '@/components/admin/native-select'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { type ActionState } from '@/core/content/actions'
 import type { MetaField } from '@/core/module/define'
-import { type ActionState, saveSettings } from '@/lib/admin-actions'
+import { saveSettings } from '@/lib/admin-actions'
 
 // Stored meta value → input string. The inverse of `parseMeta`'s field
 // handling in src/lib/resource-meta.ts; keep the two in step.
