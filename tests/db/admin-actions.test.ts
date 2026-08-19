@@ -143,6 +143,37 @@ describe('input validation returns handled errors, not 500s', () => {
     })
   })
 
+  test('a retired section can still be unpublished and re-slugged', async () => {
+    // The counterpart to the admin list keeping orphans visible: showing a
+    // row you cannot act on is not a workflow. There is no schema to
+    // validate meta against and no meta fields on the form, so the stored
+    // meta is preserved rather than re-parsed.
+    const [row] = await db
+      .insert(resources)
+      .values({
+        type: 'retired_section',
+        slug: 'ghost',
+        status: 'published',
+        meta: { keepMe: true },
+      })
+      .returning({ id: resources.id })
+
+    const f = new FormData()
+    f.set('slug', 'ghost-archived')
+    f.set('status', 'draft')
+    f.set('tags', 'archived')
+    expect(await saveSettings(row.id, {}, f)).toEqual({ ok: true })
+
+    const [saved] = await db
+      .select()
+      .from(resources)
+      .where(eq(resources.id, row.id))
+    expect(saved.status).toBe('draft')
+    expect(saved.slug).toBe('ghost-archived')
+    expect(saved.tags).toEqual(['archived'])
+    expect(saved.meta).toEqual({ keepMe: true })
+  })
+
   test('an unregistered type is rejected before it reaches the table', async () => {
     // resources.type is plain text now (ADR 0013) — the module registry is
     // the only thing standing between a bad type and the database, so this

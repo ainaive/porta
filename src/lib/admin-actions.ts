@@ -21,6 +21,7 @@ import {
   resourceTypes,
   slugSchema,
 } from '@/core/content/meta'
+import { findSection } from '@/core/module/derive'
 import { db } from '@/db'
 import {
   invites,
@@ -202,13 +203,22 @@ export async function saveSettings(
     .map((tag) => tag.trim())
     .filter(Boolean)
 
-  const { meta, error } = parseMeta(resource.type as ResourceType, formData)
-  if (error) {
-    return {
-      error: 'metaInvalid',
-      detail: error,
-      values: submittedValues(formData),
+  // A resource whose section has been retired has no schema to validate
+  // against and no meta fields on the form, so re-parsing would reject every
+  // save and strand the row: an admin could neither unpublish it nor correct
+  // its slug. Keep the stored meta as-is and let slug/status/tags through —
+  // that IS the retirement workflow (fix the type, unpublish, or delete).
+  let meta = resource.meta
+  if (findSection(resource.type)) {
+    const parsed = parseMeta(resource.type as ResourceType, formData)
+    if (parsed.error) {
+      return {
+        error: 'metaInvalid',
+        detail: parsed.error,
+        values: submittedValues(formData),
+      }
     }
+    meta = parsed.meta
   }
 
   try {
