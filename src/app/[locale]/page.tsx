@@ -17,7 +17,7 @@ export default async function HomePage({
 }) {
   const { locale } = await params
   const [t, overview, session] = await Promise.all([
-    getTranslations('sections'),
+    getTranslations('content'),
     getHomeOverview(locale),
     // React-cached; the header already asked, so this costs nothing.
     getSession(),

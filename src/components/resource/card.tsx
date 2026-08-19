@@ -6,9 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { sectionPath } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import type { TranslatedResource } from '@/lib/content'
-import { type ResourceType, sectionForType } from '@/lib/resource-meta'
+import type { ResourceType } from '@/lib/resource-meta'
 
 export async function ResourceCard({
   resource,
@@ -16,11 +17,11 @@ export async function ResourceCard({
   resource: TranslatedResource
 }) {
   const t = await getTranslations('common')
-  const section = sectionForType[resource.type as ResourceType]
+  const path = sectionPath(resource.type as ResourceType)
 
   return (
     <Link
-      href={`/${section}/${resource.slug}`}
+      href={`${path}/${resource.slug}`}
       className="group focus-visible:outline-none"
     >
       <Card className="h-full transition-colors group-hover:border-foreground/20 group-focus-visible:ring-2 group-focus-visible:ring-ring">

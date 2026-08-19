@@ -3,11 +3,18 @@ import { ResourceCard } from '@/components/resource/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  getSection,
+  sectionDescriptionKey,
+  sectionTitleKey,
+} from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { listPublished, listPublishedTags } from '@/lib/content'
-import { type ResourceType, sectionForType } from '@/lib/resource-meta'
+import type { ResourceType } from '@/lib/resource-meta'
 
+// One listing for every section in every module: the module supplies the
+// path and the labels, the platform supplies search, tags and pagination.
 export async function ResourceListing({
   type,
   locale,
@@ -21,9 +28,10 @@ export async function ResourceListing({
   tag?: string
   page?: number
 }) {
-  const section = sectionForType[type]
-  const [t, result, tags] = await Promise.all([
-    getTranslations('sections'),
+  const section = getSection(type)
+  const [t, label, result, tags] = await Promise.all([
+    getTranslations('content'),
+    getTranslations(),
     listPublished(type, locale, { q, tag, page }),
     listPublishedTags(type),
   ])
@@ -32,7 +40,7 @@ export async function ResourceListing({
   // Preserve the active search/tag across page links.
   const baseQuery = { ...(q ? { q } : {}), ...(tag ? { tag } : {}) }
   const pageHref = (p: number) => ({
-    pathname: `/${section}`,
+    pathname: section.path,
     query: p > 1 ? { ...baseQuery, page: String(p) } : baseQuery,
   })
 
@@ -41,13 +49,13 @@ export async function ResourceListing({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            {t(`${section}.title`)}
+            {label(sectionTitleKey(type))}
           </h1>
           <p className="mt-1 text-muted-foreground">
-            {t(`${section}.description`)}
+            {label(sectionDescriptionKey(type))}
           </p>
         </div>
-        <form action={`/${locale}/${section}`} method="get">
+        <form action={`/${locale}${section.path}`} method="get">
           <Input
             type="search"
             name="q"
@@ -61,16 +69,14 @@ export async function ResourceListing({
 
       {tags.length > 0 ? (
         <div className="mt-6 flex flex-wrap items-center gap-2">
-          <Link
-            href={{ pathname: `/${section}`, query: q ? { q } : undefined }}
-          >
+          <Link href={{ pathname: section.path, query: q ? { q } : undefined }}>
             <Badge variant={tag ? 'outline' : 'default'}>{t('all')}</Badge>
           </Link>
           {tags.map((item) => (
             <Link
               key={item}
               href={{
-                pathname: `/${section}`,
+                pathname: section.path,
                 query: { tag: item, ...(q ? { q } : {}) },
               }}
             >

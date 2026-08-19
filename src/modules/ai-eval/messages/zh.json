@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "models": "模型 API"
+  },
+  "models": {
+    "title": "模型 API",
+    "description": "模型 API 文档、接入端点与使用指南。"
+  },
+  "endpoint": "接入端点",
+  "provider": "提供方",
+  "documentation": "查看文档",
+  "meta": {
+    "provider": "提供方",
+    "docsUrl": "文档 URL",
+    "endpoint": "接入端点",
+    "links": "链接（每行一条：名称 | URL）"
+  }
+}

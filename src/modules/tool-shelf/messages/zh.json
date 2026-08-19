@@ -1,0 +1,15 @@
+{
+  "nav": {
+    "tools": "工具"
+  },
+  "tools": {
+    "title": "工具",
+    "description": "开箱即用的内部与生态工具。"
+  },
+  "openTool": "打开工具",
+  "documentation": "查看文档",
+  "meta": {
+    "url": "URL",
+    "docsUrl": "文档 URL"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "nav": {
+    "tools": "Tools"
+  },
+  "tools": {
+    "title": "Tools",
+    "description": "Internal and ecosystem tools, ready to use."
+  },
+  "openTool": "Open tool",
+  "documentation": "Documentation",
+  "meta": {
+    "url": "URL",
+    "docsUrl": "Docs URL"
+  }
+}

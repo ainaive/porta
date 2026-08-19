@@ -3,8 +3,8 @@ import { ResourceDetailHeader } from '@/components/resource/detail-header'
 import { Markdown } from '@/components/resource/markdown'
 import type { Locale } from '@/i18n/routing'
 import { getPublishedBySlug } from '@/lib/content'
-import { videoMeta } from '@/lib/resource-meta'
 import { requireSession } from '@/lib/session'
+import { videoMeta } from '@/modules/help/module'
 
 export const dynamic = 'force-dynamic'
 

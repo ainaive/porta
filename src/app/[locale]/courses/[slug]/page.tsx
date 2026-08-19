@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { getPublishedBySlug, listChapters } from '@/lib/content'
-import { courseMeta } from '@/lib/resource-meta'
 import { requireSession } from '@/lib/session'
+import { courseMeta } from '@/modules/help/module'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +34,7 @@ export default async function CourseDetailPage({
 
   const [chapters, t, tCommon] = await Promise.all([
     listChapters(resource.id, locale),
-    getTranslations('sections'),
+    getTranslations('help'),
     getTranslations('common'),
   ])
   const meta = courseMeta.safeParse(resource.meta).data

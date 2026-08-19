@@ -6,10 +6,10 @@ import { TranslationForm } from '@/components/admin/translation-form'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { findSection } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import { deleteResource } from '@/lib/admin-actions'
 import { adminGetResource } from '@/lib/content'
-import type { ResourceType } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
@@ -27,6 +27,9 @@ export default async function EditResourcePage({
   const t = await getTranslations('admin')
   const { resource, translations } = data
   const deleteAction = deleteResource.bind(null, resource.id)
+  // A row whose type is no longer registered still has to be editable, so
+  // the meta fields simply collapse to none rather than crashing the page.
+  const section = findSection(resource.type)
 
   return (
     <main>
@@ -86,12 +89,13 @@ export default async function EditResourcePage({
           <SettingsForm
             resource={{
               id: resource.id,
-              type: resource.type as ResourceType,
               slug: resource.slug,
               status: resource.status,
               tags: resource.tags,
-              meta: (resource.meta ?? {}) as Record<string, never>,
+              meta: (resource.meta ?? {}) as Record<string, unknown>,
             }}
+            moduleId={section?.moduleId ?? ''}
+            metaFields={section?.metaFields ?? []}
           />
           <Separator className="my-8" />
           <ConfirmButton

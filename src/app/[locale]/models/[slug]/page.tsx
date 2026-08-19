@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Locale } from '@/i18n/routing'
 import { getPublishedBySlug } from '@/lib/content'
-import { modelApiMeta } from '@/lib/resource-meta'
 import { requireSession } from '@/lib/session'
+import { modelApiMeta } from '@/modules/ai-eval/module'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +33,7 @@ export default async function ModelApiDetailPage({
   if (!resource) notFound()
 
   const meta = modelApiMeta.safeParse(resource.meta).data
-  const t = await getTranslations('sections')
+  const t = await getTranslations('ai-eval')
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">

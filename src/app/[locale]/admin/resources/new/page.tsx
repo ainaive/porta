@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { CreateResourceForm } from '@/components/admin/create-resource-form'
+import { resourceTypes } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
@@ -14,7 +15,7 @@ export default async function NewResourcePage() {
         {t('newResource')}
       </h1>
       <div className="mt-6">
-        <CreateResourceForm />
+        <CreateResourceForm types={resourceTypes} />
       </div>
     </main>
   )

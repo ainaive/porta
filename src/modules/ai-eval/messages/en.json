@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "models": "Model APIs"
+  },
+  "models": {
+    "title": "Model APIs",
+    "description": "Model API docs, endpoints, and usage guides."
+  },
+  "endpoint": "Endpoint",
+  "provider": "Provider",
+  "documentation": "Documentation",
+  "meta": {
+    "provider": "Provider",
+    "docsUrl": "Docs URL",
+    "endpoint": "Endpoint",
+    "links": "Links (one per line: Label | URL)"
+  }
+}

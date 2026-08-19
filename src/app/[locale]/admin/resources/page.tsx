@@ -9,16 +9,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { sectionPath } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { adminListResources } from '@/lib/content'
-import { type ResourceType, sectionForType } from '@/lib/resource-meta'
+import { type ResourceType, resourceTypes } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 import { firstParam, parsePageParam } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
-const TYPES = ['tool', 'course', 'video', 'model_api'] as const
+const TYPES = resourceTypes
 const STATUSES = ['draft', 'published'] as const
 
 export default async function AdminResourcesPage({
@@ -145,8 +146,7 @@ export default async function AdminResourcesPage({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  /{sectionForType[resource.type as ResourceType]}/
-                  {resource.slug}
+                  {sectionPath(resource.type as ResourceType)}/{resource.slug}
                 </TableCell>
               </TableRow>
             ))}

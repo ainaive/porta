@@ -4,10 +4,6 @@
     "untranslated": "Untranslated"
   },
   "nav": {
-    "tools": "Tools",
-    "courses": "Courses",
-    "videos": "Videos",
-    "models": "Model APIs",
     "admin": "Admin",
     "signIn": "Sign in",
     "signOut": "Sign out",
@@ -62,41 +58,11 @@
       "description": "Anyone can see this page and every section listing. Full resource pages need an account, and accounts are created from an invite link — there is no open sign-up."
     }
   },
-  "sections": {
-    "tools": {
-      "title": "Tools",
-      "description": "Internal and ecosystem tools, ready to use."
-    },
-    "courses": {
-      "title": "Courses",
-      "description": "Structured learning paths from the team."
-    },
-    "videos": {
-      "title": "Videos",
-      "description": "Teaching videos and recorded sessions."
-    },
-    "models": {
-      "title": "Model APIs",
-      "description": "Model API docs, endpoints, and usage guides."
-    },
+  "content": {
     "searchPlaceholder": "Search…",
     "empty": "Nothing here yet.",
     "all": "All",
     "latest": "Latest additions",
-    "chapters": "Chapters",
-    "previousChapter": "Previous",
-    "nextChapter": "Next",
-    "openTool": "Open tool",
-    "documentation": "Documentation",
-    "endpoint": "Endpoint",
-    "provider": "Provider",
-    "level": "Level",
-    "levels": {
-      "beginner": "Beginner",
-      "intermediate": "Intermediate",
-      "advanced": "Advanced"
-    },
-    "estimatedHours": "~{hours} h",
     "pagination": "Pagination",
     "prevPage": "Previous",
     "nextPage": "Next",
@@ -163,15 +129,6 @@
     "banned": "Banned",
     "ban": "Ban",
     "unban": "Unban",
-    "metaUrl": "URL",
-    "metaDocsUrl": "Docs URL",
-    "metaProvider": "Provider",
-    "metaEmbedUrl": "Embed URL",
-    "metaDuration": "Duration",
-    "metaEndpoint": "Endpoint",
-    "metaLinks": "Links (one per line: Label | URL)",
-    "metaLevel": "Level",
-    "metaHours": "Estimated hours",
     "errors": {
       "slugFormat": "Slug must be kebab-case",
       "typeInvalid": "Invalid type",

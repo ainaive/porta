@@ -1,0 +1,31 @@
+{
+  "nav": {
+    "courses": "课程",
+    "videos": "视频"
+  },
+  "courses": {
+    "title": "课程",
+    "description": "团队沉淀的体系化学习路径。"
+  },
+  "videos": {
+    "title": "视频",
+    "description": "教学视频与内部分享录像。"
+  },
+  "chapters": "章节",
+  "previousChapter": "上一章",
+  "nextChapter": "下一章",
+  "level": "难度",
+  "levels": {
+    "beginner": "入门",
+    "intermediate": "进阶",
+    "advanced": "高级"
+  },
+  "estimatedHours": "约 {hours} 小时",
+  "meta": {
+    "level": "难度",
+    "hours": "预计学时",
+    "provider": "提供方",
+    "embedUrl": "嵌入 URL",
+    "duration": "时长"
+  }
+}

@@ -5,8 +5,8 @@ import { Markdown } from '@/components/resource/markdown'
 import { Button } from '@/components/ui/button'
 import type { Locale } from '@/i18n/routing'
 import { getPublishedBySlug } from '@/lib/content'
-import { toolMeta } from '@/lib/resource-meta'
 import { requireSession } from '@/lib/session'
+import { toolMeta } from '@/modules/tool-shelf/module'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +32,7 @@ export default async function ToolDetailPage({
   if (!resource) notFound()
 
   const meta = toolMeta.safeParse(resource.meta).data ?? {}
-  const t = await getTranslations('sections')
+  const t = await getTranslations('tool-shelf')
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">

@@ -35,7 +35,7 @@ export default async function CourseChapterPage({
   const next = chapters[index + 1]
 
   const [t, tCommon] = await Promise.all([
-    getTranslations('sections'),
+    getTranslations('help'),
     getTranslations('common'),
   ])
 

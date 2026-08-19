@@ -1,48 +1,15 @@
 import { describe, expect, test } from 'bun:test'
-import {
-  metaSchemas,
-  parseMeta,
-  sectionForType,
-  slugSchema,
-  typeForSection,
-  videoMeta,
-} from './resource-meta'
+import { parseMeta, resourceTypes, slugSchema } from './resource-meta'
+
+// The per-section zod schemas are tested by the modules that own them
+// (src/modules/*/module.test.ts). What is tested here is the generic
+// write-time path: form fields → candidate object → the module's schema.
 
 function form(entries: Record<string, string>): FormData {
   const data = new FormData()
   for (const [key, value] of Object.entries(entries)) data.set(key, value)
   return data
 }
-
-describe('meta schemas', () => {
-  test('video requires provider and embedUrl', () => {
-    expect(videoMeta.safeParse({}).success).toBe(false)
-    expect(
-      videoMeta.safeParse({
-        provider: 'youtube',
-        embedUrl: 'https://www.youtube.com/embed/x',
-      }).success,
-    ).toBe(true)
-    expect(
-      videoMeta.safeParse({ provider: 'vimeo', embedUrl: 'https://x.test' })
-        .success,
-    ).toBe(false)
-  })
-
-  test('tool rejects non-URL fields', () => {
-    expect(metaSchemas.tool.safeParse({ url: 'not-a-url' }).success).toBe(false)
-    expect(metaSchemas.tool.safeParse({}).success).toBe(true)
-  })
-
-  test('course level is a closed enum', () => {
-    expect(metaSchemas.course.safeParse({ level: 'beginner' }).success).toBe(
-      true,
-    )
-    expect(metaSchemas.course.safeParse({ level: 'expert' }).success).toBe(
-      false,
-    )
-  })
-})
 
 describe('parseMeta', () => {
   test('drops empty optional fields for tools', () => {
@@ -60,7 +27,7 @@ describe('parseMeta', () => {
     expect(error).toContain('url')
   })
 
-  test('parses model_api links lines, keeping | inside URLs', () => {
+  test('parses lines fields, keeping | inside URLs', () => {
     const { meta, error } = parseMeta(
       'model_api',
       form({
@@ -83,7 +50,7 @@ describe('parseMeta', () => {
     expect(error).toContain('links')
   })
 
-  test('coerces course estimatedHours and rejects NaN', () => {
+  test('coerces number fields and rejects NaN', () => {
     const ok = parseMeta('course', form({ estimatedHours: '2.5' }))
     expect(ok.meta).toEqual({ estimatedHours: 2.5 })
 
@@ -92,6 +59,22 @@ describe('parseMeta', () => {
 
     const bad = parseMeta('course', form({ estimatedHours: 'many' }))
     expect(bad.error).toContain('estimatedHours')
+  })
+
+  test('required fields submit empty strings so the schema can reject them', () => {
+    // `video.embedUrl` is required: an empty input must fail validation
+    // rather than silently drop out of the object.
+    const { error } = parseMeta('video', form({ provider: 'youtube' }))
+    expect(error).toContain('embedUrl')
+  })
+
+  test('an unregistered section is rejected, not stored', () => {
+    const { meta, error } = parseMeta(
+      'not-a-section' as (typeof resourceTypes)[number],
+      form({}),
+    )
+    expect(meta).toBeUndefined()
+    expect(error).toContain('unregistered')
   })
 })
 
@@ -106,12 +89,4 @@ describe('slugSchema', () => {
       expect(slugSchema.safeParse(slug).success).toBe(false)
     },
   )
-})
-
-describe('section maps', () => {
-  test('sectionForType and typeForSection round-trip', () => {
-    for (const [type, section] of Object.entries(sectionForType)) {
-      expect(typeForSection[section]).toBe(type as never)
-    }
-  })
 })

@@ -1,0 +1,31 @@
+{
+  "nav": {
+    "courses": "Courses",
+    "videos": "Videos"
+  },
+  "courses": {
+    "title": "Courses",
+    "description": "Structured learning paths from the team."
+  },
+  "videos": {
+    "title": "Videos",
+    "description": "Teaching videos and recorded sessions."
+  },
+  "chapters": "Chapters",
+  "previousChapter": "Previous",
+  "nextChapter": "Next",
+  "level": "Level",
+  "levels": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "estimatedHours": "~{hours} h",
+  "meta": {
+    "level": "Level",
+    "hours": "Estimated hours",
+    "provider": "Provider",
+    "embedUrl": "Embed URL",
+    "duration": "Duration"
+  }
+}
