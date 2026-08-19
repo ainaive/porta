@@ -10,13 +10,6 @@ import {
 } from 'drizzle-orm/pg-core'
 import { user } from './auth'
 
-export const resourceType = pgEnum('resource_type', [
-  'tool',
-  'course',
-  'video',
-  'model_api',
-])
-
 export const resourceStatus = pgEnum('resource_status', ['draft', 'published'])
 
 export const contentLocale = pgEnum('content_locale', ['en', 'zh'])
@@ -25,7 +18,11 @@ export const resources = pgTable(
   'resources',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    type: resourceType('type').notNull(),
+    // Plain text, not an enum: section keys belong to the modules that
+    // register them, so an enum here would mean every new module edits this
+    // file and ships a core migration. Validated against the module registry
+    // at write time, exactly as `meta` is (ADR 0013).
+    type: text('type').notNull(),
     slug: text('slug').notNull(),
     status: resourceStatus('status').notNull().default('draft'),
     tags: text('tags').array().notNull().default([]),

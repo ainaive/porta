@@ -143,6 +143,17 @@ describe('input validation returns handled errors, not 500s', () => {
     })
   })
 
+  test('an unregistered type is rejected before it reaches the table', async () => {
+    // resources.type is plain text now (ADR 0013) — the module registry is
+    // the only thing standing between a bad type and the database, so this
+    // is the guard the dropped pg enum used to provide.
+    const f = new FormData()
+    f.set('type', 'not-a-section')
+    f.set('slug', 'whatever')
+    expect(await createResource({}, f)).toMatchObject({ error: 'typeInvalid' })
+    expect(await db.select().from(resources)).toHaveLength(0)
+  })
+
   test('a duplicate (type, slug) is reported as slugTaken', async () => {
     await db
       .insert(resources)
