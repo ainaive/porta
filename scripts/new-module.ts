@@ -6,14 +6,71 @@
 // The generated module is registered and green — `bun run verify` passes
 // immediately — so the first commit on a new module is real code rather than
 // boilerplate. See docs/architecture.md, "Adding a module".
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const REGISTRY = join(ROOT, 'src/core/module/registry.ts')
 
-const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-const SNAKE = /^[a-z0-9]+(?:_[a-z0-9]+)*$/
+// The id must be kebab-case AND survive camelCasing into a legal, non-reserved
+// TypeScript identifier — it becomes an exported binding in the manifest, so
+// `2fa` or `default` would generate a file that cannot parse.
+const KEBAB = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
+const SNAKE = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/
+const RESERVED = new Set([
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const',
+  'continue',
+  'debugger',
+  'default',
+  'delete',
+  'do',
+  'else',
+  'enum',
+  'export',
+  'extends',
+  'false',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'import',
+  'in',
+  'instanceof',
+  'new',
+  'null',
+  'return',
+  'super',
+  'switch',
+  'this',
+  'throw',
+  'true',
+  'try',
+  'typeof',
+  'var',
+  'void',
+  'while',
+  'with',
+  'as',
+  'implements',
+  'interface',
+  'let',
+  'package',
+  'private',
+  'protected',
+  'public',
+  'static',
+  'yield',
+  'any',
+  'boolean',
+  'number',
+  'string',
+  'symbol',
+  'await',
+])
 
 function camel(id: string): string {
   return id.replace(/-(\w)/g, (_, c: string) => c.toUpperCase())
@@ -23,10 +80,22 @@ function title(word: string): string {
   return word.charAt(0).toUpperCase() + word.slice(1)
 }
 
+async function exists(path: string): Promise<boolean> {
+  try {
+    await access(join(ROOT, path))
+    return true
+  } catch {
+    return false
+  }
+}
+
+// `wx` fails rather than truncating: this script must never be able to eat a
+// module someone else is working on, and the preflight below is not a
+// substitute for the guarantee.
 async function write(path: string, contents: string): Promise<void> {
   const full = join(ROOT, path)
   await mkdir(dirname(full), { recursive: true })
-  await writeFile(full, contents)
+  await writeFile(full, contents, { flag: 'wx' })
   console.log(`  created ${path}`)
 }
 
@@ -35,11 +104,6 @@ async function write(path: string, contents: string): Promise<void> {
 async function register(id: string): Promise<void> {
   const source = await readFile(REGISTRY, 'utf8')
   const name = camel(id)
-
-  if (source.includes(`@/modules/${id}/module`)) {
-    console.log('  registry already lists this module')
-    return
-  }
 
   const listMatch = source.match(/export const modules = \[([^\]]*)\] as const/)
   if (!listMatch) {
@@ -66,14 +130,28 @@ async function register(id: string): Promise<void> {
 const [id, sectionArg] = process.argv.slice(2)
 if (!id || !KEBAB.test(id)) {
   console.error(
-    'Usage: bun scripts/new-module.ts <kebab-case-id> [section_key]',
+    'Usage: bun scripts/new-module.ts <kebab-case-id> [section_key]\n' +
+      'The id must start with a letter and be kebab-case, e.g. "ai-eval".',
+  )
+  process.exit(1)
+}
+if (RESERVED.has(camel(id))) {
+  console.error(
+    `"${id}" camel-cases to "${camel(id)}", which is a reserved word — the ` +
+      'manifest exports it as a binding. Pick another id.',
   )
   process.exit(1)
 }
 const section = sectionArg ?? id.replace(/-/g, '_')
 if (!SNAKE.test(section)) {
   console.error(
-    `Section key must be snake_case (it is stored in resources.type): ${section}`,
+    `Section key must start with a letter and be snake_case (it is stored in resources.type): ${section}`,
+  )
+  process.exit(1)
+}
+if (RESERVED.has(camel(section))) {
+  console.error(
+    `"${section}" camel-cases to a reserved word — it is exported as a zod schema binding. Pick another key.`,
   )
   process.exit(1)
 }
@@ -81,6 +159,30 @@ if (!SNAKE.test(section)) {
 const label = title(id.replace(/-/g, ' '))
 const sectionLabel = title(section.replace(/_/g, ' '))
 const base = `/${id}`
+const listingFile = `${section.replace(/_/g, '-')}-listing`
+
+// Preflight every destination before writing any of them, so a name clash
+// leaves the tree untouched instead of half-scaffolded over someone's module.
+const destinations = [
+  `src/modules/${id}/module.ts`,
+  `src/modules/${id}/messages/en.json`,
+  `src/modules/${id}/messages/zh.json`,
+  `src/modules/${id}/pages/${listingFile}.tsx`,
+  `src/app/[locale]${base}/page.tsx`,
+]
+const clashes: string[] = []
+for (const path of destinations) {
+  if (await exists(path)) clashes.push(path)
+}
+if ((await readFile(REGISTRY, 'utf8')).includes(`@/modules/${id}/module`)) {
+  clashes.push('src/core/module/registry.ts (already registers this module)')
+}
+if (clashes.length > 0) {
+  console.error(
+    `Refusing to scaffold "${id}" — these already exist:\n  ${clashes.join('\n  ')}`,
+  )
+  process.exit(1)
+}
 
 console.log(`Scaffolding module "${id}" at ${base}\n`)
 
@@ -133,7 +235,7 @@ for (const [locale, nav, sTitle, sDesc, url] of [
 }
 
 await write(
-  `src/modules/${id}/pages/${section.replace(/_/g, '-')}-listing.tsx`,
+  `src/modules/${id}/pages/${listingFile}.tsx`,
   `import { createListingPage } from '@/core/content/listing-page'
 
 export default createListingPage('${section}')
@@ -145,7 +247,7 @@ await write(
   `// Route mount: the page itself belongs to the module that owns this section.
 // \`dynamic\` is declared here rather than re-exported because route segment
 // config is read from the route file (ADR 0013, ADR 0005 — no DB at build).
-export { default } from '@/modules/${id}/pages/${section.replace(/_/g, '-')}-listing'
+export { default } from '@/modules/${id}/pages/${listingFile}'
 
 export const dynamic = 'force-dynamic'
 `,
