@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { CreateResourceForm } from '@/components/admin/create-resource-form'
-import { resourceTypes } from '@/lib/resource-meta'
+import { resourceTypes } from '@/core/content/meta'
 import { requireAdmin } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'

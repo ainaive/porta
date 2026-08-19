@@ -1,11 +1,4 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
-import { db } from '@/db'
-import {
-  courseChapters,
-  courseChapterTranslations,
-  resources,
-  resourceTranslations,
-} from '@/db/schema'
 import {
   adminListChapters,
   adminListResources,
@@ -15,7 +8,14 @@ import {
   listPublished,
   listPublishedTags,
   PAGE_SIZE,
-} from '@/lib/content'
+} from '@/core/content/queries'
+import { db } from '@/db'
+import {
+  courseChapters,
+  courseChapterTranslations,
+  resources,
+  resourceTranslations,
+} from '@/db/schema'
 import { resetDb } from './harness'
 
 type Translation = {

@@ -32,10 +32,10 @@ import {
   type TranslatedChapter,
   type TranslatedResource,
   type TranslationRow,
-} from '@/lib/fallback'
-import { type ResourceType, resourceTypes } from '@/lib/resource-meta'
+} from './fallback'
+import { type ResourceType, resourceTypes } from './meta'
 
-export type { TranslatedChapter, TranslatedResource } from '@/lib/fallback'
+export type { TranslatedChapter, TranslatedResource } from './fallback'
 
 const uuidColumn = z.uuid()
 

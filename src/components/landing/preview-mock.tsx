@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server'
+import type { ResourceType } from '@/core/content/meta'
+import type { TranslatedResource } from '@/core/content/queries'
 import { navEntries, sectionTitleKey } from '@/core/module/derive'
 import type { Locale } from '@/i18n/routing'
-import type { TranslatedResource } from '@/lib/content'
-import type { ResourceType } from '@/lib/resource-meta'
 import { Glow } from './primitives'
 
 // Straight from the design: brand hue, violet, amber, cyan, green, brand tint.

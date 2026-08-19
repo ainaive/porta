@@ -9,11 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { type ResourceType, resourceTypes } from '@/core/content/meta'
+import { adminListResources } from '@/core/content/queries'
 import { sectionPath } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { adminListResources } from '@/lib/content'
-import { type ResourceType, resourceTypes } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 import { firstParam, parsePageParam } from '@/lib/utils'
 

@@ -3,6 +3,8 @@ import { ResourceCard } from '@/components/resource/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import type { ResourceType } from '@/core/content/meta'
+import { listPublished, listPublishedTags } from '@/core/content/queries'
 import {
   getSection,
   sectionDescriptionKey,
@@ -10,8 +12,6 @@ import {
 } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { listPublished, listPublishedTags } from '@/lib/content'
-import type { ResourceType } from '@/lib/resource-meta'
 
 // One listing for every section in every module: the module supplies the
 // path and the labels, the platform supplies search, tags and pagination.

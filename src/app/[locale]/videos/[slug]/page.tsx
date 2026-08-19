@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation'
 import { ResourceDetailHeader } from '@/components/resource/detail-header'
 import { Markdown } from '@/components/resource/markdown'
+import { getPublishedBySlug } from '@/core/content/queries'
 import type { Locale } from '@/i18n/routing'
-import { getPublishedBySlug } from '@/lib/content'
 import { requireSession } from '@/lib/session'
 import { videoMeta } from '@/modules/help/module'
 

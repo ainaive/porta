@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { parseMeta, resourceTypes, slugSchema } from './resource-meta'
+import { parseMeta, resourceTypes, slugSchema } from './meta'
 
 // The per-section zod schemas are tested by the modules that own them
 // (src/modules/*/module.test.ts). What is tested here is the generic

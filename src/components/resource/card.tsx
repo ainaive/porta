@@ -6,10 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import type { ResourceType } from '@/core/content/meta'
+import type { TranslatedResource } from '@/core/content/queries'
 import { sectionPath } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
-import type { TranslatedResource } from '@/lib/content'
-import type { ResourceType } from '@/lib/resource-meta'
 
 export async function ResourceCard({
   resource,

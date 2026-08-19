@@ -6,6 +6,12 @@ import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
+import {
+  formString,
+  parseMeta,
+  type ResourceType,
+  slugSchema,
+} from '@/core/content/meta'
 import { db } from '@/db'
 import {
   courseChapters,
@@ -21,12 +27,6 @@ import type { Locale } from '@/i18n/routing'
 import { auth, canonicalBaseURL } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
-import {
-  formString,
-  parseMeta,
-  type ResourceType,
-  slugSchema,
-} from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 
 // `error` is a message key under admin.errors (translated where rendered,
