@@ -47,12 +47,15 @@ test.describe('public smoke', () => {
     await expect(page).toHaveURL(/\/en\/courses$/)
   })
 
-  test('all four section listings respond', async ({ page }) => {
+  test('every section listing responds', async ({ page }) => {
     for (const [path, heading] of [
       ['/en/tools', 'Tools'],
       ['/en/courses', 'Courses'],
       ['/en/videos', 'Videos'],
-      ['/en/models', 'Model APIs'],
+      ['/en/evals', 'AI Evaluation'],
+      ['/en/evals/agents', 'Agents'],
+      ['/en/evals/models', 'Models'],
+      ['/en/evals/reports', 'Reports'],
     ] as const) {
       await page.goto(path)
       await expect(page.getByRole('heading', { name: heading })).toBeVisible()

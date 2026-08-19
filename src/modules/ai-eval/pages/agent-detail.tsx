@@ -3,11 +3,10 @@ import { getTranslations } from 'next-intl/server'
 import { ResourceDetailHeader } from '@/components/resource/detail-header'
 import { Markdown } from '@/components/resource/markdown'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getPublishedBySlug } from '@/core/content/queries'
 import type { Locale } from '@/i18n/routing'
 import { requireSession } from '@/lib/session'
-import { modelMeta } from '../module'
+import { agentMeta } from '../module'
 
 export async function generateMetadata({
   params,
@@ -15,46 +14,32 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale; slug: string }>
 }) {
   const { locale, slug } = await params
-  const resource = await getPublishedBySlug('model', slug, locale)
+  const resource = await getPublishedBySlug('agent', slug, locale)
   return { title: resource?.title }
 }
 
-export default async function ModelDetailPage({
+export default async function AgentDetailPage({
   params,
 }: {
   params: Promise<{ locale: Locale; slug: string }>
 }) {
   const { locale, slug } = await params
-  await requireSession(`/${locale}/evals/models/${slug}`)
+  await requireSession(`/${locale}/evals/agents/${slug}`)
 
-  const resource = await getPublishedBySlug('model', slug, locale)
+  const resource = await getPublishedBySlug('agent', slug, locale)
   if (!resource) notFound()
 
-  const meta = modelMeta.safeParse(resource.meta).data
+  const meta = agentMeta.safeParse(resource.meta).data
   const t = await getTranslations('ai-eval')
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <ResourceDetailHeader resource={resource} />
 
-      {meta?.endpoint || meta?.provider ? (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-base">{t('endpoint')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {meta.provider ? (
-              <div className="text-muted-foreground">
-                {t('provider')}: {meta.provider}
-              </div>
-            ) : null}
-            {meta.endpoint ? (
-              <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2">
-                {meta.endpoint}
-              </code>
-            ) : null}
-          </CardContent>
-        </Card>
+      {meta?.vendor ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {t('vendor')}: {meta.vendor}
+        </p>
       ) : null}
 
       {meta?.docsUrl || (meta?.links.length ?? 0) > 0 ? (

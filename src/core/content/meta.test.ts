@@ -29,7 +29,7 @@ describe('parseMeta', () => {
 
   test('parses lines fields, keeping | inside URLs', () => {
     const { meta, error } = parseMeta(
-      'model_api',
+      'model',
       form({
         links: [
           'Docs | https://example.com/docs',
@@ -46,7 +46,7 @@ describe('parseMeta', () => {
   })
 
   test('rejects a link line without a URL', () => {
-    const { error } = parseMeta('model_api', form({ links: 'just a label' }))
+    const { error } = parseMeta('model', form({ links: 'just a label' }))
     expect(error).toContain('links')
   })
 

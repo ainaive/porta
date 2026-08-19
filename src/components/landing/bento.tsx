@@ -125,7 +125,7 @@ export async function Bento({
     getTranslations('common'),
   ])
   const { sections: catalog, tags } = overview
-  const endpoint = firstEndpoint(catalog.model_api.items)
+  const endpoint = firstEndpoint(catalog.model.items)
   const latestVideo = catalog.video.items[0]
   const fallbackExample = overview.latest.find((item) => item.isFallback)
 
@@ -181,11 +181,11 @@ export async function Bento({
         <Tile className="lg:col-span-2">
           <TileHead
             index="02"
-            label={label(sectionTitleKey('model_api'))}
-            count={catalog.model_api.count}
+            label={label(sectionTitleKey('model'))}
+            count={catalog.model.count}
             title={t('bento.models.title')}
             description={t('bento.models.description')}
-            href="/models"
+            href="/evals/models"
           />
           {endpoint ? (
             <dl className="mt-5 overflow-hidden rounded-xl border bg-background/70 p-4 font-mono text-[11.5px] leading-loose">

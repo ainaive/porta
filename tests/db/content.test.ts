@@ -236,7 +236,7 @@ describe('getHomeOverview', () => {
     expect(sections.course.count).toBe(1)
     expect(sections.video.count).toBe(1)
     // Every type has an entry even with nothing published for it.
-    expect(sections.model_api).toEqual({ count: 0, items: [] })
+    expect(sections.model).toEqual({ count: 0, items: [] })
   })
 
   test('counts only what a visitor can reach', async () => {
