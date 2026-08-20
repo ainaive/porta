@@ -53,6 +53,15 @@ const COMMONJS_NAMES = ['require', 'createRequire']
 // The file implementing the rule has to name the tokens it forbids.
 const VERIFIER = 'src/core/module/boundaries.test.ts'
 
+/** The text of any string-literal-like node — `'x'`, `"x"` and `` `x` `` are
+ *  the same thing to every consumer here. Every "is this a string" decision
+ *  in this file goes through this one function: having four of them is how
+ *  the narrow predicate came back after the other three had been widened,
+ *  which let `` module[`require`] `` through. */
+function literalText(node: ts.Node | undefined): string | null {
+  return node && ts.isStringLiteralLike(node) ? node.text : null
+}
+
 function isRequireLike(callee: ts.Expression): boolean {
   if (ts.isIdentifier(callee)) return callee.text === 'require'
   if (ts.isPropertyAccessExpression(callee)) {
@@ -62,10 +71,9 @@ function isRequireLike(callee: ts.Expression): boolean {
         callee.expression.text === 'require')
     )
   }
-  // `module['require'](...)`
+  // `module['require'](...)` and `` module[`require`](...) ``
   if (ts.isElementAccessExpression(callee)) {
-    const arg = callee.argumentExpression
-    return ts.isStringLiteralLike(arg) && arg.text === 'require'
+    return literalText(callee.argumentExpression) === 'require'
   }
   return false
 }
@@ -116,11 +124,9 @@ function specifiers(
   const opaque: Opaque[] = []
   const commonjs: Opaque[] = []
 
-  // `isStringLiteralLike`, not `isStringLiteral`: a backtick path with no
-  // substitution is a NoSubstitutionTemplateLiteral, and `import(`../help`)`
-  // is every bit as much a dependency as `import('../help')`.
   const push = (node: ts.Node | undefined): void => {
-    if (node && ts.isStringLiteralLike(node)) found.push(node.text)
+    const text = literalText(node)
+    if (text !== null) found.push(text)
   }
 
   const visit = (node: ts.Node): void => {
@@ -140,8 +146,8 @@ function specifiers(
       const isRequire = isRequireLike(callee)
       if (isDynamic || isRequire) {
         const [first] = node.arguments
-        if (first && ts.isStringLiteralLike(first)) {
-          found.push(first.text)
+        if (literalText(first) !== null) {
+          push(first)
         } else if (first) {
           // Note there is no branch for an interpolated template. Judging one
           // by its literal head looked reasonable and was not: a head of
@@ -156,10 +162,8 @@ function specifiers(
     // (`createRequire`, an imported binding, a call), or a string literal
     // used to reach the property (`module['require']`).
     if (file !== VERIFIER) {
-      const named =
-        (ts.isIdentifier(node) || ts.isStringLiteral(node)) &&
-        COMMONJS_NAMES.includes(node.text)
-      if (named) {
+      const name = ts.isIdentifier(node) ? node.text : literalText(node)
+      if (name !== null && COMMONJS_NAMES.includes(name)) {
         commonjs.push({
           file,
           expression: (node.parent ?? node).getText().slice(0, 80),
@@ -267,6 +271,19 @@ describe('module boundaries', () => {
     // finding, not a pass.
     const unresolvable = [...moduleFiles, ...platformFiles].flatMap(opaqueOf)
     expect(unresolvable).toEqual([])
+  })
+
+  test('this file keeps one string-literal check, and it is the wide one', () => {
+    // Twice now the same defect: the narrow predicate misses a backtick with
+    // no substitution, so `` module[`require`] `` and `` import(`../x`) ``
+    // walked past. Both times it was widened in one place while another kept
+    // the old one. There is a single `literalText` helper now; this asserts
+    // nothing quietly adds a second decision point beside it.
+    const self = readFileSync(resolve(ROOT, VERIFIER), 'utf8')
+    const narrow = [...self.matchAll(/ts\.isStringLiteral\b(?!Like)/g)].map(
+      (m) => m[0],
+    )
+    expect(narrow).toEqual([])
   })
 
   test('the CommonJS loader names appear nowhere in src', () => {

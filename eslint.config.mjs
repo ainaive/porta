@@ -96,6 +96,28 @@ const eslintConfig = defineConfig([
             'src is ESM — use an import. CommonJS loaders also bypass the module boundary rules.',
         },
         {
+          // `ns['createRequire'](...)`
+          selector:
+            'MemberExpression[computed=true][property.value="createRequire"]',
+          message:
+            'src is ESM — createRequire produces a loader that bypasses the module boundary rules.',
+        },
+        {
+          // `` module[`require`](...) `` — a template literal has no
+          // `.value`, so the string-literal selector above does not see it.
+          selector:
+            'MemberExpression[computed=true][property.quasis.0.value.cooked="require"]',
+          message:
+            'src is ESM — use an import. CommonJS loaders also bypass the module boundary rules.',
+        },
+        {
+          // `` ns[`createRequire`](...) ``
+          selector:
+            'MemberExpression[computed=true][property.quasis.0.value.cooked="createRequire"]',
+          message:
+            'src is ESM — createRequire produces a loader that bypasses the module boundary rules.',
+        },
+        {
           // The import specifier, the call, and any binding it is held in.
           selector: 'Identifier[name="createRequire"]',
           message:
