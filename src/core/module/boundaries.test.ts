@@ -108,17 +108,12 @@ function specifiers(
         const [first] = node.arguments
         if (first && ts.isStringLiteralLike(first)) {
           found.push(first.text)
-        } else if (
-          first &&
-          ts.isTemplateExpression(first) &&
-          // An interpolated path is judged by its literal head:
-          // `import(`../${name}/module`)` from a module directory still aims
-          // at a sibling. Only useful if the head is itself a path —
-          // `import(`${base}/module`)` says nothing and must not pass.
-          (first.head.text.startsWith('.') || first.head.text.startsWith('@/'))
-        ) {
-          found.push(first.head.text)
         } else if (first) {
+          // Note there is no branch for an interpolated template. Judging one
+          // by its literal head looked reasonable and was not: a head of
+          // `./` accepts `import(`./${'../help/module'}`)`, which lands in
+          // another module. A prefix constrains nothing about where the
+          // substitution goes, so interpolation is simply unresolvable.
           opaque.push({ file, expression: first.getText().slice(0, 80) })
         }
       }
