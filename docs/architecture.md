@@ -86,10 +86,18 @@ flowchart LR
     `import()` whose argument it cannot reduce to a path (a concatenation, a
     ternary, a variable, any interpolated template), a file under `src` whose
     extension is neither scanned nor known to be inert, module discovery
-    drifting from the registry, and CommonJS loaders in any spelling
-    (`require`, `module.require`, `require.resolve` — src is ESM, and
-    `module.require(...)` reads nothing like an import). Enumerating the ways
-    round a checker is a losing game; not knowing has to be a finding.
+    drifting from the registry, and the CommonJS loader names (`require`,
+    `createRequire`) appearing anywhere — banned as names rather than as call
+    shapes, because `module.require(...)`, `module['require'](...)` and a
+    `createRequire` binding are the same thing wearing different clothes.
+    Enumerating the ways round a checker is a losing game; not knowing has to
+    be a finding.
+  - What it does **not** claim: a name assembled at runtime
+    (`module['requ' + 'ire']`) or reached through `eval` is not statically
+    knowable. This is a guardrail against reaching into a sibling module by
+    accident — which is the failure that actually happens — not a sandbox
+    against someone setting out to defeat it. Treat a bypass as a code-review
+    matter, not a gap to be patched.
 
 ## Content model & locale fallback
 

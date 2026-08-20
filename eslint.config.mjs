@@ -89,6 +89,18 @@ const eslintConfig = defineConfig([
           message:
             'src is ESM — use an import. CommonJS loaders also bypass the module boundary rules.',
         },
+        {
+          // `module['require'](...)`
+          selector: 'MemberExpression[computed=true][property.value="require"]',
+          message:
+            'src is ESM — use an import. CommonJS loaders also bypass the module boundary rules.',
+        },
+        {
+          // The import specifier, the call, and any binding it is held in.
+          selector: 'Identifier[name="createRequire"]',
+          message:
+            'src is ESM — createRequire produces a loader that bypasses the module boundary rules.',
+        },
       ],
     },
   },

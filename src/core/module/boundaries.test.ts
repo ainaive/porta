@@ -38,11 +38,21 @@ type Edge = { file: string; target: string }
  *  a CommonJS loader call, which is not allowed here at all. */
 type Opaque = { file: string; expression: string }
 
-// `require` has more spellings than it is worth chasing — `require(...)`,
-// `module.require(...)`, `require.resolve(...)`, a `createRequire` result.
-// src is ESM throughout and has never contained one, so the whole family is
-// rejected rather than classified. Widening the scan to .cts/.cjs without
-// this left a CommonJS-shaped hole in a CommonJS-capable scanner.
+// Rather than recognise CommonJS *call shapes* — which meant chasing
+// `require(...)`, then `module.require(...)`, then `module['require'](...)`,
+// then a `createRequire` result held in a variable — the names themselves are
+// banned wherever they appear. src is ESM throughout and contains neither
+// token today, so nothing legitimate is caught.
+//
+// Honest about the limit: a name assembled at runtime (`module['requ'+'ire']`)
+// or reached through `eval` is not statically knowable and is not claimed.
+// This is a guardrail against reaching for a sibling module by accident, not
+// a sandbox against someone determined to defeat it.
+const COMMONJS_NAMES = ['require', 'createRequire']
+
+// The file implementing the rule has to name the tokens it forbids.
+const VERIFIER = 'src/core/module/boundaries.test.ts'
+
 function isRequireLike(callee: ts.Expression): boolean {
   if (ts.isIdentifier(callee)) return callee.text === 'require'
   if (ts.isPropertyAccessExpression(callee)) {
@@ -51,6 +61,11 @@ function isRequireLike(callee: ts.Expression): boolean {
       (ts.isIdentifier(callee.expression) &&
         callee.expression.text === 'require')
     )
+  }
+  // `module['require'](...)`
+  if (ts.isElementAccessExpression(callee)) {
+    const arg = callee.argumentExpression
+    return ts.isStringLiteralLike(arg) && arg.text === 'require'
   }
   return false
 }
@@ -123,9 +138,6 @@ function specifiers(
       const callee = node.expression
       const isDynamic = callee.kind === ts.SyntaxKind.ImportKeyword
       const isRequire = isRequireLike(callee)
-      if (isRequire) {
-        commonjs.push({ file, expression: node.getText().slice(0, 80) })
-      }
       if (isDynamic || isRequire) {
         const [first] = node.arguments
         if (first && ts.isStringLiteralLike(first)) {
@@ -140,6 +152,21 @@ function specifiers(
         }
       }
     }
+    // The name ban, applied wherever the token appears: an identifier
+    // (`createRequire`, an imported binding, a call), or a string literal
+    // used to reach the property (`module['require']`).
+    if (file !== VERIFIER) {
+      const named =
+        (ts.isIdentifier(node) || ts.isStringLiteral(node)) &&
+        COMMONJS_NAMES.includes(node.text)
+      if (named) {
+        commonjs.push({
+          file,
+          expression: (node.parent ?? node).getText().slice(0, 80),
+        })
+      }
+    }
+
     ts.forEachChild(node, visit)
   }
 
@@ -242,11 +269,11 @@ describe('module boundaries', () => {
     expect(unresolvable).toEqual([])
   })
 
-  test('no CommonJS loader is used anywhere in src', () => {
-    // `module.require('../help/module')` was invisible while a bare
-    // `require(...)` was not — a distinction with no meaning. Banning the
-    // family closes every spelling at once, and costs nothing: src is ESM
-    // and has never contained one.
+  test('the CommonJS loader names appear nowhere in src', () => {
+    // Recognising call shapes meant a new bypass per round —
+    // `module.require`, then `module['require']`, then a `createRequire`
+    // binding. Banning the names instead closes all of those at once, and
+    // costs nothing: src is ESM and contains neither token.
     const loaders = [...moduleFiles, ...platformFiles].flatMap(commonjsOf)
     expect(loaders).toEqual([])
   })
