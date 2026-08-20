@@ -78,9 +78,15 @@ flowchart LR
   - `no-restricted-imports` (`eslint.config.mjs`, `--max-warnings 0`) catches
     the alias form in the editor.
   - `src/core/module/boundaries.test.ts` catches it however it is written: it
-    resolves imports to repo-relative paths, so `../../other-module/thing`
-    fails the same way `@/modules/other-module/thing` does. ESLint alone
-    cannot see that, and relative imports are the house style inside a module.
+    reads imports with TypeScript's parser and resolves them to repo-relative
+    paths, so `../../other-module/thing` fails the same way
+    `@/modules/other-module/thing` does. ESLint alone cannot see that, and
+    relative imports are the house style inside a module.
+  - It **fails closed**: a dynamic `import()` whose argument it cannot reduce
+    to a path — a concatenation, a ternary, a variable — is reported rather
+    than skipped, and a file under `src` whose extension is neither scanned
+    nor known to be inert fails too. Enumerating the ways round a checker is a
+    losing game; not knowing has to be a finding.
 
 ## Content model & locale fallback
 

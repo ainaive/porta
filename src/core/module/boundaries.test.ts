@@ -34,6 +34,8 @@ const INTERNALS = [
 const MAY_NAME_A_MODULE = 'src/core/module/registry.ts'
 
 type Edge = { file: string; target: string }
+/** A dynamic import whose argument this verifier cannot reduce to a path. */
+type Opaque = { file: string; expression: string }
 
 // tsconfig includes .mts, and .mjs/.cjs/.js can appear at any time. A scan
 // narrower than the language is a hole that opens itself, so the list is
@@ -60,8 +62,15 @@ function sourceFiles(...patterns: string[]): string[] {
 
 const SOURCE_GLOB = `src/**/*.{${SOURCE_EXTENSIONS.join(',')}}`
 
-/** Every module specifier in `file`, in any syntactic form. */
-function specifiers(file: string, source: string): string[] {
+/** Every module specifier in `file`, plus any dynamic import argument that
+ *  could not be reduced to one. Chasing expression forms one at a time is a
+ *  losing game — `'a' + 'b'`, a ternary, a variable — so anything the
+ *  verifier cannot classify is surfaced and fails the gate instead of
+ *  passing silently. */
+function specifiers(
+  file: string,
+  source: string,
+): { literals: string[]; opaque: Opaque[] } {
   const kind = file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
   const tree = ts.createSourceFile(
     file,
@@ -71,6 +80,7 @@ function specifiers(file: string, source: string): string[] {
     kind,
   )
   const found: string[] = []
+  const opaque: Opaque[] = []
 
   // `isStringLiteralLike`, not `isStringLiteral`: a backtick path with no
   // substitution is a NoSubstitutionTemplateLiteral, and `import(`../help`)`
@@ -96,13 +106,20 @@ function specifiers(file: string, source: string): string[] {
       const isRequire = ts.isIdentifier(callee) && callee.text === 'require'
       if (isDynamic || isRequire) {
         const [first] = node.arguments
-        push(first)
-        // An interpolated path cannot be resolved, so judge it by its literal
-        // head: `import(`../${name}/module`)` from a module directory still
-        // aims at a sibling. src/i18n/request.ts uses this form legitimately,
-        // and its head (`../../messages/`) is nowhere near src/modules.
-        if (first && ts.isTemplateExpression(first)) {
+        if (first && ts.isStringLiteralLike(first)) {
+          found.push(first.text)
+        } else if (
+          first &&
+          ts.isTemplateExpression(first) &&
+          // An interpolated path is judged by its literal head:
+          // `import(`../${name}/module`)` from a module directory still aims
+          // at a sibling. Only useful if the head is itself a path —
+          // `import(`${base}/module`)` says nothing and must not pass.
+          (first.head.text.startsWith('.') || first.head.text.startsWith('@/'))
+        ) {
           found.push(first.head.text)
+        } else if (first) {
+          opaque.push({ file, expression: first.getText().slice(0, 80) })
         }
       }
     }
@@ -110,7 +127,7 @@ function specifiers(file: string, source: string): string[] {
   }
 
   visit(tree)
-  return found
+  return { literals: found, opaque }
 }
 
 /** In-repo import edges, resolved to repo-relative paths so an alias and a
@@ -118,7 +135,7 @@ function specifiers(file: string, source: string): string[] {
 function edgesOf(file: string): Edge[] {
   const source = readFileSync(resolve(ROOT, file), 'utf8')
   const out: Edge[] = []
-  for (const spec of specifiers(file, source)) {
+  for (const spec of specifiers(file, source).literals) {
     let target: string
     if (spec.startsWith('@/')) {
       target = `src/${spec.slice(2)}`
@@ -136,6 +153,10 @@ function edgesOf(file: string): Edge[] {
     })
   }
   return out
+}
+
+function opaqueOf(file: string): Opaque[] {
+  return specifiers(file, readFileSync(resolve(ROOT, file), 'utf8')).opaque
 }
 
 function moduleOf(path: string): string | null {
@@ -189,6 +210,15 @@ describe('module boundaries', () => {
       return !INERT_EXTENSIONS.includes(ext)
     })
     expect(unscanned).toEqual([])
+  })
+
+  test('every dynamic import can be reduced to a path', () => {
+    // Fail closed. `import('../help/' + 'module')` is neither a literal nor a
+    // template, and enumerating expression forms would just invite the next
+    // one. If the verifier cannot say where an import points, that is a
+    // finding, not a pass.
+    const unresolvable = [...moduleFiles, ...platformFiles].flatMap(opaqueOf)
+    expect(unresolvable).toEqual([])
   })
 
   test('platform scan reaches beyond core and lib', () => {
