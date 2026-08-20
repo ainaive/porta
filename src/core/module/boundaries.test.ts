@@ -35,12 +35,30 @@ const MAY_NAME_A_MODULE = 'src/core/module/registry.ts'
 
 type Edge = { file: string; target: string }
 
+// tsconfig includes .mts, and .mjs/.cjs/.js can appear at any time. A scan
+// narrower than the language is a hole that opens itself, so the list is
+// declared once here and pinned by a test below.
+const SOURCE_EXTENSIONS = ['ts', 'tsx', 'mts', 'cts', 'js', 'jsx', 'mjs', 'cjs']
+// Extensions that cannot carry an import, so need no scanning.
+const INERT_EXTENSIONS = [
+  'json',
+  'css',
+  'ico',
+  'png',
+  'jpg',
+  'svg',
+  'webp',
+  'md',
+]
+
 function sourceFiles(...patterns: string[]): string[] {
   return patterns
     .flatMap((pattern) => [...new Glob(pattern).scanSync({ cwd: ROOT })])
     .map((p) => p.replaceAll('\\', '/'))
     .sort()
 }
+
+const SOURCE_GLOB = `src/**/*.{${SOURCE_EXTENSIONS.join(',')}}`
 
 /** Every module specifier in `file`, in any syntactic form. */
 function specifiers(file: string, source: string): string[] {
@@ -66,6 +84,11 @@ function specifiers(file: string, source: string): string[] {
     if (ts.isImportDeclaration(node)) push(node.moduleSpecifier)
     // `export { x } from 'y'`, `export * from 'y'`
     if (ts.isExportDeclaration(node)) push(node.moduleSpecifier)
+    // `typeof import('y')` / `import('y').Thing` in a type position — a
+    // type-only dependency is still a dependency.
+    if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) {
+      push(node.argument.literal)
+    }
     // `import('y')` and `require('y')`
     if (ts.isCallExpression(node)) {
       const callee = node.expression
@@ -104,7 +127,13 @@ function edgesOf(file: string): Edge[] {
     } else {
       continue // a package, not a boundary
     }
-    out.push({ file, target: target.replaceAll('\\', '/') })
+    // Normalised: `@/modules/` resolves to `src/modules/` while `../`
+    // resolves to `src/modules`, and a trailing slash must not be the
+    // difference between caught and missed.
+    out.push({
+      file,
+      target: target.replaceAll('\\', '/').replace(/\/+$/, ''),
+    })
   }
   return out
 }
@@ -121,13 +150,15 @@ function aimsAtModuleRoot(path: string): boolean {
   return path === 'src/modules'
 }
 
-const moduleFiles = sourceFiles('src/modules/**/*.{ts,tsx}')
+const moduleFiles = sourceFiles(
+  `src/modules/**/*.{${SOURCE_EXTENSIONS.join(',')}}`,
+)
 const moduleEdges = moduleFiles.flatMap(edgesOf)
 
 // Everything that is not a module and not a route mount: core, lib,
 // components, db, i18n, and the proxy. All of it is downstream of the
 // registry and none of it may depend on a module.
-const platformFiles = sourceFiles('src/**/*.{ts,tsx}').filter(
+const platformFiles = sourceFiles(SOURCE_GLOB).filter(
   (file) => !file.startsWith('src/modules/') && !file.startsWith('src/app/'),
 )
 const platformEdges = platformFiles.flatMap(edgesOf)
@@ -144,6 +175,20 @@ describe('module boundaries', () => {
     const registered = new Set(modules.map((feature) => feature.id))
     expect([...onDisk].sort()).toEqual([...registered].sort())
     expect(moduleEdges.length).toBeGreaterThan(20)
+  })
+
+  test('every file under src that can carry an import is scanned', () => {
+    // The gap this closes is structural: .mts was in tsconfig's include and
+    // in neither the glob nor the ESLint `files` list, so a whole file could
+    // sit outside every boundary check. A new extension now fails here rather
+    // than quietly widening the blind spot.
+    const scanned = new Set([...moduleFiles, ...platformFiles])
+    const unscanned = sourceFiles('src/**/*').filter((file) => {
+      if (scanned.has(file) || file.startsWith('src/app/')) return false
+      const ext = file.match(/\.([^./]+)$/)?.[1] ?? ''
+      return !INERT_EXTENSIONS.includes(ext)
+    })
+    expect(unscanned).toEqual([])
   })
 
   test('platform scan reaches beyond core and lib', () => {

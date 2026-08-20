@@ -253,7 +253,7 @@ console.log(`
 Done. Next:
   1. Replace the TODO copy in src/modules/${id}/messages/*.json — both
      locales. Nothing will stop you shipping it: i18n:check compares key
-     sets, not values, so "TODO" would go out as the section's title.
+     sets, not values, so "TODO" would ship as the section's description.
   2. Give the section a real meta schema and metaFields in module.ts.
   3. Add a detail page if resources in this section have their own page.
   4. bun run format && bun run verify

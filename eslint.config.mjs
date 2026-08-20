@@ -12,7 +12,7 @@ const eslintConfig = defineConfig([
 
   {
     name: 'porta/module-boundaries',
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'],
     ignores: ['src/app/**', 'src/core/module/registry.ts'],
     rules: {
       'no-restricted-imports': [
@@ -32,7 +32,7 @@ const eslintConfig = defineConfig([
 
   {
     name: 'porta/modules-use-published-core',
-    files: ['src/modules/**/*.{ts,tsx}'],
+    files: ['src/modules/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'],
     rules: {
       'no-restricted-imports': [
         'error',
