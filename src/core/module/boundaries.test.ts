@@ -34,8 +34,26 @@ const INTERNALS = [
 const MAY_NAME_A_MODULE = 'src/core/module/registry.ts'
 
 type Edge = { file: string; target: string }
-/** A dynamic import whose argument this verifier cannot reduce to a path. */
+/** A dynamic import whose argument this verifier cannot reduce to a path, or
+ *  a CommonJS loader call, which is not allowed here at all. */
 type Opaque = { file: string; expression: string }
+
+// `require` has more spellings than it is worth chasing — `require(...)`,
+// `module.require(...)`, `require.resolve(...)`, a `createRequire` result.
+// src is ESM throughout and has never contained one, so the whole family is
+// rejected rather than classified. Widening the scan to .cts/.cjs without
+// this left a CommonJS-shaped hole in a CommonJS-capable scanner.
+function isRequireLike(callee: ts.Expression): boolean {
+  if (ts.isIdentifier(callee)) return callee.text === 'require'
+  if (ts.isPropertyAccessExpression(callee)) {
+    return (
+      callee.name.text === 'require' ||
+      (ts.isIdentifier(callee.expression) &&
+        callee.expression.text === 'require')
+    )
+  }
+  return false
+}
 
 // tsconfig includes .mts, and .mjs/.cjs/.js can appear at any time. A scan
 // narrower than the language is a hole that opens itself, so the list is
@@ -70,7 +88,7 @@ const SOURCE_GLOB = `src/**/*.{${SOURCE_EXTENSIONS.join(',')}}`
 function specifiers(
   file: string,
   source: string,
-): { literals: string[]; opaque: Opaque[] } {
+): { literals: string[]; opaque: Opaque[]; commonjs: Opaque[] } {
   const kind = file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
   const tree = ts.createSourceFile(
     file,
@@ -81,6 +99,7 @@ function specifiers(
   )
   const found: string[] = []
   const opaque: Opaque[] = []
+  const commonjs: Opaque[] = []
 
   // `isStringLiteralLike`, not `isStringLiteral`: a backtick path with no
   // substitution is a NoSubstitutionTemplateLiteral, and `import(`../help`)`
@@ -103,7 +122,10 @@ function specifiers(
     if (ts.isCallExpression(node)) {
       const callee = node.expression
       const isDynamic = callee.kind === ts.SyntaxKind.ImportKeyword
-      const isRequire = ts.isIdentifier(callee) && callee.text === 'require'
+      const isRequire = isRequireLike(callee)
+      if (isRequire) {
+        commonjs.push({ file, expression: node.getText().slice(0, 80) })
+      }
       if (isDynamic || isRequire) {
         const [first] = node.arguments
         if (first && ts.isStringLiteralLike(first)) {
@@ -122,7 +144,7 @@ function specifiers(
   }
 
   visit(tree)
-  return { literals: found, opaque }
+  return { literals: found, opaque, commonjs }
 }
 
 /** In-repo import edges, resolved to repo-relative paths so an alias and a
@@ -152,6 +174,10 @@ function edgesOf(file: string): Edge[] {
 
 function opaqueOf(file: string): Opaque[] {
   return specifiers(file, readFileSync(resolve(ROOT, file), 'utf8')).opaque
+}
+
+function commonjsOf(file: string): Opaque[] {
+  return specifiers(file, readFileSync(resolve(ROOT, file), 'utf8')).commonjs
 }
 
 function moduleOf(path: string): string | null {
@@ -214,6 +240,15 @@ describe('module boundaries', () => {
     // finding, not a pass.
     const unresolvable = [...moduleFiles, ...platformFiles].flatMap(opaqueOf)
     expect(unresolvable).toEqual([])
+  })
+
+  test('no CommonJS loader is used anywhere in src', () => {
+    // `module.require('../help/module')` was invisible while a bare
+    // `require(...)` was not — a distinction with no meaning. Banning the
+    // family closes every spelling at once, and costs nothing: src is ESM
+    // and has never contained one.
+    const loaders = [...moduleFiles, ...platformFiles].flatMap(commonjsOf)
+    expect(loaders).toEqual([])
   })
 
   test('platform scan reaches beyond core and lib', () => {

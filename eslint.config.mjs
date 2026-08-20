@@ -64,6 +64,35 @@ const eslintConfig = defineConfig([
     },
   },
 
+  {
+    name: 'porta/no-commonjs-loaders',
+    files: ['src/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'],
+    rules: {
+      // src is ESM throughout. A CommonJS loader is both out of place and a
+      // way round the import boundaries, since `module.require(...)` reads
+      // nothing like an import — see src/core/module/boundaries.test.ts,
+      // which rejects the same family however it is spelled.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.name="require"]',
+          message:
+            'src is ESM — use an import. CommonJS loaders also bypass the module boundary rules.',
+        },
+        {
+          selector: 'CallExpression[callee.property.name="require"]',
+          message:
+            'src is ESM — use an import. CommonJS loaders also bypass the module boundary rules.',
+        },
+        {
+          selector: 'MemberExpression[object.name="require"]',
+          message:
+            'src is ESM — use an import. CommonJS loaders also bypass the module boundary rules.',
+        },
+      ],
+    },
+  },
+
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
