@@ -1,30 +1,41 @@
 # 硅基生态平台 / Silicon Ecosystem — Architecture
 
 Single Next.js App Router application, DB-backed content, deployed to Vercel
-and as a self-hosted Docker container from the same codebase. Domain terms
-used here are defined in [CONTEXT.md](../CONTEXT.md); decisions have records
-in [docs/adr/](./adr/).
+and as a self-hosted Docker container from the same codebase. It is organised
+as **feature modules over a shared kernel**: `src/core` is the platform,
+`src/modules/<id>` is one team's vertical slice, and `src/lib` is platform
+internals no module may call ([ADR 0013](./adr/0013-feature-modules-and-the-module-registry.md)).
+Domain terms used here are defined in [CONTEXT.md](../CONTEXT.md); decisions
+have records in [docs/adr/](./adr/).
 
 ## System overview
 
 ```mermaid
 flowchart LR
-  B[Browser] --> P["src/proxy.ts\nintl routing + optimistic cookie gate"]
+  B[Browser] --> P["src/proxy.ts\nmodule redirects + intl routing\n+ optimistic cookie gate"]
   B -- "/api/auth/*" --> A["better-auth handler\n(outside the proxy matcher)"]
-  P --> R["RSC pages\nsrc/app/[locale]/**"]
-  R --> L["src/lib/*\ncontent, fallback, session, invites"]
-  B -- server actions --> S["src/lib/admin-actions.ts"]
-  S --> L
+  P --> R["route mounts\nsrc/app/[locale]/**"]
+  R --> M["src/modules/<id>/**\npages, sections, own tables"]
+  M --> C["src/core/**\ncontent kernel + module registry"]
+  R --> C
+  B -- server actions --> S["src/lib/admin-actions.ts\nsrc/modules/*/actions.ts"]
+  S --> C
   A --> D[(Postgres)]
-  L --> DR["drizzle (lazy client, src/db)"]
+  C --> DR["drizzle (lazy client, src/db)"]
   DR --> D
 ```
 
 - Every page lives under `/[locale]` (`en`, `zh`; always prefixed).
-- The proxy composes next-intl's middleware with a gate: if the bare path is
-  gated (`src/lib/gating.ts`) and no session cookie exists, redirect to the
-  locale's sign-in with a `next=` param. Its matcher excludes `/api` so intl
-  rewrites can never break better-auth routes.
+- Route files under `src/app` are **two-line mounts**: they re-export the page
+  from the module that owns it and declare `dynamic = 'force-dynamic'` (route
+  segment config is read from the route file, so it cannot be re-exported).
+- The proxy does three things in order: apply the path moves modules declare
+  (`redirects` in a manifest), gate (if the bare path is gated and no session
+  cookie exists, redirect to the locale's sign-in with a `next=` param), then
+  hand off to next-intl's middleware. Redirect-before-gate matters: otherwise
+  a signed-out visitor's `next=` would point at a path that no longer exists.
+  The matcher excludes `/api` so intl rewrites can never break better-auth
+  routes.
 
 ## Request & auth flow
 
@@ -48,18 +59,62 @@ flowchart LR
   menu, admin link) must re-render with fresh cookies; client-side
   `router.push` would keep it stale.
 
+## Modules and the registry
+
+- A module is a directory: `module.ts` (a **pure-data manifest** — no JSX, no
+  DB, no server-only imports, because the middleware reaches it),
+  `messages/{en,zh}.json`, `pages/`, optionally `schema.ts` for tables of its
+  own, plus components and colocated tests.
+- `src/core/module/registry.ts` lists the modules. `derive.ts` computes
+  navigation, gated-path regexes, section lookups, message merging and
+  redirects from it — there is no second list anywhere.
+- `src/core/module/registry.test.ts` is the contract: duplicate section keys
+  or paths, a module id shadowing a core namespace, a gated listing, or a
+  manifest naming a message key it does not ship all fail `bun run verify`.
+- **Boundaries are enforced, not documented.** Only the registry and
+  `src/app/**` may name a module; a module may not import another module or a
+  platform internal (`auth`, `invites`, `email`, `admin-actions`). `@/db` is
+  open to modules on purpose — owning tables is a supported seam.
+  - `no-restricted-imports` (`eslint.config.mjs`, `--max-warnings 0`) catches
+    the alias form in the editor.
+  - `src/core/module/boundaries.test.ts` catches it however it is written: it
+    reads imports with TypeScript's parser and resolves them to repo-relative
+    paths, so `../../other-module/thing` fails the same way
+    `@/modules/other-module/thing` does. ESLint alone cannot see that, and
+    relative imports are the house style inside a module.
+  - It **fails closed** on everything it can be wrong about: a dynamic
+    `import()` whose argument it cannot reduce to a path (a concatenation, a
+    ternary, a variable, any interpolated template), a file under `src` whose
+    extension is neither scanned nor known to be inert, module discovery
+    drifting from the registry, and the CommonJS loader names (`require`,
+    `createRequire`) appearing anywhere — banned as names rather than as call
+    shapes, because `module.require(...)`, `module['require'](...)` and a
+    `createRequire` binding are the same thing wearing different clothes.
+    Enumerating the ways round a checker is a losing game; not knowing has to
+    be a finding.
+  - What it does **not** claim: a name assembled at runtime
+    (`module['requ' + 'ire']`) or reached through `eval` is not statically
+    knowable. This is a guardrail against reaching into a sibling module by
+    accident — which is the failure that actually happens — not a sandbox
+    against someone setting out to defeat it. Treat a bypass as a code-review
+    matter, not a gap to be patched.
+
 ## Content model & locale fallback
 
-- One `resources` table (type enum, slug unique per type, draft/published,
-  `tags text[]`, `meta` jsonb) + `resource_translations` per locale. Courses
-  add `course_chapters` (+ translations) with dense 1..n positions.
-- `meta` is validated at write time against the per-type zod schema in
-  `src/lib/resource-meta.ts` — the database stays schema-light, the
+- One `resources` table (`type` as **text**, validated against the registry at
+  write time; slug unique per type; draft/published; `tags text[]`; `meta`
+  jsonb) + `resource_translations` per locale. Modules may add tables of their
+  own — Help & Tutorials owns `course_chapters` (+ translations) with dense
+  1..n positions.
+- `meta` is validated at write time against the section's zod schema, which
+  lives in the owning module — the database stays schema-light, the
   application stays typed.
-- The fallback policy is pure code in `src/lib/fallback.ts`; queries in
-  `src/lib/content.ts` fetch both locales' rows and pick. Untranslated-
-  everywhere resources never surface publicly (admin list still shows them);
-  publishing requires ≥1 translation (enforced in `saveSettings`).
+- The fallback policy is pure code in `src/core/content/fallback.ts`; queries
+  in `src/core/content/queries.ts` fetch both locales' rows and pick.
+  `pickTranslation` is the primitive a module reuses for its own translated
+  rows. Untranslated-everywhere resources never surface publicly (admin list
+  still shows them); publishing requires ≥1 translation (enforced in
+  `saveSettings`).
 - Public search (`listPublished`) is a SQL `ILIKE` across every translation's
   title/summary/body in both locales, backed by `pg_trgm` GIN indexes;
   listings paginate at the resource level (page size 24). See
@@ -69,19 +124,34 @@ flowchart LR
 
 - next-intl v4, `localePrefix: 'always'` — every URL carries its locale, so
   redirects and shared links are unambiguous.
-- UI strings live in `messages/en.json` / `zh.json`; `bun run i18n:check`
-  fails on key drift (also asserted by a unit test).
+- Core UI strings live in `messages/en.json` / `zh.json`; **each module ships
+  its own** `src/modules/<id>/messages/{en,zh}.json`, merged at request time
+  under the module id as its namespace. Splitting them is what stops three
+  teams colliding on one file.
+- `bun run i18n:check` diffs the core bundle and every module bundle
+  independently and names the failing file (also asserted by a unit test), so
+  a module can only break its own parity.
 
 ## Admin & server-action conventions
 
 - **Route groups and layouts are not security boundaries.** Every admin page
   AND every server action starts with `requireAdmin()`; gated pages call
   `requireSession()`. Moving files never changes the security posture.
-- Mutations are server actions in `src/lib/admin-actions.ts`: zod-parse
-  input, return `ActionState` (`{ ok?, error? }`) for `useActionState`
-  forms, `revalidatePath('/', 'layout')` after writes.
+- Mutations are server actions: generic resource ones in
+  `src/lib/admin-actions.ts`, module-specific ones in
+  `src/modules/<id>/actions.ts`. All of them zod-parse input, return
+  `ActionState` (`{ ok?, error? }`) for `useActionState` forms, and
+  `revalidatePath('/', 'layout')` after writes. The shared contract —
+  `ActionState`, `submittedValues`, the SQLSTATE unwrapping that turns races
+  into handled errors — lives in `src/core/content/actions.ts` rather than in
+  the action files, because a `'use server'` module may only export async
+  functions and so cannot publish helpers.
+- One admin editor serves every section: type-specific fields render from the
+  `metaFields` descriptors the module registered, with labels resolved in that
+  module's namespace, so adding a field needs no change in core.
 - Chapter reordering does two-phase position swaps (unique constraint), and
   deletion renumbers to keep positions dense — chapter URLs are positional.
+  Both live in `src/modules/help/actions.ts`.
 
 ## Deployment targets & constraints
 
@@ -146,9 +216,12 @@ anything else should reuse.
 
 | Layer | Tool | Owns |
 |---|---|---|
-| Unit (`src/**/*.test.ts`, `scripts/`) | bun test | fallback policy, meta/slug validation, gated-path classification, message-key diffing |
-| DB integration (`tests/db/`) | bun test + `porta_test` | invite lifecycle, content visibility queries, the signup-hook contract via direct `auth.api` calls |
-| E2E (`e2e/*.e2e.ts`) | Playwright + `porta_e2e` | proxy gating, invite→signup lifecycle, editorial publish flow, i18n badges, smoke |
+| Unit (`src/**/*.test.ts`, `scripts/`) | bun test | fallback policy, meta/slug validation, gated-path classification, message-key diffing, **the module registry contract** |
+| DB integration (`tests/db/`) | bun test + `porta_test` | invite lifecycle, content visibility queries, chapter ordering, the signup-hook contract via direct `auth.api` calls |
+| E2E (`e2e/*.e2e.ts`) | Playwright + `porta_e2e` | proxy gating, module redirects, invite→signup lifecycle, editorial publish flow, i18n badges, smoke |
+
+A module's own tests are colocated with it (`src/modules/<id>/*.test.ts`) —
+its meta schemas are its own to break.
 
 `bun run verify` = format check + lint (zero warnings) + typecheck + i18n
 parity + unit/DB tests — the local landing gate. Naming rule: bun test picks
@@ -159,16 +232,38 @@ Test-database safety: the bun-test preload force-assigns `DATABASE_URL` to a
 TRUNCATEs at the dev database), and the e2e prep script requires an `_e2e`
 suffix before dropping anything.
 
-## Adding a section
+## Adding a section to a module
 
-A new section is additive — no schema surgery:
+Entirely inside the module — no core file, no migration:
 
-1. Add the value to the `resource_type` enum in `src/db/schema/content.ts`;
-   `bun run db:generate` a migration.
-2. Add a meta zod schema + `sectionForType` entry in
-   `src/lib/resource-meta.ts` (admin settings form fields render from it).
-3. Add listing and detail pages under `src/app/[locale]/<section>/`
-   (copy the closest existing section).
-4. Add the section to the nav (`src/components/site/header.tsx`), the gating
-   patterns (`src/lib/gating.ts`) if details are gated, and both message
-   files.
+1. Add a section to `sections` in `src/modules/<id>/module.ts`: a `key`
+   (globally unique, stored in `resources.type`), a `path`, title/description
+   message keys, a zod `meta` schema, and `metaFields` descriptors.
+2. Add those keys to **both** `src/modules/<id>/messages/*.json`.
+3. Add a listing page — `createListingPage('<key>')` from
+   `@/core/content/listing-page` is usually the whole file — and a detail page
+   that renders your `meta`.
+4. Mount them: `src/app/[locale]/<path>/page.tsx` re-exporting the page plus
+   `export const dynamic = 'force-dynamic'`.
+
+Nav, gating, the admin type filter and the admin form fields all follow from
+the manifest. `bun run verify` fails if a key collides or a message is
+missing.
+
+## Adding a module
+
+`bun run module:new <id>` scaffolds all of this and leaves the tree green;
+what it generates is:
+
+1. `src/modules/<id>/` with `module.ts`, `messages/{en,zh}.json`, `pages/`.
+   The manifest needs `id` (also its i18n namespace), `nav`, `sections` and
+   `messages`; add `redirects` if it is taking over existing paths.
+2. Route mounts under `src/app/[locale]/`. A module with several sections
+   usually wants `createModuleIndexPage('<id>')` at its base path.
+3. **One line** in `src/core/module/registry.ts`.
+
+Optional: `schema.ts` if the module needs tables of its own — drizzle-kit
+picks it up via the glob in `drizzle.config.ts`. Note that migrations still
+land in one `drizzle/` folder, so two modules generating migrations at the
+same time conflict in `drizzle/meta/_journal.json`; the fix is to regenerate,
+and it is the accepted price of a single-container deployment (ADR 0005).

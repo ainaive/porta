@@ -42,17 +42,22 @@ test.describe('public smoke', () => {
     await page.getByRole('button', { name: 'Menu' }).click()
     await page
       .getByRole('dialog')
-      .getByRole('link', { name: 'Courses' })
+      .getByRole('link', { name: 'Help & Tutorials' })
       .click()
-    await expect(page).toHaveURL(/\/en\/courses$/)
+    await expect(page).toHaveURL(/\/en\/help$/)
   })
 
-  test('all four section listings respond', async ({ page }) => {
+  test('every section listing responds', async ({ page }) => {
     for (const [path, heading] of [
-      ['/en/tools', 'Tools'],
-      ['/en/courses', 'Courses'],
-      ['/en/videos', 'Videos'],
-      ['/en/models', 'Model APIs'],
+      ['/en/tools', 'Tool Shelf'],
+      ['/en/help', 'Help & Tutorials'],
+      ['/en/help/courses', 'Courses'],
+      ['/en/help/videos', 'Videos'],
+      ['/en/help/guides', 'Guides'],
+      ['/en/evals', 'AI Evaluation'],
+      ['/en/evals/agents', 'Agents'],
+      ['/en/evals/models', 'Models'],
+      ['/en/evals/reports', 'Reports'],
     ] as const) {
       await page.goto(path)
       await expect(page.getByRole('heading', { name: heading })).toBeVisible()
@@ -93,16 +98,16 @@ test.describe('public smoke', () => {
 
 test.describe('signed in', () => {
   test('video detail embeds the provider player', async ({ page }) => {
-    await page.goto('/en/videos/getting-started-with-silicon')
+    await page.goto('/en/help/videos/getting-started-with-silicon')
     await expect(page.locator('iframe[src*="youtube.com"]')).toBeVisible()
   })
 
   test('course chapters navigate with prev/next', async ({ page }) => {
-    await page.goto('/en/courses/prompt-engineering-101')
+    await page.goto('/en/help/courses/prompt-engineering-101')
     await page.getByRole('link', { name: /Why prompts matter/ }).click()
-    await expect(page).toHaveURL(/\/courses\/prompt-engineering-101\/1$/)
+    await expect(page).toHaveURL(/\/help\/courses\/prompt-engineering-101\/1$/)
     await page.getByRole('link', { name: /Next/ }).click()
-    await expect(page).toHaveURL(/\/courses\/prompt-engineering-101\/2$/)
+    await expect(page).toHaveURL(/\/help\/courses\/prompt-engineering-101\/2$/)
   })
 
   test('a non-numeric chapter segment shows not-found, not chapter 1', async ({
@@ -110,7 +115,7 @@ test.describe('signed in', () => {
   }) => {
     // Dynamic/streaming pages can't rewind an already-committed 200, so assert
     // the not-found UI renders (the codebase's convention) rather than status.
-    await page.goto('/en/courses/prompt-engineering-101/1abc')
+    await page.goto('/en/help/courses/prompt-engineering-101/1abc')
     await expect(page.getByText('Page not found')).toBeVisible()
   })
 

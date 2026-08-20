@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { Badge } from '@/components/ui/badge'
-import type { TranslatedResource } from '@/lib/content'
+import type { TranslatedResource } from '@/core/content/queries'
 
 export async function ResourceDetailHeader({
   resource,

@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { Button } from '@/components/ui/button'
+import { navEntries } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import { getSession } from '@/lib/session'
 import { BrandMark } from './brand-mark'
@@ -7,16 +8,12 @@ import { LocaleSwitcher } from './locale-switcher'
 import { MobileNav } from './mobile-nav'
 import { UserMenu } from './user-menu'
 
-const SECTIONS = [
-  { href: '/tools', key: 'tools' },
-  { href: '/courses', key: 'courses' },
-  { href: '/videos', key: 'videos' },
-  { href: '/models', key: 'models' },
-] as const
-
 export async function SiteHeader() {
-  const [t, common, session] = await Promise.all([
+  // Section links come from the module registry; `t` is unnamespaced because
+  // each module's labels live under its own namespace.
+  const [t, nav, common, session] = await Promise.all([
     getTranslations('nav'),
+    getTranslations(),
     getTranslations('common'),
     getSession(),
   ])
@@ -28,9 +25,9 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4">
         <MobileNav
           label={t('menu')}
-          items={SECTIONS.map((section) => ({
-            href: section.href,
-            label: t(section.key),
+          items={navEntries.map((entry) => ({
+            href: entry.href,
+            label: nav(entry.labelKey),
           }))}
         />
         <Link href="/" className="flex items-center gap-2.5">
@@ -44,13 +41,13 @@ export async function SiteHeader() {
           </span>
         </Link>
         <nav className="flex items-center gap-1 text-sm max-sm:hidden">
-          {SECTIONS.map((section) => (
+          {navEntries.map((entry) => (
             <Link
-              key={section.key}
-              href={section.href}
+              key={entry.href}
+              href={entry.href}
               className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              {t(section.key)}
+              {nav(entry.labelKey)}
             </Link>
           ))}
         </nav>

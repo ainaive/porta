@@ -1,15 +1,29 @@
 'use server'
 
-import { and, asc, eq, max, ne } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
+import {
+  type ActionState,
+  isForeignKeyViolation,
+  isUniqueViolation,
+  localeSchema,
+  submittedValues,
+  uuidSchema,
+} from '@/core/content/actions'
+import {
+  formString,
+  parseMeta,
+  type ResourceType,
+  resourceTypes,
+  slugSchema,
+} from '@/core/content/meta'
+import { findSection } from '@/core/module/derive'
 import { db } from '@/db'
 import {
-  courseChapters,
-  courseChapterTranslations,
   invites,
   resources,
   resourceTranslations,
@@ -21,78 +35,19 @@ import type { Locale } from '@/i18n/routing'
 import { auth, canonicalBaseURL } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
-import {
-  formString,
-  parseMeta,
-  type ResourceType,
-  slugSchema,
-} from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 
-// `error` is a message key under admin.errors (translated where rendered,
-// in ActionFeedback), with `detail` interpolated for technical specifics.
-// `values` echoes the submitted fields on error so forms can re-fill:
-// React 19 resets uncontrolled <form action> forms on every submit, error
-// included — without the echo a failed save discards everything typed.
-export type ActionErrorCode =
-  | 'slugFormat'
-  | 'typeInvalid'
-  | 'slugTaken'
-  | 'titleRequired'
-  | 'publishNeedsTranslation'
-  | 'resourceNotFound'
-  | 'emailInvalid'
-  | 'metaInvalid'
-
-export type ActionState = {
-  ok?: boolean
-  error?: ActionErrorCode
-  detail?: string
-  values?: Record<string, string>
-}
-
-function submittedValues(formData: FormData): Record<string, string> {
-  const values: Record<string, string> = {}
-  for (const [key, value] of formData.entries()) {
-    if (typeof value === 'string' && !key.startsWith('$ACTION')) {
-      values[key] = value
-    }
-  }
-  return values
-}
-
-const localeSchema = z.enum(['en', 'zh'])
-const typeSchema = z.enum(['tool', 'course', 'video', 'model_api'])
-const uuidSchema = z.uuid()
+// Accepts exactly the sections the registry knows about, so an unregistered
+// type can never reach the database.
+const typeSchema = z.enum(
+  resourceTypes as unknown as [ResourceType, ...ResourceType[]],
+)
 
 // Invite links are built by hand (they carry our own sign-up token, not a
 // better-auth one), so resolve the same canonical origin better-auth uses for
 // its emailed links — keeping invite and reset links pointed at one place.
 function appBaseUrl(): string {
   return canonicalBaseURL() ?? ''
-}
-
-// Drizzle wraps driver errors, so the postgres SQLSTATE lives on a cause a
-// level or two down, not the top-level error — walk the chain to find it.
-function pgErrorCode(error: unknown): string | undefined {
-  let current: unknown = error
-  for (let depth = 0; depth < 5 && current; depth++) {
-    const code = (current as { code?: unknown }).code
-    if (typeof code === 'string') return code
-    current = (current as { cause?: unknown }).cause
-  }
-  return undefined
-}
-
-// A slug that raced past the pre-check surfaces as a unique violation; a
-// well-formed id whose parent row is missing (deleted concurrently, or a
-// crafted request) fails a foreign key. Both become handled errors, not 500s.
-function isUniqueViolation(error: unknown): boolean {
-  return pgErrorCode(error) === '23505'
-}
-
-function isForeignKeyViolation(error: unknown): boolean {
-  return pgErrorCode(error) === '23503'
 }
 
 // ---------- Resources ----------
@@ -248,13 +203,22 @@ export async function saveSettings(
     .map((tag) => tag.trim())
     .filter(Boolean)
 
-  const { meta, error } = parseMeta(resource.type as ResourceType, formData)
-  if (error) {
-    return {
-      error: 'metaInvalid',
-      detail: error,
-      values: submittedValues(formData),
+  // A resource whose section has been retired has no schema to validate
+  // against and no meta fields on the form, so re-parsing would reject every
+  // save and strand the row: an admin could neither unpublish it nor correct
+  // its slug. Keep the stored meta as-is and let slug/status/tags through —
+  // that IS the retirement workflow (fix the type, unpublish, or delete).
+  let meta = resource.meta
+  if (findSection(resource.type)) {
+    const parsed = parseMeta(resource.type as ResourceType, formData)
+    if (parsed.error) {
+      return {
+        error: 'metaInvalid',
+        detail: parsed.error,
+        values: submittedValues(formData),
+      }
     }
+    meta = parsed.meta
   }
 
   try {
@@ -278,143 +242,6 @@ export async function deleteResource(resourceId: string): Promise<void> {
   await db.delete(resources).where(eq(resources.id, resourceId))
   revalidatePath('/', 'layout')
   redirect({ href: '/admin/resources', locale: await getLocale() })
-}
-
-// ---------- Course chapters ----------
-
-export async function addChapter(courseId: string): Promise<void> {
-  await requireAdmin()
-
-  const [row] = await db
-    .select({ maxPosition: max(courseChapters.position) })
-    .from(courseChapters)
-    .where(eq(courseChapters.courseId, courseId))
-  const position = (row?.maxPosition ?? 0) + 1
-
-  const [created] = await db
-    .insert(courseChapters)
-    .values({ courseId, position })
-    .returning({ id: courseChapters.id })
-
-  revalidatePath('/', 'layout')
-  redirect({
-    href: `/admin/resources/${courseId}/chapters/${created.id}`,
-    locale: await getLocale(),
-  })
-}
-
-export async function saveChapterTranslation(
-  chapterId: string,
-  locale: Locale,
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  await requireAdmin()
-  localeSchema.parse(locale)
-  if (!uuidSchema.safeParse(chapterId).success) {
-    return { error: 'resourceNotFound' }
-  }
-
-  const title = formString(formData, 'title')
-  if (!title) {
-    return { error: 'titleRequired', values: submittedValues(formData) }
-  }
-
-  try {
-    await db
-      .insert(courseChapterTranslations)
-      .values({ chapterId, locale, title, body: formString(formData, 'body') })
-      .onConflictDoUpdate({
-        target: [
-          courseChapterTranslations.chapterId,
-          courseChapterTranslations.locale,
-        ],
-        set: { title, body: formString(formData, 'body') },
-      })
-  } catch (e) {
-    if (isForeignKeyViolation(e)) return { error: 'resourceNotFound' }
-    throw e
-  }
-
-  revalidatePath('/', 'layout')
-  return { ok: true }
-}
-
-export async function moveChapter(
-  chapterId: string,
-  direction: 'up' | 'down',
-): Promise<void> {
-  await requireAdmin()
-
-  await db.transaction(async (tx) => {
-    const [current] = await tx
-      .select()
-      .from(courseChapters)
-      .where(eq(courseChapters.id, chapterId))
-      .limit(1)
-    if (!current) return
-
-    const siblings = await tx
-      .select()
-      .from(courseChapters)
-      .where(eq(courseChapters.courseId, current.courseId))
-      .orderBy(asc(courseChapters.position))
-    const index = siblings.findIndex((c) => c.id === chapterId)
-    const swapWith = siblings[direction === 'up' ? index - 1 : index + 1]
-    if (!swapWith) return
-
-    // Two-phase swap to satisfy the unique (courseId, position) constraint.
-    await tx
-      .update(courseChapters)
-      .set({ position: 0 })
-      .where(eq(courseChapters.id, current.id))
-    await tx
-      .update(courseChapters)
-      .set({ position: current.position })
-      .where(eq(courseChapters.id, swapWith.id))
-    await tx
-      .update(courseChapters)
-      .set({ position: swapWith.position })
-      .where(eq(courseChapters.id, current.id))
-  })
-
-  revalidatePath('/', 'layout')
-}
-
-export async function deleteChapter(chapterId: string): Promise<void> {
-  await requireAdmin()
-
-  await db.transaction(async (tx) => {
-    const [current] = await tx
-      .select()
-      .from(courseChapters)
-      .where(eq(courseChapters.id, chapterId))
-      .limit(1)
-    if (!current) return
-
-    await tx.delete(courseChapters).where(eq(courseChapters.id, chapterId))
-
-    // Renumber sequentially so chapter URLs (/courses/slug/N) stay dense.
-    const remaining = await tx
-      .select()
-      .from(courseChapters)
-      .where(eq(courseChapters.courseId, current.courseId))
-      .orderBy(asc(courseChapters.position))
-    for (const [offset, chapter] of remaining.entries()) {
-      await tx
-        .update(courseChapters)
-        .set({ position: 1000 + offset })
-        .where(eq(courseChapters.id, chapter.id))
-    }
-    for (const [offset, chapter] of remaining.entries()) {
-      await tx
-        .update(courseChapters)
-        .set({ position: offset + 1 })
-        .where(eq(courseChapters.id, chapter.id))
-    }
-  })
-
-  revalidatePath('/', 'layout')
 }
 
 // ---------- Invites ----------

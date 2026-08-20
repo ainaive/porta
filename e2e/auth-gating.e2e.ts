@@ -27,6 +27,6 @@ test('admin area redirects signed-out visitors to sign-in', async ({
 
 test('public listing is reachable without a session', async ({ page }) => {
   await page.goto('/en/tools')
-  await expect(page.getByRole('heading', { name: 'Tools' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Tool Shelf' })).toBeVisible()
   await expect(page.getByText('Silicon CLI')).toBeVisible()
 })

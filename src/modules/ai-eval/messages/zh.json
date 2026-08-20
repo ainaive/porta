@@ -1,0 +1,34 @@
+{
+  "nav": {
+    "title": "AI 评测"
+  },
+  "index": {
+    "title": "AI 评测",
+    "description": "我们所依赖的模型、智能体与工具，真实表现如何。"
+  },
+  "agents": {
+    "title": "智能体",
+    "description": "智能体评测：各自擅长什么，又在哪里失灵。"
+  },
+  "models": {
+    "title": "模型",
+    "description": "模型 API 文档、接入端点与使用指南。"
+  },
+  "reports": {
+    "title": "评测报告",
+    "description": "其余的测量结果——基准测试、横向对比与分析文章。"
+  },
+  "endpoint": "接入端点",
+  "provider": "提供方",
+  "vendor": "厂商",
+  "documentation": "查看文档",
+  "meta": {
+    "provider": "提供方",
+    "vendor": "厂商",
+    "docsUrl": "文档 URL",
+    "endpoint": "接入端点",
+    "links": "链接（每行一条：名称 | URL）",
+    "subject": "评测对象",
+    "sourceUrl": "来源 URL"
+  }
+}

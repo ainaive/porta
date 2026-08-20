@@ -1,0 +1,34 @@
+{
+  "nav": {
+    "title": "AI Evaluation"
+  },
+  "index": {
+    "title": "AI Evaluation",
+    "description": "How the models, agents, and tools we build on actually perform."
+  },
+  "agents": {
+    "title": "Agents",
+    "description": "Agent evaluations: what each one is good at, and where it breaks."
+  },
+  "models": {
+    "title": "Models",
+    "description": "Model API docs, endpoints, and usage guides."
+  },
+  "reports": {
+    "title": "Reports",
+    "description": "Everything else we measure — benchmarks, comparisons, write-ups."
+  },
+  "endpoint": "Endpoint",
+  "provider": "Provider",
+  "vendor": "Vendor",
+  "documentation": "Documentation",
+  "meta": {
+    "provider": "Provider",
+    "vendor": "Vendor",
+    "docsUrl": "Docs URL",
+    "endpoint": "Endpoint",
+    "links": "Links (one per line: Label | URL)",
+    "subject": "Subject",
+    "sourceUrl": "Source URL"
+  }
+}

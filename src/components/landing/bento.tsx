@@ -1,9 +1,10 @@
 import { getTranslations } from 'next-intl/server'
 import type { ReactNode } from 'react'
+import { z } from 'zod'
 import { Badge } from '@/components/ui/badge'
+import type { HomeOverview, TranslatedResource } from '@/core/content/queries'
+import { sectionTitleKey } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
-import type { HomeOverview, TranslatedResource } from '@/lib/content'
-import { modelApiMeta } from '@/lib/resource-meta'
 import { cn } from '@/lib/utils'
 import { Kicker } from './primitives'
 
@@ -85,26 +86,46 @@ function Stat({ value, label }: { value: number; label: string }) {
   )
 }
 
+// The landing reads the one meta field it quotes rather than importing the
+// owning module's schema — core must not depend on a module.
+const endpointMeta = z.object({
+  endpoint: z.string().min(1),
+  provider: z.string().optional(),
+})
+
 // Picks the first model API resource that actually carries an endpoint, so
 // the panel quotes the catalog instead of inventing a plausible-looking one.
 function firstEndpoint(items: TranslatedResource[]) {
   for (const item of items) {
-    const parsed = modelApiMeta.safeParse(item.meta)
-    if (parsed.success && parsed.data.endpoint) {
+    const parsed = endpointMeta.safeParse(item.meta)
+    if (parsed.success) {
       return { item, meta: parsed.data }
     }
   }
   return null
 }
 
-export async function Bento({ overview }: { overview: HomeOverview }) {
-  const [t, sections, common] = await Promise.all([
+export async function Bento({
+  overview,
+  chapterCount,
+}: {
+  overview: HomeOverview
+  // Owned by the help module, so the page fetches it and hands it over
+  // rather than core querying a table it does not own.
+  chapterCount: number
+}) {
+  // `label` is unnamespaced: the tiles quote section titles that now live in
+  // their owning modules' bundles. The landing still names specific sections
+  // by hand — ADR 0008 holds its copy to shipped capability, so the tiles are
+  // deliberate rather than derived.
+  const [t, label, content, common] = await Promise.all([
     getTranslations('home'),
-    getTranslations('sections'),
+    getTranslations(),
+    getTranslations('content'),
     getTranslations('common'),
   ])
-  const { sections: catalog, tags, chapterCount } = overview
-  const endpoint = firstEndpoint(catalog.model_api.items)
+  const { sections: catalog, tags } = overview
+  const endpoint = firstEndpoint(catalog.model.items)
   const latestVideo = catalog.video.items[0]
   const fallbackExample = overview.latest.find((item) => item.isFallback)
 
@@ -121,7 +142,7 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
         <Tile className="lg:col-span-4">
           <TileHead
             index="01"
-            label={sections('tools.title')}
+            label={label(sectionTitleKey('tool'))}
             count={catalog.tool.count}
             title={t('bento.tools.title')}
             description={t('bento.tools.description')}
@@ -152,7 +173,7 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
             </div>
           ) : (
             <p className="mt-6 text-sm text-muted-foreground">
-              {sections('empty')}
+              {content('empty')}
             </p>
           )}
         </Tile>
@@ -160,17 +181,17 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
         <Tile className="lg:col-span-2">
           <TileHead
             index="02"
-            label={sections('models.title')}
-            count={catalog.model_api.count}
+            label={label(sectionTitleKey('model'))}
+            count={catalog.model.count}
             title={t('bento.models.title')}
             description={t('bento.models.description')}
-            href="/models"
+            href="/evals/models"
           />
           {endpoint ? (
             <dl className="mt-5 overflow-hidden rounded-xl border bg-background/70 p-4 font-mono text-[11.5px] leading-loose">
               <div className="flex gap-2">
                 <dt className="shrink-0 text-muted-foreground/70">
-                  {sections('provider')}
+                  {label('ai-eval.provider')}
                 </dt>
                 <dd className="min-w-0 truncate text-secondary-foreground">
                   {endpoint.meta.provider ?? endpoint.item.title}
@@ -178,7 +199,7 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
               </div>
               <div className="flex gap-2">
                 <dt className="shrink-0 text-muted-foreground/70">
-                  {sections('endpoint')}
+                  {label('ai-eval.endpoint')}
                 </dt>
                 {/* Flex rather than an inline caret: inside a truncating box
                     the caret gets pushed past the clip edge. */}
@@ -199,32 +220,32 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
         <Tile className="lg:col-span-2">
           <TileHead
             index="03"
-            label={sections('courses.title')}
+            label={label(sectionTitleKey('course'))}
             title={t('bento.courses.title')}
             description={t('bento.courses.description')}
-            href="/courses"
+            href="/help/courses"
           />
           <div className="mt-6 flex gap-10">
             <Stat
               value={catalog.course.count}
-              label={sections('courses.title')}
+              label={label(sectionTitleKey('course'))}
             />
-            <Stat value={chapterCount} label={sections('chapters')} />
+            <Stat value={chapterCount} label={label('help.chapters')} />
           </div>
         </Tile>
 
         <Tile className="lg:col-span-2">
           <TileHead
             index="04"
-            label={sections('videos.title')}
+            label={label(sectionTitleKey('video'))}
             title={t('bento.videos.title')}
             description={t('bento.videos.description')}
-            href="/videos"
+            href="/help/videos"
           />
           <div className="mt-6 flex items-end gap-6">
             <Stat
               value={catalog.video.count}
-              label={sections('videos.title')}
+              label={label(sectionTitleKey('video'))}
             />
             {latestVideo ? (
               <p className="min-w-0 truncate pb-1 text-[13px] text-muted-foreground">

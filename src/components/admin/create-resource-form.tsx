@@ -7,9 +7,15 @@ import { NativeSelect } from '@/components/admin/native-select'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { type ActionState, createResource } from '@/lib/admin-actions'
+import { type ActionState } from '@/core/content/actions'
+import { createResource } from '@/lib/admin-actions'
 
-export function CreateResourceForm() {
+export function CreateResourceForm({
+  /** Registered section keys, in registry order. */
+  types,
+}: {
+  types: readonly string[]
+}) {
   const t = useTranslations('admin')
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     createResource,
@@ -27,12 +33,13 @@ export function CreateResourceForm() {
           <NativeSelect
             id="type"
             name="type"
-            defaultValue={values?.type ?? 'tool'}
+            defaultValue={values?.type ?? types[0]}
           >
-            <option value="tool">tool</option>
-            <option value="course">course</option>
-            <option value="video">video</option>
-            <option value="model_api">model_api</option>
+            {types.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
           </NativeSelect>
         </Field>
         <Field>

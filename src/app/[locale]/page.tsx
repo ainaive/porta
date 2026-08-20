@@ -4,9 +4,10 @@ import { Bento } from '@/components/landing/bento'
 import { Hero } from '@/components/landing/hero'
 import { PreviewMock } from '@/components/landing/preview-mock'
 import { ResourceCard } from '@/components/resource/card'
+import { getHomeOverview } from '@/core/content/queries'
 import type { Locale } from '@/i18n/routing'
-import { getHomeOverview } from '@/lib/content'
 import { getSession } from '@/lib/session'
+import { countPublishedChapters } from '@/modules/help/chapters'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,9 +17,10 @@ export default async function HomePage({
   params: Promise<{ locale: Locale }>
 }) {
   const { locale } = await params
-  const [t, overview, session] = await Promise.all([
-    getTranslations('sections'),
+  const [t, overview, chapterCount, session] = await Promise.all([
+    getTranslations('content'),
     getHomeOverview(locale),
+    countPublishedChapters(),
     // React-cached; the header already asked, so this costs nothing.
     getSession(),
   ])
@@ -36,7 +38,7 @@ export default async function HomePage({
         <PreviewMock locale={locale} items={overview.latest} />
       </Hero>
 
-      <Bento overview={overview} />
+      <Bento overview={overview} chapterCount={chapterCount} />
 
       {overview.latest.length > 0 ? (
         <section className="mx-auto w-full max-w-6xl px-4 pb-24 sm:pb-32">

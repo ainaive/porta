@@ -1,0 +1,40 @@
+{
+  "nav": {
+    "title": "Help & Tutorials"
+  },
+  "index": {
+    "title": "Help & Tutorials",
+    "description": "Learn the toolchain: video courses, recorded sessions, and written guides."
+  },
+  "courses": {
+    "title": "Courses",
+    "description": "Structured learning paths from the team."
+  },
+  "videos": {
+    "title": "Videos",
+    "description": "Teaching videos and recorded sessions."
+  },
+  "guides": {
+    "title": "Guides",
+    "description": "Written how-tos for the things people ask about most."
+  },
+  "chapters": "Chapters",
+  "previousChapter": "Previous",
+  "nextChapter": "Next",
+  "level": "Level",
+  "levels": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "estimatedHours": "~{hours} h",
+  "source": "Source",
+  "meta": {
+    "level": "Level",
+    "hours": "Estimated hours",
+    "provider": "Provider",
+    "embedUrl": "Embed URL",
+    "duration": "Duration",
+    "sourceUrl": "Source URL"
+  }
+}

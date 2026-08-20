@@ -1,19 +1,12 @@
 import { getTranslations } from 'next-intl/server'
+import { navEntries } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import { BrandMark } from './brand-mark'
 
-const SECTIONS = ['tools', 'courses', 'videos', 'models'] as const
-
-const SECTION_HREF = {
-  tools: '/tools',
-  courses: '/courses',
-  videos: '/videos',
-  models: '/models',
-} as const
-
 export async function SiteFooter() {
-  const [t, common] = await Promise.all([
-    getTranslations('nav'),
+  // Same registry-derived list as the header, so the two can no longer drift.
+  const [nav, common] = await Promise.all([
+    getTranslations(),
     getTranslations('common'),
   ])
 
@@ -27,13 +20,13 @@ export async function SiteFooter() {
           </span>
         </div>
         <nav className="ml-auto flex flex-wrap items-center gap-x-5 gap-y-2">
-          {SECTIONS.map((key) => (
+          {navEntries.map((entry) => (
             <Link
-              key={key}
-              href={SECTION_HREF[key]}
+              key={entry.href}
+              href={entry.href}
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              {t(key)}
+              {nav(entry.labelKey)}
             </Link>
           ))}
         </nav>

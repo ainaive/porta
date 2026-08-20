@@ -1,13 +1,14 @@
 // Dev seed: wipes content tables (not users) and inserts sample resources,
 // including zh-only and en-only entries to exercise the translation fallback,
 // and a draft that must never surface publicly. Run with `bun run db:seed`.
+
+import type { ResourceType } from '../src/core/content/meta'
 import { db } from '../src/db'
+import { resources, resourceTranslations } from '../src/db/schema'
 import {
   courseChapters,
   courseChapterTranslations,
-  resources,
-  resourceTranslations,
-} from '../src/db/schema'
+} from '../src/modules/help/schema'
 
 // The seed starts by deleting all content, and bun auto-loads .env — so a
 // production DATABASE_URL sitting in the environment must not be enough to
@@ -34,7 +35,7 @@ type SeedTranslation = {
 }
 
 type SeedResource = {
-  type: 'tool' | 'course' | 'video' | 'model_api'
+  type: ResourceType
   slug: string
   status?: 'draft' | 'published'
   tags: string[]
@@ -167,7 +168,7 @@ const SEED: SeedResource[] = [
     ],
   },
   {
-    type: 'model_api',
+    type: 'model',
     slug: 'claude-api',
     tags: ['llm', 'api'],
     meta: {
@@ -199,7 +200,7 @@ const SEED: SeedResource[] = [
     ],
   },
   {
-    type: 'model_api',
+    type: 'model',
     slug: 'internal-inference-gateway',
     tags: ['llm', 'infra'],
     meta: {

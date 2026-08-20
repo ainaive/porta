@@ -8,7 +8,8 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import { asc, eq } from 'drizzle-orm'
 import { db } from '@/db'
-import { courseChapters, invites, resources } from '@/db/schema'
+import { invites, resources } from '@/db/schema'
+import { courseChapters } from '@/modules/help/schema'
 import { resetDb } from './harness'
 
 const FAKE_ADMIN = {
@@ -34,16 +35,16 @@ const {
   saveTranslation,
   saveSettings,
   deleteResource,
-  addChapter,
-  saveChapterTranslation,
-  moveChapter,
-  deleteChapter,
   createInvite,
   deleteInvite,
   sendUserResetEmail,
   setUserRole,
   toggleUserBan,
 } = await import('@/lib/admin-actions')
+// Chapter mutations moved to the help module, but they are gated by the
+// same mocked requireAdmin, so they stay in this suite's contract.
+const { addChapter, saveChapterTranslation, moveChapter, deleteChapter } =
+  await import('@/modules/help/actions')
 
 async function seedChapters(
   positions: number[],
@@ -140,6 +141,48 @@ describe('input validation returns handled errors, not 500s', () => {
     expect(await saveChapterTranslation(orphan, 'en', {}, f)).toEqual({
       error: 'resourceNotFound',
     })
+  })
+
+  test('a retired section can still be unpublished and re-slugged', async () => {
+    // The counterpart to the admin list keeping orphans visible: showing a
+    // row you cannot act on is not a workflow. There is no schema to
+    // validate meta against and no meta fields on the form, so the stored
+    // meta is preserved rather than re-parsed.
+    const [row] = await db
+      .insert(resources)
+      .values({
+        type: 'retired_section',
+        slug: 'ghost',
+        status: 'published',
+        meta: { keepMe: true },
+      })
+      .returning({ id: resources.id })
+
+    const f = new FormData()
+    f.set('slug', 'ghost-archived')
+    f.set('status', 'draft')
+    f.set('tags', 'archived')
+    expect(await saveSettings(row.id, {}, f)).toEqual({ ok: true })
+
+    const [saved] = await db
+      .select()
+      .from(resources)
+      .where(eq(resources.id, row.id))
+    expect(saved.status).toBe('draft')
+    expect(saved.slug).toBe('ghost-archived')
+    expect(saved.tags).toEqual(['archived'])
+    expect(saved.meta).toEqual({ keepMe: true })
+  })
+
+  test('an unregistered type is rejected before it reaches the table', async () => {
+    // resources.type is plain text now (ADR 0013) — the module registry is
+    // the only thing standing between a bad type and the database, so this
+    // is the guard the dropped pg enum used to provide.
+    const f = new FormData()
+    f.set('type', 'not-a-section')
+    f.set('slug', 'whatever')
+    expect(await createResource({}, f)).toMatchObject({ error: 'typeInvalid' })
+    expect(await db.select().from(resources)).toHaveLength(0)
   })
 
   test('a duplicate (type, slug) is reported as slugTaken', async () => {

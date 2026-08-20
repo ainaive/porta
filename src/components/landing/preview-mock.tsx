@@ -1,10 +1,9 @@
 import { getTranslations } from 'next-intl/server'
+import type { ResourceType } from '@/core/content/meta'
+import type { TranslatedResource } from '@/core/content/queries'
+import { navEntries, sectionTitleKey } from '@/core/module/derive'
 import type { Locale } from '@/i18n/routing'
-import type { TranslatedResource } from '@/lib/content'
-import { type ResourceType, sectionForType } from '@/lib/resource-meta'
 import { Glow } from './primitives'
-
-const SECTIONS = ['tools', 'courses', 'videos', 'models'] as const
 
 // Straight from the design: brand hue, violet, amber, cyan, green, brand tint.
 const TINTS = [
@@ -26,10 +25,12 @@ export async function PreviewMock({
   locale: Locale
   items: TranslatedResource[]
 }) {
-  const [t, nav, sections, common] = await Promise.all([
+  // The mock sidebar mirrors the real nav, so it can never advertise a
+  // section the site does not have.
+  const [t, label, content, common] = await Promise.all([
     getTranslations('home'),
-    getTranslations('nav'),
-    getTranslations('sections'),
+    getTranslations(),
+    getTranslations('content'),
     getTranslations('common'),
   ])
 
@@ -59,9 +60,9 @@ export async function PreviewMock({
             <div className="px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] text-muted-foreground/70 uppercase">
               {common('appName')}
             </div>
-            {SECTIONS.map((key, index) => (
+            {navEntries.map((entry, index) => (
               <div
-                key={key}
+                key={entry.href}
                 className={
                   index === 0
                     ? 'flex items-center gap-2 rounded-md bg-white/7 px-2.5 py-2 text-[13px]'
@@ -74,7 +75,7 @@ export async function PreviewMock({
                     className="size-1.5 rounded-full bg-brand"
                   />
                 ) : null}
-                {nav(key)}
+                {label(entry.labelKey)}
               </div>
             ))}
           </div>
@@ -110,16 +111,14 @@ export async function PreviewMock({
                     </div>
                     <div className="truncate font-mono text-[10px] text-muted-foreground/80">
                       {item.tags[0] ??
-                        sections(
-                          `${sectionForType[item.type as ResourceType]}.title`,
-                        )}
+                        label(sectionTitleKey(item.type as ResourceType))}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                {sections('empty')}
+                {content('empty')}
               </p>
             )}
           </div>

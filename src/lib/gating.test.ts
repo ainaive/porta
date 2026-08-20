@@ -17,8 +17,9 @@ describe('splitLocale', () => {
 describe('isGatedPath', () => {
   test.each([
     '/en/tools/silicon-cli',
-    '/zh/courses/some-course/2',
-    '/videos/clip',
+    '/zh/help/courses/some-course/2',
+    '/help/videos/clip',
+    '/en/evals/models/claude-api',
     '/en/admin',
     '/zh/admin/',
     '/admin/resources/abc',
@@ -30,7 +31,10 @@ describe('isGatedPath', () => {
 
   test.each([
     '/en/tools',
-    '/zh/courses',
+    '/zh/help/courses',
+    // A module's base path is an index, not a section listing — public.
+    '/en/help',
+    '/zh/evals',
     '/en',
     '/',
     '/en/sign-in',

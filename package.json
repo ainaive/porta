@@ -16,6 +16,7 @@
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
     "db:seed": "bun scripts/seed.ts",
     "i18n:check": "bun scripts/check-messages.ts",
+    "module:new": "bun scripts/new-module.ts",
     "test": "bun test src/ scripts/ tests/",
     "test:unit": "bun test src/ scripts/",
     "test:db": "bun test tests/db/",

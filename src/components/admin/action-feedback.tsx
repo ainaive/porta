@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import type { ActionState } from '@/lib/admin-actions'
+import type { ActionState } from '@/core/content/actions'
 
 export function ActionFeedback({ state }: { state: ActionState }) {
   const t = useTranslations('admin')

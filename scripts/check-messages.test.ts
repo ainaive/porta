@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import en from '../messages/en.json'
-import zh from '../messages/zh.json'
-import { diffMessageKeys } from './check-messages'
+import { diffMessageKeys, messageBundles } from './check-messages'
 
 describe('diffMessageKeys', () => {
   test('reports nested keys missing in either direction', () => {
@@ -21,6 +19,14 @@ describe('diffMessageKeys', () => {
   })
 })
 
-test('en.json and zh.json are in sync', () => {
-  expect(diffMessageKeys(en, zh)).toEqual({ missingInB: [], missingInA: [] })
+test('every bundle has en/zh parity', async () => {
+  const bundles = await messageBundles()
+  // Core plus one per module — a bundle that never loaded would pass an
+  // emptiness check silently, so assert the count grew with the registry.
+  expect(bundles.length).toBeGreaterThan(1)
+  for (const bundle of bundles) {
+    expect({ [bundle.name]: diffMessageKeys(bundle.en, bundle.zh) }).toEqual({
+      [bundle.name]: { missingInB: [], missingInA: [] },
+    })
+  }
 })

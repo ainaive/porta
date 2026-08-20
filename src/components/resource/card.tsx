@@ -6,9 +6,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import type { TranslatedResource } from '@/core/content/queries'
+import { findSection } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
-import type { TranslatedResource } from '@/lib/content'
-import { type ResourceType, sectionForType } from '@/lib/resource-meta'
 
 export async function ResourceCard({
   resource,
@@ -16,11 +16,15 @@ export async function ResourceCard({
   resource: TranslatedResource
 }) {
   const t = await getTranslations('common')
-  const section = sectionForType[resource.type as ResourceType]
+  // Public queries drop resources whose section was retired, so this is a
+  // backstop rather than an expected state — but a stale row must not take
+  // the whole listing down with it.
+  const section = findSection(resource.type)
+  if (!section) return null
 
   return (
     <Link
-      href={`/${section}/${resource.slug}`}
+      href={`${section.path}/${resource.slug}`}
       className="group focus-visible:outline-none"
     >
       <Card className="h-full transition-colors group-hover:border-foreground/20 group-focus-visible:ring-2 group-focus-visible:ring-ring">

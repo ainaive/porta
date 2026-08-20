@@ -9,16 +9,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { type ResourceType, resourceTypes } from '@/core/content/meta'
+import { adminListResources } from '@/core/content/queries'
+import { findSection } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { adminListResources } from '@/lib/content'
-import { type ResourceType, sectionForType } from '@/lib/resource-meta'
 import { requireAdmin } from '@/lib/session'
 import { firstParam, parsePageParam } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
-const TYPES = ['tool', 'course', 'video', 'model_api'] as const
+const TYPES = resourceTypes
 const STATUSES = ['draft', 'published'] as const
 
 export default async function AdminResourcesPage({
@@ -145,8 +146,11 @@ export default async function AdminResourcesPage({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  /{sectionForType[resource.type as ResourceType]}/
-                  {resource.slug}
+                  {/* Admin deliberately lists resources whose section was
+                      retired — this is the only place they can be found and
+                      fixed — so show the slug rather than a path that no
+                      longer resolves. */}
+                  {findSection(resource.type)?.path ?? '—'}/{resource.slug}
                 </TableCell>
               </TableRow>
             ))}
