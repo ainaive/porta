@@ -4,8 +4,32 @@ import { expect, test } from '@playwright/test'
 // the policy is *survivable*: that Next received the nonce, stamped it onto
 // its own script tags, and that nothing the app renders trips the policy.
 
+const ENFORCED = 'content-security-policy'
+const REPORT_ONLY = 'content-security-policy-report-only'
+
+// Read whichever spelling the server is configured to send. Playwright merges
+// process.env into the webServer's environment, so a CSP_REPORT_ONLY=1 left in
+// a shell or .env — exactly what someone trialling the flag would have — moves
+// the policy to the other header. Assertions that hard-coded one name failed
+// with an empty string, which reads as "the CSP is broken" rather than "the
+// suite looked in the wrong place".
+function policyOf(headers: Record<string, string>): string {
+  return headers[ENFORCED] ?? headers[REPORT_ONLY] ?? ''
+}
+
 test.describe('security headers', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
+
+  // The flag's whole purpose is a safe rollout, so which header it selects is
+  // worth pinning end to end rather than only over cspHeaderName().
+  test('sends exactly one CSP header, the one CSP_REPORT_ONLY selects', async ({
+    page,
+  }) => {
+    const headers = (await page.goto('/en'))?.headers() ?? {}
+    const reportOnly = process.env.CSP_REPORT_ONLY === '1'
+    expect(headers[reportOnly ? REPORT_ONLY : ENFORCED]).toBeTruthy()
+    expect(headers[reportOnly ? ENFORCED : REPORT_ONLY]).toBeUndefined()
+  })
 
   test('baseline headers ride every response', async ({ page }) => {
     const response = await page.goto('/en')
@@ -25,7 +49,7 @@ test.describe('security headers', () => {
 
   test('the CSP nonce reaches the scripts Next renders', async ({ page }) => {
     const response = await page.goto('/en')
-    const csp = response?.headers()['content-security-policy'] ?? ''
+    const csp = policyOf(response?.headers() ?? {})
     expect(csp).toContain("'strict-dynamic'")
 
     const nonce = csp.match(/'nonce-([^']+)'/)?.[1]
@@ -56,7 +80,7 @@ test.describe('security headers', () => {
   test('does not tell a plain-http deployment to upgrade its own assets', async ({
     page,
   }) => {
-    const csp = (await page.goto('/en'))?.headers()['content-security-policy']
+    const csp = policyOf((await page.goto('/en'))?.headers() ?? {})
     expect(csp).toBeTruthy()
     expect(csp).not.toContain('upgrade-insecure-requests')
   })
@@ -68,16 +92,13 @@ test.describe('security headers', () => {
     const response = await request.get('/en', {
       headers: { 'x-forwarded-proto': 'https' },
     })
-    expect(response.headers()['content-security-policy']).toContain(
-      'upgrade-insecure-requests',
-    )
+    expect(policyOf(response.headers())).toContain('upgrade-insecure-requests')
   })
 
   test('a fresh nonce per request', async ({ page }) => {
-    const first = (await page.goto('/en'))?.headers()['content-security-policy']
-    const second = (await page.goto('/en/tools'))?.headers()[
-      'content-security-policy'
-    ]
+    const first = policyOf((await page.goto('/en'))?.headers() ?? {})
+    const second = policyOf((await page.goto('/en/tools'))?.headers() ?? {})
+    expect(first).toBeTruthy()
     expect(first).not.toBe(second)
   })
 
@@ -107,7 +128,7 @@ test.describe('signed in', () => {
     const response = await page.goto(
       '/en/help/videos/getting-started-with-silicon',
     )
-    const csp = response?.headers()['content-security-policy'] ?? ''
+    const csp = policyOf(response?.headers() ?? {})
     const iframe = page.locator('iframe')
     await expect(iframe).toBeVisible()
 
