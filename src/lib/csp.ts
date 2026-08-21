@@ -14,9 +14,12 @@ import { moduleFrameSrc } from '@/core/module/derive'
 export type CspOptions = {
   nonce: string
   isDev: boolean
+  /** Whether *this request* arrived over https — not whether the build is a
+   *  production one. See `upgrade-insecure-requests` below. */
+  isHttps: boolean
 }
 
-export function buildCsp({ nonce, isDev }: CspOptions): string {
+export function buildCsp({ nonce, isDev, isHttps }: CspOptions): string {
   const directives: Array<[string, string]> = [
     ['default-src', "'self'"],
     // 'strict-dynamic' lets Next's nonced bootstrap load the chunks it needs
@@ -47,9 +50,20 @@ export function buildCsp({ nonce, isDev }: CspOptions): string {
     .map(([name, value]) => `${name} ${value}`)
     .join('; ')
 
-  // Pointless over http://localhost and actively unhelpful there — it would
-  // rewrite the dev server's own asset requests to https.
-  return isDev ? policy : `${policy}; upgrade-insecure-requests`
+  // Gated on the transport, not on the build mode — the same signal HSTS uses
+  // in security-headers.ts, and for a closely related reason.
+  //
+  // The directive tells the browser to rewrite every http:// subresource to
+  // https:// before fetching. On a production build served over plain http
+  // that is fatal: the page's own /_next/static/* requests get upgraded, the
+  // server has no TLS listener, and every one fails ERR_SSL_PROTOCOL_ERROR —
+  // an unstyled, unhydrated page. The self-hosted container reached at
+  // http://a-lan-address:3000 is exactly that deployment.
+  //
+  // It looks safe on localhost only because http://localhost is a potentially
+  // trustworthy origin and so is exempt from the upgrade, which is why an e2e
+  // suite pointed at localhost cannot see the problem.
+  return isHttps ? `${policy}; upgrade-insecure-requests` : policy
 }
 
 /** Report-only ships the policy without enforcing it: violations reach the

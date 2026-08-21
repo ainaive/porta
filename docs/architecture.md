@@ -218,6 +218,12 @@ Split by what each layer can reach ([ADR 0014](./adr/0014-security-headers-csp-a
   validates against, so the policy and the storable data cannot drift.
 - `CSP_REPORT_ONLY=1` switches the response header to the report-only
   spelling for a rollout.
+- `upgrade-insecure-requests` is gated on the *request* being https
+  (`x-forwarded-proto`, then the URL's protocol) — the same signal as HSTS.
+  Keyed on the build mode instead, a container served over plain http on a
+  LAN address would upgrade its own asset requests to a port with no TLS
+  listener. `localhost` is exempt from the upgrade, so only a header
+  assertion catches this.
 - **This forecloses PPR and Cache Components** — a nonce needs dynamic
   rendering. Revisit via a superseding ADR before adopting either.
 

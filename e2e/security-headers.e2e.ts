@@ -47,6 +47,32 @@ test.describe('security headers', () => {
     expect(nonced).toBeGreaterThan(0)
   })
 
+  // The e2e server is a production build served over plain http, which is the
+  // deployment that used to break: upgrade-insecure-requests keyed on the
+  // build mode, so it was sent here too, and a browser on a non-localhost
+  // address would have upgraded every /_next/static/* request to a port with
+  // no TLS listener. localhost is exempt from the upgrade, so the page kept
+  // working and the suite kept passing — assert on the header, not the page.
+  test('does not tell a plain-http deployment to upgrade its own assets', async ({
+    page,
+  }) => {
+    const csp = (await page.goto('/en'))?.headers()['content-security-policy']
+    expect(csp).toBeTruthy()
+    expect(csp).not.toContain('upgrade-insecure-requests')
+  })
+
+  test('does upgrade insecure requests once the request arrives over https', async ({
+    request,
+  }) => {
+    // The same server, told it sits behind a TLS-terminating proxy.
+    const response = await request.get('/en', {
+      headers: { 'x-forwarded-proto': 'https' },
+    })
+    expect(response.headers()['content-security-policy']).toContain(
+      'upgrade-insecure-requests',
+    )
+  })
+
   test('a fresh nonce per request', async ({ page }) => {
     const first = (await page.goto('/en'))?.headers()['content-security-policy']
     const second = (await page.goto('/en/tools'))?.headers()[

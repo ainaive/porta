@@ -11,7 +11,7 @@ function directive(policy: string, name: string): string | undefined {
 const NONCE = 'test-nonce'
 
 describe('buildCsp', () => {
-  const prod = buildCsp({ nonce: NONCE, isDev: false })
+  const prod = buildCsp({ nonce: NONCE, isDev: false, isHttps: true })
 
   test('carries the nonce and strict-dynamic, never unsafe-inline scripts', () => {
     const scriptSrc = directive(prod, 'script-src') ?? ''
@@ -22,14 +22,27 @@ describe('buildCsp', () => {
     expect(scriptSrc).not.toContain("'unsafe-inline'")
   })
 
-  test('allows eval and skips the https upgrade only in development', () => {
-    const dev = buildCsp({ nonce: NONCE, isDev: true })
+  test('allows eval only in development', () => {
+    const dev = buildCsp({ nonce: NONCE, isDev: true, isHttps: false })
     expect(directive(dev, 'script-src')).toContain("'unsafe-eval'")
     expect(directive(prod, 'script-src')).not.toContain("'unsafe-eval'")
-    // Upgrading over http://localhost would rewrite the dev server's own
-    // asset requests to https.
-    expect(dev).not.toContain('upgrade-insecure-requests')
-    expect(prod).toContain('upgrade-insecure-requests')
+  })
+
+  // The regression: this used to key on the build mode, so a production
+  // container reached over plain http told the browser to upgrade its own
+  // /_next/static/* requests to a port with no TLS listener. Every one failed
+  // ERR_SSL_PROTOCOL_ERROR and the page came up unstyled and unhydrated.
+  // localhost hid it — a potentially trustworthy origin is exempt from the
+  // upgrade — so the transport is the only thing that may decide this.
+  test('upgrades insecure requests only when the request itself is https', () => {
+    for (const isDev of [true, false]) {
+      expect(buildCsp({ nonce: NONCE, isDev, isHttps: false })).not.toContain(
+        'upgrade-insecure-requests',
+      )
+      expect(buildCsp({ nonce: NONCE, isDev, isHttps: true })).toContain(
+        'upgrade-insecure-requests',
+      )
+    }
   })
 
   test('locks down the directives an XSS would otherwise reach for', () => {

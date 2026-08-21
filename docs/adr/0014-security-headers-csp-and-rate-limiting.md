@@ -85,6 +85,16 @@ is runtime server env and prerendering would bake in the build's idea of it.
 - `CSP_REPORT_ONLY=1` switches the response header to the report-only
   spelling. Roll out a policy change with it set, confirm a clean console,
   then unset it.
+- **Transport-dependent directives key on the request, never on the build
+  mode.** `upgrade-insecure-requests` and HSTS both do. A production build is
+  not the same thing as an https request: the container reached at
+  `http://a-lan-address:3000` is a production build over plain http, and
+  telling that browser to upgrade its own `/_next/static/*` requests points
+  them at a port with no TLS listener — every asset fails
+  `ERR_SSL_PROTOCOL_ERROR` and the page comes up unstyled and unhydrated. An
+  e2e suite cannot see this from `localhost`, which is a potentially
+  trustworthy origin and therefore exempt from the upgrade; assert on the
+  header rather than on whether the page rendered.
 - A module can widen `frame-src` by declaring `frameSrc`. That is the intended
   seam, and it is narrow: a module that stops embedding narrows the policy
   without anyone editing it. `defineModule` stays an identity function — the
