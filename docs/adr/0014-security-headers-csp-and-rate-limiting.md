@@ -86,17 +86,26 @@ is runtime server env and prerendering would bake in the build's idea of it.
   spelling. Roll out a policy change with it set, confirm a clean console,
   then unset it.
 - A module can widen `frame-src` by declaring `frameSrc`. That is the intended
-  seam, and it is narrow: origins only, and a module that stops embedding
-  narrows the policy without anyone editing it.
+  seam, and it is narrow: a module that stops embedding narrows the policy
+  without anyone editing it. `defineModule` stays an identity function — the
+  manifest is reached by the middleware and must remain pure data — so the
+  constraint that entries are bare https origins (no path, no wildcard, no CSP
+  keyword) is enforced by the registry contract test, alongside the rest of
+  the manifest rules, and fails `bun run verify`.
 - On a directly-exposed deployment, rate limiting is coarse: one bucket per
   endpoint for everybody, so a determined attacker can exhaust the sign-in
   budget and inconvenience real users. This is the lesser harm — the
   alternative lets them forge an address and escape the limit entirely — and
   it costs legitimate users nothing they were not already paying, since a
   browser talking to the server directly sends no `x-forwarded-for` either.
-  **Run behind a proxy and set `TRUST_PROXY_HEADERS=1`.** better-auth also
-  offers `advanced.ipAddress.trustedProxies` for picking the right entry out
-  of a multi-hop forwarding chain; adopting it is the upgrade path if a
+  **Run behind a proxy and set `TRUST_PROXY_HEADERS=1`** — but only once the
+  app is reachable *solely* through that proxy. The flag and the network
+  topology are one decision, not two: turning it on while the container is
+  still published on every interface (which `docker-compose.yml` does by
+  default) lets a client bypass the proxy, forge the header and mint a fresh
+  bucket per request, which is strictly worse than leaving it off. better-auth
+  also offers `advanced.ipAddress.trustedProxies` for picking the right entry
+  out of a multi-hop forwarding chain; adopting it is the upgrade path if a
   deployment needs finer control.
 - Rate limiting is live during `bun run test:e2e`, which builds and serves in
   production mode. The suite's credential requests stay inside the rules

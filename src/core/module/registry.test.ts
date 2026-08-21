@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import coreEn from '../../../messages/en.json'
+import type { FeatureModule } from './define'
 import {
   gatedModulePatterns,
   metaFieldLabelKey,
@@ -92,6 +93,41 @@ describe('registry shape', () => {
           [`${section.key}.${field.name}`]: field.options?.length ?? 0,
         }).not.toEqual({ [`${section.key}.${field.name}`]: 0 })
       }
+    }
+  })
+})
+
+// frameSrc is the one field on a manifest that widens a security policy, and
+// `defineModule` is an identity function by design — the manifest is reached
+// by the middleware, so it stays pure data with no runtime validation. The
+// contract is enforced here instead, like the rest of it: a module that
+// declares a wildcard, a CSP keyword, a path or an http origin fails
+// `bun run verify` rather than silently loosening frame-src for everyone.
+describe('declared frame sources', () => {
+  // Through the widened view, as derive.ts does: the `const` type parameter
+  // on defineModule drops optional properties a manifest didn't set, so
+  // `modules[n].frameSrc` does not typecheck for the modules without one.
+  const declared: readonly FeatureModule[] = modules
+  const origins = declared.flatMap((feature) =>
+    (feature.frameSrc ?? []).map((origin) => [feature.id, origin] as const),
+  )
+
+  test('are bare origins, not URLs with a path or CSP source expressions', () => {
+    for (const [id, origin] of origins) {
+      // URL.origin strips path, query, hash and credentials, so requiring the
+      // round-trip rejects all of them at once. '*', "'self'", 'data:' and
+      // 'https:' do not parse as URLs at all.
+      expect({ [`${id}: ${origin}`]: URL.parse(origin)?.origin }).toEqual({
+        [`${id}: ${origin}`]: origin,
+      })
+    }
+  })
+
+  test('are https, so no module can downgrade what the page embeds', () => {
+    for (const [id, origin] of origins) {
+      expect({ [`${id}: ${origin}`]: URL.parse(origin)?.protocol }).toEqual({
+        [`${id}: ${origin}`]: 'https:',
+      })
     }
   })
 })

@@ -84,11 +84,14 @@ console and nothing is blocked; set it for a deploy or two after changing the
 policy, then unset it to enforce. `TRUST_PROXY_HEADERS=1` tells auth rate
 limiting that a reverse proxy you control rewrites `x-forwarded-for`, so
 limits key on the real client address; **Vercel is detected automatically and
-needs nothing here.** Leave it unset when the server is reachable directly:
-there the header is whatever the client typed, and trusting it would let an
-attacker mint a fresh rate-limit bucket per request. Unset, every client
-shares one bucket per endpoint — safe, but coarse, which is the reason to run
-behind a proxy and set it. See
+needs nothing here.** Set it only when *both* are true: a proxy rewrites the
+header, and the app cannot be reached except through that proxy — bind it to
+the proxy's network or to loopback. If the container is still published on
+every interface (as `docker-compose.yml` does by default), a client can go
+around the proxy, forge the header and mint a fresh bucket per request, which
+is worse than leaving the flag off. Unset, every client shares one bucket per
+endpoint: safe but coarse, and the reason to run behind a proxy in the first
+place. See
 [ADR 0014](./docs/adr/0014-security-headers-csp-and-rate-limiting.md).
 
 **Docker** — the app also runs as a self-hosted container (Next.js standalone
