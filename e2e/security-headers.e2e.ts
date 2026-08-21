@@ -98,7 +98,11 @@ test.describe('security headers', () => {
   test('a fresh nonce per request', async ({ page }) => {
     const first = policyOf((await page.goto('/en'))?.headers() ?? {})
     const second = policyOf((await page.goto('/en/tools'))?.headers() ?? {})
+    // Both, not just the first: policyOf returns '' for a response with no
+    // policy at all, and '' differs from a real one — so a route that stopped
+    // sending a CSP would read as a freshly generated nonce.
     expect(first).toBeTruthy()
+    expect(second).toBeTruthy()
     expect(first).not.toBe(second)
   })
 
