@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
 import { moduleRedirects } from '@/core/module/derive'
 import { routing } from '@/i18n/routing'
+import { buildCsp, cspHeaderName, newNonce } from '@/lib/csp'
 import { isGatedPath, splitLocale } from '@/lib/gating'
 
 const intl = createIntlMiddleware(routing)
@@ -20,10 +21,45 @@ function movedTo(bare: string): string | null {
   return null
 }
 
+// Did this request arrive over https? Behind a TLS-terminating proxy the
+// connection Next sees is plain http, so x-forwarded-for's sibling is the only
+// evidence — first hop of a possible chain. Only the CSP's
+// upgrade-insecure-requests depends on this, and getting it wrong falls open
+// (the directive is dropped, the page still works) rather than shut, so the
+// header is read directly rather than gated on TRUST_PROXY_HEADERS: forging it
+// affects nothing but the forger's own response.
+function isHttpsRequest(request: NextRequest): boolean {
+  const forwarded = request.headers.get('x-forwarded-proto')
+  if (forwarded) return forwarded.split(',')[0]?.trim() === 'https'
+  return request.nextUrl.protocol === 'https:'
+}
+
 // The gate here is only an optimistic cookie check for fast redirects —
 // requireSession/requireAdmin re-verify against the database on every page.
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // The nonce has to reach the renderer on the *request*, because that is
+  // where Next looks for it: it parses the request's CSP header, pulls the
+  // 'nonce-…' out, and stamps it onto the framework and page script tags.
+  // next-intl copies the incoming request headers into the rewrite it issues
+  // (`new Headers(request.headers)`), so setting them here carries through.
+  const nonce = newNonce()
+  const csp = buildCsp({
+    nonce,
+    isDev: process.env.NODE_ENV === 'development',
+    isHttps: isHttpsRequest(request),
+  })
+  const headerName = cspHeaderName(process.env.CSP_REPORT_ONLY === '1')
+  request.headers.set('x-nonce', nonce)
+  // Always the enforcing name on the request: this one is Next's input, not
+  // the browser's policy, and Next only recognises the canonical spelling.
+  request.headers.set('Content-Security-Policy', csp)
+
+  const withCsp = <T extends NextResponse>(response: T): T => {
+    response.headers.set(headerName, csp)
+    return response
+  }
 
   // Before the gate: a signed-out visitor following an old link should land
   // on the new URL's sign-in, not the old one's.
@@ -32,17 +68,17 @@ export function proxy(request: NextRequest) {
   if (moved) {
     const url = new URL(`/${currentLocale}${moved}`, request.url)
     url.search = request.nextUrl.search
-    return NextResponse.redirect(url, 308)
+    return withCsp(NextResponse.redirect(url, 308))
   }
 
   if (isGatedPath(pathname) && !getSessionCookie(request)) {
     const { locale } = splitLocale(pathname)
     const url = new URL(`/${locale}/sign-in`, request.url)
     url.searchParams.set('next', pathname)
-    return NextResponse.redirect(url)
+    return withCsp(NextResponse.redirect(url))
   }
 
-  return intl(request)
+  return withCsp(intl(request))
 }
 
 export const config = {

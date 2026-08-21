@@ -35,6 +35,57 @@ function previewOrigins(): string[] {
     .map((host) => `https://${host}`)
 }
 
+// Rate limiting keys on the client IP, and the only way to learn it behind a
+// proxy is x-forwarded-for — which better-auth trusts by default. That is
+// right when something in front overwrites the header and wrong when nothing
+// does: on a directly-exposed server the *client* sets it, so an attacker
+// mints a fresh bucket per request and the limit stops applying to the only
+// person it was for.
+//
+// So the explicit configuration is for the untrusted case. `[]` (not
+// undefined — undefined means "use the default", which is the header) makes
+// better-auth find no address and fall back to one bucket per path. That
+// costs legitimate users nothing they were not already paying: a browser
+// talking to the server directly sends no x-forwarded-for either, so it was
+// always going to share. It only takes the escape hatch away from whoever
+// forges the header.
+//
+// Vercel always overwrites x-forwarded-for; a self-hosted deployment behind
+// a reverse proxy opts in with TRUST_PROXY_HEADERS=1. See ADR 0014.
+export function trustedIpHeaders(): string[] | undefined {
+  const behindProxy =
+    process.env.VERCEL === '1' || process.env.TRUST_PROXY_HEADERS === '1'
+  return behindProxy ? undefined : []
+}
+
+// better-auth rate-limits by default in production, but in memory: the counter
+// dies with the instance, so it holds across neither Vercel's reused-and-
+// recycled instances nor a scaled-out container. Postgres is already the one
+// thing both deployment targets share, and the database storage does its
+// check-and-increment as a single conditional update, so concurrent requests
+// cannot all pass a stale read.
+//
+// Exported so the tests can drive these exact numbers through the real
+// limiter: it is disabled outside production, which is right for the app and
+// would leave the rules untested.
+export const rateLimitConfig = {
+  storage: 'database',
+  window: 60,
+  max: 100,
+  // Tighter than the built-in defaults (3 per 10s on /sign-in and /sign-up),
+  // which reset six times a minute — on the order of a thousand password
+  // guesses an hour from one address. This is an invite-only portal for a
+  // known population; nobody legitimate types a password five times a minute.
+  customRules: {
+    '/sign-in/email': { window: 60, max: 5 },
+    '/sign-up/email': { window: 60, max: 5 },
+    // These two send mail to an address the requester chose. The limit is as
+    // much about not being someone else's spam cannon as about the account.
+    '/request-password-reset': { window: 60, max: 3 },
+    '/reset-password': { window: 60, max: 5 },
+  },
+} as const
+
 // Send without blocking the response. `after()` defers the send past the
 // response (the point — see sendResetPassword), but it throws outside a Next
 // request scope (e.g. the DB tests call auth.api directly). There, fall back to
@@ -57,6 +108,10 @@ export const auth = betterAuth({
   // Preview deployments serve from an ephemeral host that isn't the (canonical)
   // baseURL — trust it so sign-in/reset POSTs pass the origin check there.
   trustedOrigins: previewOrigins(),
+  advanced: { ipAddress: { ipAddressHeaders: trustedIpHeaders() } },
+  // `enabled` is left at its default — production only — so dev and the test
+  // suites are not throttled. See rateLimitConfig above.
+  rateLimit: rateLimitConfig,
   emailAndPassword: {
     enabled: true,
     // A reset means the account may be compromised — drop every existing

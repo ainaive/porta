@@ -76,6 +76,12 @@ export type FeatureModule = {
   extraGatedPaths?: readonly string[]
   /** Permanent redirects this module owns, locale-less and path-only. */
   redirects?: readonly { from: string; to: string }[]
+  /** External origins this module embeds in an iframe, e.g. a video host.
+   *  The CSP's `frame-src` is derived from these, so a module widens the
+   *  policy by declaring what it embeds rather than by editing the policy —
+   *  and a module that embeds nothing cannot widen it at all. Origins only
+   *  (scheme + host [+ port]); a path here would be silently ignored by CSP. */
+  frameSrc?: readonly string[]
 }
 
 // `const` type parameter so section keys and paths stay literal types: that

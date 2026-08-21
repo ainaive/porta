@@ -103,12 +103,12 @@ function escape(path: string): string {
   return path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+const gatedSections = sections.filter((section) => section.gated !== false)
+
 /** Detail pages under a gated section, plus whatever else a module declares.
  *  Listings stay public — the pattern requires a segment after the path. */
 export const gatedModulePatterns: readonly RegExp[] = [
-  ...sections
-    .filter((section) => section.gated !== false)
-    .map((section) => new RegExp(`^${escape(section.path)}/.+`)),
+  ...gatedSections.map((section) => new RegExp(`^${escape(section.path)}/.+`)),
   ...declared.flatMap((feature) =>
     (feature.extraGatedPaths ?? []).map(
       (path) => new RegExp(`^${escape(path)}(/|$)`),
@@ -116,7 +116,51 @@ export const gatedModulePatterns: readonly RegExp[] = [
   ),
 ]
 
+/** Paths gated at the path itself, rather than one segment below it. */
+const modulePathsGatedOutright: readonly string[] = declared.flatMap(
+  (feature) => feature.extraGatedPaths ?? [],
+)
+
+/** The same gating as `gatedModulePatterns`, as paths rather than patterns:
+ *  robots.txt speaks in path prefixes and cannot consume a RegExp. Detail
+ *  pages are `${section.path}/…`, so gating them is a prefix with a trailing
+ *  slash — which leaves the listing itself crawlable, as it should be. */
+export const gatedPathPrefixes: readonly string[] = [
+  ...new Set([
+    ...gatedSections.map((section) => `${section.path}/`),
+    ...modulePathsGatedOutright,
+  ]),
+].sort()
+
+/** Module indexes and section listings a signed-out visitor can read — the
+ *  public surface, and so exactly what belongs in a sitemap. Anything a
+ *  module gated outright drops out here rather than being remembered
+ *  separately. */
+export const publicPaths: readonly string[] = [
+  ...new Set([
+    ...navEntries.map((entry) => entry.href),
+    ...sections.map((section) => section.path),
+  ]),
+]
+  .filter(
+    (path) =>
+      !modulePathsGatedOutright.some(
+        (gated) => path === gated || path.startsWith(`${gated}/`),
+      ),
+  )
+  .sort()
+
 // ---------- Redirects ----------
 
 export const moduleRedirects: readonly { from: string; to: string }[] =
   declared.flatMap((feature) => feature.redirects ?? [])
+
+// ---------- Content Security Policy ----------
+
+/** Every external origin any module embeds, for the CSP's `frame-src`. A
+ *  module widens the policy by declaring what it embeds; core never keeps a
+ *  list of hosts, so a module that drops an embed narrows the policy for
+ *  free. */
+export const moduleFrameSrc: readonly string[] = [
+  ...new Set(declared.flatMap((feature) => feature.frameSrc ?? [])),
+].sort()

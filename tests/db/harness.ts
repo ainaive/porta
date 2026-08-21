@@ -34,6 +34,6 @@ export async function resetDb(): Promise<void> {
   await db.execute(
     sql`TRUNCATE "user", "session", "account", "verification", "invites",
         "resources", "resource_translations", "course_chapters",
-        "course_chapter_translations" CASCADE`,
+        "course_chapter_translations", "rate_limit" CASCADE`,
   )
 }

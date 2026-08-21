@@ -7,7 +7,16 @@ import { routing } from '@/i18n/routing'
 //
 // The per-section patterns come from the module registry, so a module gates
 // its own detail pages by registering them — there is no list here to forget.
-const GATED = [...gatedModulePatterns, /^\/admin(\/|$)/, /^\/account(\/|$)/]
+
+/** Gated by the platform rather than by a module: they belong to no module's
+ *  vertical slice. Exported because robots.txt has to disallow exactly these
+ *  too, and two hand-kept copies of a security-relevant list is one too many. */
+export const platformGatedPaths = ['/admin', '/account'] as const
+
+const GATED = [
+  ...gatedModulePatterns,
+  ...platformGatedPaths.map((path) => new RegExp(`^${path}(/|$)`)),
+]
 
 export function splitLocale(pathname: string): {
   locale: string

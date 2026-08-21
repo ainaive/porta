@@ -58,6 +58,16 @@ flowchart LR
   `src/lib/hard-navigate.ts`: the layout's session-dependent chrome (user
   menu, admin link) must re-render with fresh cookies; client-side
   `router.push` would keep it stale.
+- **Credential endpoints are rate-limited from Postgres**, not per-instance
+  memory — the counter has to survive an instance being recycled on either
+  target. `rateLimitConfig` in `src/lib/auth.ts` holds the rules (60s windows
+  on sign-in, sign-up, reset and reset-request); the `rate_limit` table is
+  better-auth's. It is enabled in production only, so the tests drive the
+  exported config through a second better-auth instance rather than the app's.
+  The client address is trusted **only** where something in front rewrites
+  `x-forwarded-for` — Vercel (detected) or `TRUST_PROXY_HEADERS=1`. Elsewhere
+  `ipAddressHeaders: []` makes every client share one bucket rather than
+  letting a forged header mint fresh ones ([ADR 0014](./adr/0014-security-headers-csp-and-rate-limiting.md)).
 
 ## Modules and the registry
 
@@ -66,8 +76,13 @@ flowchart LR
   `messages/{en,zh}.json`, `pages/`, optionally `schema.ts` for tables of its
   own, plus components and colocated tests.
 - `src/core/module/registry.ts` lists the modules. `derive.ts` computes
-  navigation, gated-path regexes, section lookups, message merging and
-  redirects from it — there is no second list anywhere.
+  navigation, gated-path regexes and prefixes, section lookups, message
+  merging, redirects, the CSP's `frame-src` and the crawlable/gated path sets
+  behind `robots.txt` and `sitemap.xml` — no module appears in a second list
+  anywhere. The only hand-written paths are the platform's own, `/admin` and
+  `/account`, which belong to no module: they live once, in
+  `platformGatedPaths` (`src/lib/gating.ts`), and the proxy and `robots.ts`
+  both read them from there.
 - `src/core/module/registry.test.ts` is the contract: duplicate section keys
   or paths, a module id shadowing a core namespace, a gated listing, or a
   manifest naming a message key it does not ship all fail `bun run verify`.
@@ -159,8 +174,11 @@ Two targets, one codebase — the constraints that keep both working:
 
 - **No Vercel-only service dependencies** (no Blob/KV/Edge Config/cron).
 - **Runtime-read env only**: `DATABASE_URL`, `BETTER_AUTH_SECRET`,
-  `BETTER_AUTH_URL`, optional `DATABASE_POOLED`. No `NEXT_PUBLIC_*` for
-  anything environment-dependent (those bake in at build).
+  `BETTER_AUTH_URL`, and the optional `DATABASE_POOLED`, `RESEND_API_KEY`,
+  `EMAIL_FROM`, `TRUST_PROXY_HEADERS`, `CSP_REPORT_ONLY` (`.env.example` is
+  the full list). No `NEXT_PUBLIC_*` for anything environment-dependent
+  (those bake in at build) — and, for the same reason, no prerendered route
+  that reads one, which is why `robots.ts` and `sitemap.ts` are dynamic.
 - **Plain TCP Postgres** (postgres.js) — works for Neon and docker-compose
   Postgres alike. The client is a lazy proxy (`src/db/index.ts`) so `next
   build` never needs a database; all DB-backed pages are `force-dynamic`.
@@ -181,6 +199,44 @@ Two targets, one codebase — the constraints that keep both working:
   deployments point at the database production uses. Local runs, CI, and the
   Docker entrypoint never set `VERCEL_ENV` and are unaffected.
 - CI's docker job boots the compose stack and curls it on every PR.
+
+## Security headers & CSP
+
+Split by what each layer can reach ([ADR 0014](./adr/0014-security-headers-csp-and-rate-limiting.md)):
+
+- **`next.config.ts`** sends the static set from `src/lib/security-headers.ts`
+  on every path — including `/api`, which the proxy matcher excludes on
+  purpose. HSTS is a separate rule conditioned on `x-forwarded-proto: https`,
+  so a local `next start` or a bare `docker compose up` never pins it on
+  plain HTTP.
+- **`src/proxy.ts`** sends the CSP, because it carries a per-request nonce
+  (`src/lib/csp.ts`). The nonce is set on the **request** headers before
+  handing off to next-intl — Next finds it by parsing the request's CSP
+  header, and next-intl copies incoming headers into its rewrite. Set it only
+  on the response and every script on the page is blocked.
+- `script-src` is `'nonce-…' 'strict-dynamic'`, never `'unsafe-inline'`.
+  `style-src` keeps `'unsafe-inline'`: React inline styles compile to style
+  *attributes*, which a nonce cannot cover.
+- **`frame-src` is derived from the registry.** A module declares what it
+  embeds via `frameSrc` on its manifest; nothing in core lists a host. Help &
+  Tutorials declares its video origins from the same constant `videoMeta`
+  validates against, so the policy and the storable data cannot drift.
+- `CSP_REPORT_ONLY=1` switches the response header to the report-only
+  spelling for a rollout.
+- `upgrade-insecure-requests` is gated on the *request* being https
+  (`x-forwarded-proto`, then the URL's protocol) — the same signal as HSTS.
+  Keyed on the build mode instead, a container served over plain http on a
+  LAN address would upgrade its own asset requests to a port with no TLS
+  listener. `localhost` is exempt from the upgrade, so only a header
+  assertion catches this.
+- **This forecloses PPR and Cache Components** — a nonce needs dynamic
+  rendering. Revisit via a superseding ADR before adopting either.
+
+`src/app/robots.ts` and `src/app/sitemap.ts` are derived from the registry
+too: `gatedPathPrefixes` and `publicPaths` in `derive.ts`. Both are
+`force-dynamic` so the canonical origin is read at runtime rather than baked
+in at build, and they reach the client unrewritten only because the proxy
+matcher excludes paths containing a dot.
 
 ## Theming & chrome
 
@@ -216,9 +272,9 @@ anything else should reuse.
 
 | Layer | Tool | Owns |
 |---|---|---|
-| Unit (`src/**/*.test.ts`, `scripts/`) | bun test | fallback policy, meta/slug validation, gated-path classification, message-key diffing, **the module registry contract** |
-| DB integration (`tests/db/`) | bun test + `porta_test` | invite lifecycle, content visibility queries, chapter ordering, the signup-hook contract via direct `auth.api` calls |
-| E2E (`e2e/*.e2e.ts`) | Playwright + `porta_e2e` | proxy gating, module redirects, invite→signup lifecycle, editorial publish flow, i18n badges, smoke |
+| Unit (`src/**/*.test.ts`, `scripts/`) | bun test | fallback policy, meta/slug validation, gated-path classification, message-key diffing, the CSP and header sets, robots/sitemap derivation, **the module registry contract** |
+| DB integration (`tests/db/`) | bun test + `porta_test` | invite lifecycle, content visibility queries, chapter ordering, the signup-hook contract via direct `auth.api` calls, rate-limit rules through `auth.handler` |
+| E2E (`e2e/*.e2e.ts`) | Playwright + `porta_e2e` | proxy gating, module redirects, invite→signup lifecycle, editorial publish flow, i18n badges, security headers and CSP survivability, crawl control, smoke |
 
 A module's own tests are colocated with it (`src/modules/<id>/*.test.ts`) —
 its meta schemas are its own to break.
@@ -257,7 +313,9 @@ what it generates is:
 
 1. `src/modules/<id>/` with `module.ts`, `messages/{en,zh}.json`, `pages/`.
    The manifest needs `id` (also its i18n namespace), `nav`, `sections` and
-   `messages`; add `redirects` if it is taking over existing paths.
+   `messages`; add `redirects` if it is taking over existing paths, and
+   `frameSrc` if it embeds an external origin in an iframe — that is the only
+   way to widen the CSP.
 2. Route mounts under `src/app/[locale]/`. A module with several sections
    usually wants `createModuleIndexPage('<id>')` at its base path.
 3. **One line** in `src/core/module/registry.ts`.

@@ -26,6 +26,17 @@ services:
       # Email (optional): without these, mail is skipped rather than sent.
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
+      # Unset here on purpose: `ports: 3000:3000` below publishes the app on
+      # every host interface, so x-forwarded-for is whatever the client sends.
+      #
+      # Setting TRUST_PROXY_HEADERS=1 is only safe once the app is reachable
+      # *solely* through the proxy that rewrites the header — bind it to the
+      # proxy's network or to 127.0.0.1 and firewall the rest. Turning the
+      # flag on while port 3000 is still open to the world is worse than
+      # leaving it off: a client goes around the proxy, forges the header, and
+      # mints a fresh rate-limit bucket per request.
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-}
+      CSP_REPORT_ONLY: ${CSP_REPORT_ONLY:-}
     depends_on:
       db:
         condition: service_healthy
