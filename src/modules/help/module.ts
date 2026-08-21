@@ -19,11 +19,31 @@ export const VIDEO_PROVIDER_ORIGINS = {
   bilibili: ['https://player.bilibili.com'],
 } as const
 
-export const videoMeta = z.object({
-  provider: z.enum(['youtube', 'bilibili']),
-  embedUrl: z.url(),
-  duration: z.string().optional(),
-})
+// `provider` is a promise about where the URL points; without this refinement
+// it was decoration, and any URL an admin pasted went straight into an
+// iframe. Cross-checking the two also keeps the stored data inside what the
+// CSP's frame-src permits — otherwise the fault surfaces as a blank player
+// long after the save that caused it.
+export const videoMeta = z
+  .object({
+    provider: z.enum(['youtube', 'bilibili']),
+    embedUrl: z.url(),
+    duration: z.string().optional(),
+  })
+  .superRefine(({ provider, embedUrl }, ctx) => {
+    const allowed = VIDEO_PROVIDER_ORIGINS[provider]
+    // URL.parse returns null instead of throwing; z.url() has already run, so
+    // this is belt-and-braces for an input it would accept and WHATWG won't.
+    const origin = URL.parse(embedUrl)?.origin
+    if (origin && (allowed as readonly string[]).includes(origin)) return
+    ctx.addIssue({
+      code: 'custom',
+      path: ['embedUrl'],
+      // Name the origins rather than saying "invalid": the admin pasting a
+      // watch?v= link needs to be told the embed form exists.
+      message: `must be hosted by ${provider} (${allowed.join(' or ')})`,
+    })
+  })
 
 export const guideMeta = z.object({
   level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
