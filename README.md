@@ -78,6 +78,19 @@ both unset to disable email — the flows then log a redacted skip status (the
 subject only, never the link, which carries a token) instead of sending. To
 inspect reset/invite links locally, point Resend at a dev mail catcher.
 
+Two optional variables tune the security posture. `CSP_REPORT_ONLY=1` sends
+the Content-Security-Policy as report-only — violations reach the browser
+console and nothing is blocked; set it for a deploy or two after changing the
+policy, then unset it to enforce. `TRUST_PROXY_HEADERS=1` tells auth rate
+limiting that a reverse proxy you control rewrites `x-forwarded-for`, so
+limits key on the real client address; **Vercel is detected automatically and
+needs nothing here.** Leave it unset when the server is reachable directly:
+there the header is whatever the client typed, and trusting it would let an
+attacker mint a fresh rate-limit bucket per request. Unset, every client
+shares one bucket per endpoint — safe, but coarse, which is the reason to run
+behind a proxy and set it. See
+[ADR 0014](./docs/adr/0014-security-headers-csp-and-rate-limiting.md).
+
 **Docker** — the app also runs as a self-hosted container (Next.js standalone
 output, migrations applied on start):
 
