@@ -120,3 +120,13 @@ export const gatedModulePatterns: readonly RegExp[] = [
 
 export const moduleRedirects: readonly { from: string; to: string }[] =
   declared.flatMap((feature) => feature.redirects ?? [])
+
+// ---------- Content Security Policy ----------
+
+/** Every external origin any module embeds, for the CSP's `frame-src`. A
+ *  module widens the policy by declaring what it embeds; core never keeps a
+ *  list of hosts, so a module that drops an embed narrows the policy for
+ *  free. */
+export const moduleFrameSrc: readonly string[] = [
+  ...new Set(declared.flatMap((feature) => feature.frameSrc ?? [])),
+].sort()

@@ -10,6 +10,15 @@ export const courseMeta = z.object({
   estimatedHours: z.number().positive().optional(),
 })
 
+// The origins this module will render in an iframe, per provider. One list
+// feeds two things that must never disagree: the CSP's `frame-src` (via the
+// manifest's `frameSrc` below) and the validation of `embedUrl`. A host the
+// browser would refuse to frame should not be storable in the first place.
+export const VIDEO_PROVIDER_ORIGINS = {
+  youtube: ['https://www.youtube.com', 'https://www.youtube-nocookie.com'],
+  bilibili: ['https://player.bilibili.com'],
+} as const
+
 export const videoMeta = z.object({
   provider: z.enum(['youtube', 'bilibili']),
   embedUrl: z.url(),
@@ -107,6 +116,10 @@ export const help = defineModule({
     { from: '/courses', to: '/help/courses' },
     { from: '/videos', to: '/help/videos' },
   ],
+  // Video detail pages iframe the provider. Declaring the origins here is what
+  // widens the CSP's frame-src — no other module can, and this one stops
+  // widening it the day it stops embedding.
+  frameSrc: Object.values(VIDEO_PROVIDER_ORIGINS).flat(),
   messages: {
     en: () => import('./messages/en.json'),
     zh: () => import('./messages/zh.json'),

@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
 import { moduleRedirects } from '@/core/module/derive'
 import { routing } from '@/i18n/routing'
+import { buildCsp, cspHeaderName, newNonce } from '@/lib/csp'
 import { isGatedPath, splitLocale } from '@/lib/gating'
 
 const intl = createIntlMiddleware(routing)
@@ -25,6 +26,24 @@ function movedTo(bare: string): string | null {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // The nonce has to reach the renderer on the *request*, because that is
+  // where Next looks for it: it parses the request's CSP header, pulls the
+  // 'nonce-…' out, and stamps it onto the framework and page script tags.
+  // next-intl copies the incoming request headers into the rewrite it issues
+  // (`new Headers(request.headers)`), so setting them here carries through.
+  const nonce = newNonce()
+  const csp = buildCsp({ nonce, isDev: process.env.NODE_ENV === 'development' })
+  const headerName = cspHeaderName(process.env.CSP_REPORT_ONLY === '1')
+  request.headers.set('x-nonce', nonce)
+  // Always the enforcing name on the request: this one is Next's input, not
+  // the browser's policy, and Next only recognises the canonical spelling.
+  request.headers.set('Content-Security-Policy', csp)
+
+  const withCsp = <T extends NextResponse>(response: T): T => {
+    response.headers.set(headerName, csp)
+    return response
+  }
+
   // Before the gate: a signed-out visitor following an old link should land
   // on the new URL's sign-in, not the old one's.
   const { locale: currentLocale, bare } = splitLocale(pathname)
@@ -32,17 +51,17 @@ export function proxy(request: NextRequest) {
   if (moved) {
     const url = new URL(`/${currentLocale}${moved}`, request.url)
     url.search = request.nextUrl.search
-    return NextResponse.redirect(url, 308)
+    return withCsp(NextResponse.redirect(url, 308))
   }
 
   if (isGatedPath(pathname) && !getSessionCookie(request)) {
     const { locale } = splitLocale(pathname)
     const url = new URL(`/${locale}/sign-in`, request.url)
     url.searchParams.set('next', pathname)
-    return NextResponse.redirect(url)
+    return withCsp(NextResponse.redirect(url))
   }
 
-  return intl(request)
+  return withCsp(intl(request))
 }
 
 export const config = {
