@@ -116,7 +116,16 @@ test.describe('signed in', () => {
     // exists to keep honest.
     const src = await iframe.getAttribute('src')
     const origin = new URL(src ?? '').origin
-    expect(csp).toContain(`frame-src`)
-    expect(csp).toContain(origin)
+
+    // Matched as a source token, not as a substring of the whole policy:
+    // `toContain(origin)` would also pass on https://www.youtube.com.evil.test,
+    // and would not care which directive the origin turned up in.
+    const frameSrc = csp
+      .split('; ')
+      .find((part) => part.startsWith('frame-src '))
+      ?.split(/\s+/)
+      .slice(1)
+    expect(frameSrc).toBeDefined()
+    expect(frameSrc).toContain(origin)
   })
 })

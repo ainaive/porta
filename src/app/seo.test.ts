@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { gatedPathPrefixes, publicPaths, sections } from '@/core/module/derive'
 import { routing } from '@/i18n/routing'
-import { isGatedPath } from '@/lib/gating'
+import { isGatedPath, platformGatedPaths } from '@/lib/gating'
 import robots from './robots'
 import sitemap from './sitemap'
 
@@ -16,10 +16,17 @@ const disallow = Array.isArray(rules)
   : ((rules.disallow ?? []) as string[])
 
 describe('robots', () => {
-  test('disallows the admin area and the account page in every locale', () => {
-    for (const locale of routing.locales) {
-      expect(disallow).toContain(`/${locale}/admin`)
-      expect(disallow).toContain(`/${locale}/account`)
+  // Read from gating.ts rather than spelled out again here: the point of
+  // exporting platformGatedPaths is that robots and the proxy cannot disagree
+  // about them, and a test with its own copy would not notice if they did.
+  test('disallows every platform-gated path in every locale', () => {
+    expect(platformGatedPaths.length).toBeGreaterThan(0)
+    for (const path of platformGatedPaths) {
+      for (const locale of routing.locales) {
+        expect(disallow).toContain(`/${locale}${path}`)
+        // And the proxy agrees these are gated — one source, two consumers.
+        expect(isGatedPath(`/${locale}${path}`)).toBe(true)
+      }
     }
   })
 

@@ -78,7 +78,11 @@ flowchart LR
 - `src/core/module/registry.ts` lists the modules. `derive.ts` computes
   navigation, gated-path regexes and prefixes, section lookups, message
   merging, redirects, the CSP's `frame-src` and the crawlable/gated path sets
-  behind `robots.txt` and `sitemap.xml` — there is no second list anywhere.
+  behind `robots.txt` and `sitemap.xml` — no module appears in a second list
+  anywhere. The only hand-written paths are the platform's own, `/admin` and
+  `/account`, which belong to no module: they live once, in
+  `platformGatedPaths` (`src/lib/gating.ts`), and the proxy and `robots.ts`
+  both read them from there.
 - `src/core/module/registry.test.ts` is the contract: duplicate section keys
   or paths, a module id shadowing a core namespace, a gated listing, or a
   manifest naming a message key it does not ship all fail `bun run verify`.
@@ -170,8 +174,9 @@ Two targets, one codebase — the constraints that keep both working:
 
 - **No Vercel-only service dependencies** (no Blob/KV/Edge Config/cron).
 - **Runtime-read env only**: `DATABASE_URL`, `BETTER_AUTH_SECRET`,
-  `BETTER_AUTH_URL`, optional `DATABASE_POOLED`, `TRUST_PROXY_HEADERS`,
-  `CSP_REPORT_ONLY`. No `NEXT_PUBLIC_*` for anything environment-dependent
+  `BETTER_AUTH_URL`, and the optional `DATABASE_POOLED`, `RESEND_API_KEY`,
+  `EMAIL_FROM`, `TRUST_PROXY_HEADERS`, `CSP_REPORT_ONLY` (`.env.example` is
+  the full list). No `NEXT_PUBLIC_*` for anything environment-dependent
   (those bake in at build) — and, for the same reason, no prerendered route
   that reads one, which is why `robots.ts` and `sitemap.ts` are dynamic.
 - **Plain TCP Postgres** (postgres.js) — works for Neon and docker-compose
