@@ -26,6 +26,12 @@ services:
       # Email (optional): without these, mail is skipped rather than sent.
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
+      # This compose file publishes the port directly, so x-forwarded-for is
+      # whatever the client sends and must not be trusted. Behind a reverse
+      # proxy that rewrites it, set TRUST_PROXY_HEADERS=1 so auth rate
+      # limiting keys per client instead of pooling everyone together.
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-}
+      CSP_REPORT_ONLY: ${CSP_REPORT_ONLY:-}
     depends_on:
       db:
         condition: service_healthy
