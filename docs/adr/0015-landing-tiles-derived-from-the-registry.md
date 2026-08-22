@@ -79,8 +79,10 @@ exists to prevent.
 ## Consequences
 
 - Adding a module still means one directory plus one line in `registry.ts`, and
-  now that line also buys a landing tile. The claim in ADR 0013 gets stronger
-  rather than gaining an exception.
+  the landing stops being an exception to that: a section that declares a tile
+  gets one, with no core file to edit. ADR 0013's claim gets stronger rather
+  than gaining a carve-out. Registering does not by itself produce a tile —
+  see the opt-in point below.
 - **The courses tile no longer shows a chapter count.** Chapters are a help-module
   table, so the number came from `countPublishedChapters()`, hand-wired through
   `page.tsx`. A manifest cannot hold that query, and keeping the seam meant one

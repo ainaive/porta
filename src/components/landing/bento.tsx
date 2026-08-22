@@ -123,10 +123,14 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
   const fallbackExample = overview.latest.find((item) => item.isFallback)
 
   // The whole grid, derived: every section that declared a tile and has
-  // something published, in registry order, then core's own two tiles. A new
-  // module appears here by registering — there is no list to extend.
+  // something published, in registry order, then core's own two tiles. A
+  // section joins by declaring a tile — there is no list here to extend.
+  //
+  // `catalog` is keyed off the same registry array `sections` comes from, so
+  // every section key is present: indexing it is total, not a lookup that
+  // might miss.
   const tiles: BentoTile[] = [
-    ...sectionTiles((key) => catalog[key]?.count ?? 0).map(
+    ...sectionTiles((key) => catalog[key].count).map(
       (tile): BentoTile => ({ variant: 'section', ...tile }),
     ),
     // Only shown when the catalog really is holding a resource open in the
