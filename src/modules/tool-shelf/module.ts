@@ -22,6 +22,11 @@ export const toolShelf = defineModule({
         { name: 'url', kind: 'text', labelKey: 'meta.url' },
         { name: 'docsUrl', kind: 'text', labelKey: 'meta.docsUrl' },
       ],
+      landingTile: {
+        kind: 'list',
+        titleKey: 'tools.landing.title',
+        descriptionKey: 'tools.landing.description',
+      },
     },
   ],
   messages: {

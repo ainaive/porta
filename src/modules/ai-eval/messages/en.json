@@ -8,15 +8,27 @@
   },
   "agents": {
     "title": "Agents",
-    "description": "Agent evaluations: what each one is good at, and where it breaks."
+    "description": "Agent evaluations: what each one is good at, and where it breaks.",
+    "landing": {
+      "title": "Agents, assessed",
+      "description": "Agents we have put through their paces, each with a write-up and links to the vendor's own documentation."
+    }
   },
   "models": {
     "title": "Models",
-    "description": "Model API docs, endpoints, and usage guides."
+    "description": "Model API docs, endpoints, and usage guides.",
+    "landing": {
+      "title": "Model API resources",
+      "description": "Providers, endpoints, and usage guidelines, kept alongside everything else the team builds with."
+    }
   },
   "reports": {
     "title": "Reports",
-    "description": "Everything else we measure — benchmarks, comparisons, write-ups."
+    "description": "Everything else we measure — benchmarks, comparisons, write-ups.",
+    "landing": {
+      "title": "Measurement write-ups",
+      "description": "Benchmarks, comparisons, and one-off investigations, each filed with the source it came from."
+    }
   },
   "endpoint": "Endpoint",
   "provider": "Provider",

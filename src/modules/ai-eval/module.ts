@@ -55,6 +55,11 @@ export const aiEval = defineModule({
         { name: 'docsUrl', kind: 'text', labelKey: 'meta.docsUrl' },
         linksField,
       ],
+      landingTile: {
+        kind: 'stat',
+        titleKey: 'agents.landing.title',
+        descriptionKey: 'agents.landing.description',
+      },
     },
     {
       key: 'model',
@@ -73,6 +78,14 @@ export const aiEval = defineModule({
         },
         linksField,
       ],
+      // The one tile that quotes stored data: a real provider and endpoint,
+      // read from whichever published model carries both.
+      landingTile: {
+        kind: 'fields',
+        titleKey: 'models.landing.title',
+        descriptionKey: 'models.landing.description',
+        fields: ['provider', 'endpoint'],
+      },
     },
     {
       key: 'report',
@@ -84,6 +97,11 @@ export const aiEval = defineModule({
         { name: 'subject', kind: 'text', labelKey: 'meta.subject' },
         { name: 'sourceUrl', kind: 'text', labelKey: 'meta.sourceUrl' },
       ],
+      landingTile: {
+        kind: 'stat',
+        titleKey: 'reports.landing.title',
+        descriptionKey: 'reports.landing.description',
+      },
     },
   ],
   // The model catalog used to sit at the top level; keep those links alive.

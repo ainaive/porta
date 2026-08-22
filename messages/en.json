@@ -24,23 +24,7 @@
     },
     "bento": {
       "title": "Every resource, one system",
-      "subtitle": "Stop digging through chat history for links. Tools, model APIs, courses, and videos share one catalog, one set of tags, and one publishing flow.",
-      "tools": {
-        "title": "Tools directory",
-        "description": "Internal and ecosystem tools, each with a summary, tags, and links to the tool itself and its documentation."
-      },
-      "models": {
-        "title": "Model API resources",
-        "description": "Providers, endpoints, and usage guidelines, kept alongside everything else the team builds with."
-      },
-      "courses": {
-        "title": "Courses and chapters",
-        "description": "Structured learning paths, split into ordered chapters you can link straight into."
-      },
-      "videos": {
-        "title": "Teaching videos",
-        "description": "Recorded sessions and walkthroughs, embedded from YouTube and Bilibili."
-      },
+      "subtitle": "Stop digging through chat history for links. Every section shares one catalog, one set of tags, and one publishing flow.",
       "bilingual": {
         "title": "Bilingual by default",
         "description": "Every page exists in English and Chinese. Anything missing a translation still shows up, marked so you know what you are reading.",

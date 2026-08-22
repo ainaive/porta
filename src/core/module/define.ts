@@ -35,6 +35,34 @@ export type MetaField = {
   mono?: boolean
 }
 
+/** What a section contributes to the landing page's bento grid. Data, like
+ *  `metaFields`: core owns the grid, the spans, the numbering and the
+ *  styling, and a module declares only what its tile says. A module cannot
+ *  choose its own span — a 6-column bento is a shared composition, and one
+ *  module's width constrains every other module's, so nothing per-module
+ *  could validate that the rows still add up.
+ *
+ *  Opt-in on purpose (ADR 0008): a section earns a tile by having something
+ *  to show, rather than being entitled to one. A tile is also suppressed
+ *  whenever its section has no published resources — an empty tile reading
+ *  `0` is worse than no tile. */
+export type LandingTile = {
+  /** How the tile's body renders:
+   *  - `list`  — the section's preview resources, linked individually.
+   *  - `stat`  — the published count, plus the newest resource's title.
+   *  - `fields`— a code panel quoting `fields` from the newest resource
+   *              that carries all of them. */
+  kind: 'list' | 'stat' | 'fields'
+  /** Message keys, resolved against the owning module's namespace. */
+  titleKey: string
+  descriptionKey: string
+  /** `fields` kind only. Names entries in this section's own `metaFields`,
+   *  not message keys: core resolves each label through the descriptor that
+   *  already exists, so the tile cannot drift from the admin form, and
+   *  `registry.test.ts` can check the names resolve. */
+  fields?: readonly string[]
+}
+
 /** The public face of one resource type inside a module: its stored `type`
  *  value, its URL, its labels, and how its `meta` is validated. */
 export type SectionDefinition = {
@@ -51,6 +79,9 @@ export type SectionDefinition = {
   metaFields: readonly MetaField[]
   /** Detail pages require a session. Defaults to true; listings stay public. */
   gated?: boolean
+  /** This section's landing-page tile. Omit it and the section simply has no
+   *  tile — the landing is derived from whichever sections declare one. */
+  landingTile?: LandingTile
 }
 
 /** A top-level navigation entry. A module contributes as many as it needs —
