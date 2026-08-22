@@ -41,15 +41,22 @@ there. Its rule is that adding the line means shipping the thing.
   tiers). Gating it would put a search box in the header that bounced most
   first-time visitors to sign-in, while protecting nothing that is not already
   public.
-- **`/search` is never indexed.** A query string is an unbounded URL space: one
-  crawled search link leads to endlessly many more. This is a third category
-  the crawl rules did not have — not "you may not read this" but "there is no
-  end to these URLs" — so it gets its own list, `platformNoIndexPaths` in
-  `src/lib/gating.ts`, consumed only by `robots.ts` and deliberately **not**
-  added to the proxy's `GATED`. The page also sends its own
-  `robots: { index: false, follow: true }`. It is absent from the sitemap for
-  free rather than by exclusion: `publicPaths` derives from nav entries and
-  section paths, and search is neither.
+- **`/search` is never indexed — via `noindex` alone, and it stays crawlable.**
+  A search result page is not somewhere anyone should arrive from Google. The
+  mechanism is the page's own `robots: { index: false, follow: true }`, and
+  **robots.txt deliberately does not disallow the path.** The two look
+  complementary and are not: a disallowed URL is never fetched, so its
+  `noindex` is never read, while Google will still index a URL it has never
+  fetched on the strength of the links pointing at it — and the header links to
+  `/search` from every page. Disallow plus `noindex` yields the bare URL in
+  results with no snippet, which is strictly worse than `noindex` alone.
+  `follow` stays on so links out of a result page still count. It is absent
+  from the sitemap for free rather than by exclusion: `publicPaths` derives
+  from nav entries and section paths, and search is neither.
+- **Nothing links to a query URL**, so the unbounded `?q=` space is not
+  reachable by crawling: the header and the landing tile both point at bare
+  `/search`. Should that change, the answer is still `noindex` on the page, not
+  a robots rule that would switch it off.
 - **An empty query is a prompt, not a dump.** The section listings already
   exist for browsing; running the query on an empty box would put a full scan
   behind every crawler and stray link.
@@ -77,7 +84,12 @@ keyboard-shortcut story before it is worth making again.
 - Result cards link to gated detail pages, so a signed-out visitor searching
   successfully still meets the sign-in wall on the way in. That is the gating
   model working, but it means search is most useful once signed in.
-- `platformNoIndexPaths` is a list that must not be confused with
-  `platformGatedPaths` beside it. Adding a path to the wrong one either leaks a
-  private page into search results or silently makes a public page require an
-  account; the comment on each says which is which.
+- `robots.ts` now carries exactly one kind of rule: **gated** paths. A path that
+  is public but should not be indexed does not belong there and says so itself.
+  The comment in `robots.ts` states the trap, because "also disallow it in
+  robots.txt" is the obvious-looking change that would silently undo this.
+- Crawlers will fetch `/search` and any `?q=` URL that someone links to
+  externally. That is the cost of the `noindex` being readable, and it is small
+  — the query is bounded by `PAGE_SIZE`, and the page is `force-dynamic`
+  anyway. If crawl volume ever becomes a real cost, the lever is rate limiting
+  or a `Crawl-delay`, not a disallow.

@@ -23,20 +23,26 @@ test.describe('crawl control', () => {
     expect(body).not.toContain('<!DOCTYPE')
   })
 
-  test('search is public to read but disallowed to crawlers', async ({
+  test('search stays crawlable so its noindex can be read', async ({
+    page,
     request,
   }) => {
-    // Two different reasons live in this file: gated paths nobody may read,
-    // and /search, which anyone may read but which has no end of URLs
-    // (ADR 0016). Assert both halves — that it is disallowed, and that it
-    // still answers.
+    // The trap this guards against: disallowing /search in robots.txt looks
+    // like the stronger move, but a URL that is never fetched is a URL whose
+    // noindex is never read — and the header links to /search from every
+    // page, so Google would index the bare URL on link evidence alone. The
+    // two must not both be applied (ADR 0016).
     const robots = await request.get('/robots.txt')
     const body = await robots.text()
-    expect(body).toContain('Disallow: /en/search')
-    expect(body).toContain('Disallow: /zh/search')
+    expect(body).not.toContain('Disallow: /en/search')
+    expect(body).not.toContain('Disallow: /zh/search')
 
-    const page = await request.get('/en/search')
-    expect(page.status()).toBe(200)
+    // And the thing that actually keeps it out of the index is present.
+    await page.goto('/en/search')
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+      'content',
+      /noindex/,
+    )
   })
 
   test('sitemap.xml lists the public pages at the runtime origin', async ({

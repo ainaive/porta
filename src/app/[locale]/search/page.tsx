@@ -8,11 +8,15 @@ import { firstParam, parsePageParam } from '@/lib/utils'
 export const dynamic = 'force-dynamic'
 
 // Public — results carry title and summary, which is exactly what a section
-// listing already shows a signed-out visitor — but never indexed. A query
-// string is an unbounded URL space, so one crawled search link leads to
-// endlessly many more. robots.txt disallows the path (src/lib/gating.ts);
-// this is the per-page half of the same decision (ADR 0016). `follow` stays
-// on so the links out of a result page still count.
+// listing already shows a signed-out visitor — but never indexed: a search
+// result page is not a page anyone should arrive on from Google.
+//
+// This tag is the whole mechanism, and it only works if crawlers may fetch
+// the page. robots.txt deliberately does NOT disallow /search: a blocked URL
+// is never fetched, so this line would never be read, and the header links to
+// /search from every page — Google would index the bare URL on link evidence
+// alone and show it with no snippet. `follow` stays on so the links out of a
+// result page still count (ADR 0016).
 export const metadata: Metadata = {
   robots: { index: false, follow: true },
 }
