@@ -31,8 +31,8 @@
         "label": "中 / EN"
       },
       "search": {
-        "title": "Search and tags in every section",
-        "description": "Filter any section by free text or by tag. Tags are shared across the catalog, so the same word means the same thing everywhere.",
+        "title": "One search across every section",
+        "description": "Search the whole catalog from one box, both languages at once — or filter a single section by free text and tags. Tags are shared, so the same word means the same thing everywhere.",
         "label": "Search"
       }
     },
@@ -41,6 +41,17 @@
       "title": "Public to browse, sign in to read",
       "description": "Anyone can see this page and every section listing. Full resource pages need an account, and accounts are created from an invite link — there is no open sign-up."
     }
+  },
+  "search": {
+    "title": "Search",
+    "description": "One box over the whole catalog, in both languages.",
+    "placeholder": "Search the catalog…",
+    "submit": "Search",
+    "allSections": "All sections",
+    "filterLabel": "Filter by section",
+    "prompt": "Type something to search the catalog.",
+    "noResults": "Nothing matched “{q}”.",
+    "results": "{total} matching “{q}”"
   },
   "content": {
     "searchPlaceholder": "Search…",

@@ -182,6 +182,10 @@ export async function Bento({ overview }: { overview: HomeOverview }) {
                       count={tags.length}
                       title={t('bento.search.title')}
                       description={t('bento.search.description')}
+                      // Safe as a whole-tile link: the body is badges, not
+                      // anchors, so there is nothing for the overlay to
+                      // swallow (unlike a `list` tile).
+                      href="/search"
                     />
                     {tags.length > 0 ? (
                       <div className="mt-6 flex flex-wrap gap-2">

@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { gatedPathPrefixes } from '@/core/module/derive'
 import { routing } from '@/i18n/routing'
 import { canonicalBaseURL } from '@/lib/auth'
-import { platformGatedPaths } from '@/lib/gating'
+import { platformGatedPaths, platformNoIndexPaths } from '@/lib/gating'
 
 // Crawl rules, derived rather than listed. Every locale-prefixed form of a
 // gated path is disallowed, so a module that gates a new section stops it
@@ -37,6 +37,9 @@ export default function robots(): MetadataRoute.Robots {
         // Both halves come from the same place the proxy gates on — the
         // module registry, and gating.ts's platform paths.
         ...[...platformGatedPaths, ...gatedPathPrefixes].flatMap(everyLocale),
+        // Public but uncrawlable, which is a different reason: not "you may
+        // not read this" but "there is no end to these URLs".
+        ...platformNoIndexPaths.flatMap(everyLocale),
       ],
     },
     // Omitted rather than guessed when neither BETTER_AUTH_URL nor Vercel's

@@ -13,6 +13,15 @@ import { routing } from '@/i18n/routing'
  *  too, and two hand-kept copies of a security-relevant list is one too many. */
 export const platformGatedPaths = ['/admin', '/account'] as const
 
+/** Public, but kept out of search engines — crawl policy, not access control,
+ *  and deliberately NOT part of `GATED` below: anyone may read these, a
+ *  crawler simply shouldn't. `/search` qualifies because its query string is
+ *  an unbounded URL space, so one indexed search link leads to endlessly
+ *  many more (ADR 0016). Exported for the same reason as the list above —
+ *  robots.txt has to name exactly these, and two hand-kept copies is one too
+ *  many. Each page also sends its own `noindex`. */
+export const platformNoIndexPaths = ['/search'] as const
+
 const GATED = [
   ...gatedModulePatterns,
   ...platformGatedPaths.map((path) => new RegExp(`^${path}(/|$)`)),

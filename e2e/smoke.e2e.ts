@@ -64,6 +64,47 @@ test.describe('public smoke', () => {
     }
   })
 
+  test('the bento shows a tile for every section that has content', async ({
+    page,
+  }) => {
+    // The tiles are derived from the registry (ADR 0015). Before that, four
+    // were hardcoded and agents, reports and guides could not appear here at
+    // all — so this asserts the three that used to be impossible.
+    await page.goto('/en')
+    for (const tile of [
+      'Tools directory',
+      'Agents, assessed',
+      'Model API resources',
+      'Measurement write-ups',
+      'Courses and chapters',
+      'Teaching videos',
+      'Written guides',
+    ]) {
+      await expect(page.getByRole('heading', { name: tile })).toBeVisible()
+    }
+  })
+
+  test('a tile links to its section, and a list tile links each resource', async ({
+    page,
+  }) => {
+    await page.goto('/en')
+    // The tools tile takes no whole-tile link precisely so that the anchors
+    // inside it stay clickable — an inset overlay would swallow them. Which
+    // three tools it shows is whatever is newest, and other specs publish
+    // resources, so click into the tile rather than naming one.
+    const toolsTile = page
+      .getByRole('heading', { name: 'Tools directory' })
+      .locator('..')
+    await toolsTile.getByRole('link').first().click()
+    // This block is signed out, so a tool detail page bounces to sign-in —
+    // and `next` carries the path proving which link took the click.
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fen%2Ftools%2F.+/)
+
+    await page.goto('/en')
+    await page.getByRole('link', { name: 'Courses and chapters' }).click()
+    await expect(page).toHaveURL(/\/en\/help\/courses$/)
+  })
+
   test('draft resources never surface publicly', async ({ page }) => {
     await page.goto('/en/tools')
     await expect(page.getByText('Secret draft tool')).toHaveCount(0)

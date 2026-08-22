@@ -45,18 +45,14 @@ function likePattern(query: string): string {
   return `%${query.replace(/[\\%_]/g, '\\$&')}%`
 }
 
-export async function listPublished(
-  type: ResourceType,
-  locale: Locale,
-  filters: { q?: string; tag?: string; page?: number } = {},
-): Promise<Paginated<TranslatedResource>> {
-  const pageSize = PAGE_SIZE
-  const requested = filters.page ?? 1
-  const page =
-    Number.isFinite(requested) && requested >= 1 ? Math.trunc(requested) : 1
+export type PublicFilters = { q?: string; tag?: string; page?: number }
 
+/** What every public read of the catalog has in common: published, actually
+ *  renderable, and narrowed by whatever the visitor filtered on. The section
+ *  scope is the caller's business — one type for a listing, all of them for a
+ *  search — so it is not decided here. */
+function publishedConditions(filters: PublicFilters): SQL[] {
   const conditions: SQL[] = [
-    eq(resources.type, type),
     eq(resources.status, 'published'),
     // Only resources that will actually render: groupResources drops
     // untranslated-everywhere rows, so counting/paginating without this would
@@ -92,6 +88,21 @@ export async function listPublished(
       ),
     )
   }
+  return conditions
+}
+
+/** Count, clamp and hydrate one page of resources. Shared by the per-section
+ *  listing and the cross-section search: the ordering and tiebreaking below
+ *  are subtle enough that a second copy would drift. */
+async function paginatePublished(
+  conditions: SQL[],
+  locale: Locale,
+  requestedPage: number | undefined,
+): Promise<Paginated<TranslatedResource>> {
+  const pageSize = PAGE_SIZE
+  const requested = requestedPage ?? 1
+  const page =
+    Number.isFinite(requested) && requested >= 1 ? Math.trunc(requested) : 1
   const where = and(...conditions)
 
   const [{ total }] = await db
@@ -138,6 +149,39 @@ export async function listPublished(
     page: clampedPage,
     pageSize,
   }
+}
+
+export async function listPublished(
+  type: ResourceType,
+  locale: Locale,
+  filters: PublicFilters = {},
+): Promise<Paginated<TranslatedResource>> {
+  return paginatePublished(
+    [eq(resources.type, type), ...publishedConditions(filters)],
+    locale,
+    filters.page,
+  )
+}
+
+/** The same catalog, read across every section at once. Backed by the same
+ *  pg_trgm indexes as a section listing (they are on the translation columns,
+ *  so they never cared which type a resource was) — no new index, no
+ *  migration. */
+export async function searchPublished(
+  locale: Locale,
+  filters: PublicFilters & { type?: ResourceType } = {},
+): Promise<Paginated<TranslatedResource>> {
+  // Scope to registered sections. `resources.type` is text and only the write
+  // path checks it against the registry (ADR 0013), so a section retired after
+  // its rows were published leaves orphans behind. getHomeOverview drops them
+  // in JS; here they have to go in SQL, because dropping rows after the page
+  // was cut would leave the total lying and the page short.
+  const scope = filters.type ? [filters.type] : [...resourceTypes]
+  return paginatePublished(
+    [inArray(resources.type, scope), ...publishedConditions(filters)],
+    locale,
+    filters.page,
+  )
 }
 
 export async function listPublishedTags(type: ResourceType): Promise<string[]> {

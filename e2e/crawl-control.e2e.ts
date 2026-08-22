@@ -23,6 +23,22 @@ test.describe('crawl control', () => {
     expect(body).not.toContain('<!DOCTYPE')
   })
 
+  test('search is public to read but disallowed to crawlers', async ({
+    request,
+  }) => {
+    // Two different reasons live in this file: gated paths nobody may read,
+    // and /search, which anyone may read but which has no end of URLs
+    // (ADR 0016). Assert both halves — that it is disallowed, and that it
+    // still answers.
+    const robots = await request.get('/robots.txt')
+    const body = await robots.text()
+    expect(body).toContain('Disallow: /en/search')
+    expect(body).toContain('Disallow: /zh/search')
+
+    const page = await request.get('/en/search')
+    expect(page.status()).toBe(200)
+  })
+
   test('sitemap.xml lists the public pages at the runtime origin', async ({
     request,
     baseURL,
@@ -38,5 +54,8 @@ test.describe('crawl control', () => {
     expect(body).toContain('hreflang="zh"')
     // Gated detail pages are not public and must not be advertised.
     expect(body).not.toContain('/en/tools/')
+    // Public, but an unbounded URL space — it stays out by never being
+    // derived into publicPaths, and must not be added back (ADR 0016).
+    expect(body).not.toContain('/en/search')
   })
 })
