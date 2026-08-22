@@ -86,6 +86,11 @@ export const help = defineModule({
           step: '0.5',
         },
       ],
+      landingTile: {
+        kind: 'stat',
+        titleKey: 'courses.landing.title',
+        descriptionKey: 'courses.landing.description',
+      },
     },
     {
       key: 'video',
@@ -118,6 +123,11 @@ export const help = defineModule({
           placeholder: '12:34',
         },
       ],
+      landingTile: {
+        kind: 'stat',
+        titleKey: 'videos.landing.title',
+        descriptionKey: 'videos.landing.description',
+      },
     },
     {
       key: 'guide',
@@ -129,6 +139,11 @@ export const help = defineModule({
         levelField,
         { name: 'sourceUrl', kind: 'text', labelKey: 'meta.sourceUrl' },
       ],
+      landingTile: {
+        kind: 'stat',
+        titleKey: 'guides.landing.title',
+        descriptionKey: 'guides.landing.description',
+      },
     },
   ],
   // Courses and videos were top-level sections before this module existed.

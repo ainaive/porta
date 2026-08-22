@@ -217,6 +217,123 @@ const SEED: SeedResource[] = [
       },
     ],
   },
+  {
+    type: 'agent',
+    slug: 'release-notes-drafter',
+    tags: ['agent', 'automation'],
+    meta: {
+      vendor: 'Platform team',
+      docsUrl: 'https://docs.example.internal/agents/release-notes',
+      links: [
+        {
+          label: 'Evaluation run',
+          url: 'https://docs.example.internal/agents/release-notes/eval',
+        },
+      ],
+    },
+    translations: [
+      {
+        locale: 'en',
+        title: 'Release notes drafter',
+        summary:
+          'Turns a merged milestone into a first-draft changelog for a human to edit.',
+        body: 'Reliable on well-scoped commit histories; loses the thread across more than about fifty commits.',
+      },
+      {
+        locale: 'zh',
+        title: '发布说明起草助手',
+        summary: '把一个已合并的里程碑整理成变更日志初稿，交由人工润色。',
+        body: '提交历史范围清晰时表现稳定；超过约五十个提交后容易丢失主线。',
+      },
+    ],
+  },
+  {
+    type: 'agent',
+    slug: 'triage-assistant',
+    tags: ['agent', 'support'],
+    meta: { vendor: 'Platform team', links: [] },
+    translations: [
+      {
+        locale: 'en',
+        title: 'Issue triage assistant',
+        summary: 'Labels and routes incoming issues against the team taxonomy.',
+        body: 'Strong on labelling, weak on priority — treat its severity guess as a suggestion.',
+      },
+    ],
+  },
+  {
+    type: 'report',
+    slug: 'inference-gateway-latency-q3',
+    tags: ['benchmark', 'infra'],
+    meta: {
+      subject: 'Internal inference gateway',
+      sourceUrl: 'https://docs.example.internal/reports/gateway-latency-q3',
+    },
+    translations: [
+      {
+        locale: 'en',
+        title: 'Inference gateway latency, Q3',
+        summary:
+          'p50 and p99 latency for the internal gateway under production load.',
+        body: 'Median held steady across the quarter; the tail widened after the August traffic step-up.',
+      },
+      {
+        locale: 'zh',
+        title: '推理网关延迟报告（第三季度）',
+        summary: '生产负载下内部网关的 p50 与 p99 延迟表现。',
+        body: '整季中位数保持平稳；八月流量抬升后长尾明显变宽。',
+      },
+    ],
+  },
+  {
+    type: 'report',
+    slug: 'summarisation-model-comparison',
+    tags: ['benchmark', 'llm'],
+    meta: { subject: 'Summarisation models' },
+    translations: [
+      {
+        locale: 'zh',
+        title: '摘要模型横向对比',
+        summary: '在内部会议纪要数据集上对比三款模型的摘要质量。',
+        body: '长文档场景差距最大，短会议纪要三者接近。',
+      },
+    ],
+  },
+  {
+    type: 'guide',
+    slug: 'request-an-invite',
+    tags: ['onboarding'],
+    meta: { level: 'beginner' },
+    translations: [
+      {
+        locale: 'en',
+        title: 'Requesting an invite',
+        summary: 'How to get an account, and what to do when a link expires.',
+        body: 'There is no open sign-up. Ask an admin for an invite link; it lasts seven days and works once.',
+      },
+      {
+        locale: 'zh',
+        title: '如何申请邀请',
+        summary: '怎样获得账号，以及邀请链接过期后该怎么办。',
+        body: '平台不开放自助注册。请向管理员索取邀请链接，有效期七天，且只能使用一次。',
+      },
+    ],
+  },
+  {
+    type: 'guide',
+    slug: 'publishing-a-resource',
+    tags: ['admin'],
+    meta: { level: 'intermediate' },
+    translations: [
+      {
+        locale: 'en',
+        title: 'Publishing a resource',
+        summary:
+          'The draft-to-published path, and why a translation is required.',
+        body: 'A resource needs at least one translation before it can be published — otherwise it would render blank in both locales.',
+      },
+    ],
+  },
 ]
 
 const COURSE_CHAPTERS = [

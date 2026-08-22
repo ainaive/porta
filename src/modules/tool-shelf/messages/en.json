@@ -4,7 +4,11 @@
   },
   "tools": {
     "title": "Tool Shelf",
-    "description": "Internal and ecosystem tools, ready to use."
+    "description": "Internal and ecosystem tools, ready to use.",
+    "landing": {
+      "title": "Tools directory",
+      "description": "Internal and ecosystem tools, each with a summary, tags, and links to the tool itself and its documentation."
+    }
   },
   "openTool": "Open tool",
   "documentation": "Documentation",

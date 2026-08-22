@@ -14,6 +14,13 @@ import { platformGatedPaths } from '@/lib/gating'
 // stay out of search results, where they would advertise slugs and — for
 // /admin, which 404s for non-admins on purpose — the existence of an area
 // that tries not to be discoverable.
+//
+// Only *gated* paths belong here. A page that is public but should not be
+// indexed — /search — must stay crawlable and say `noindex` itself: a
+// disallowed URL is never fetched, so its noindex is never read, and Google
+// will still index the bare URL on the strength of the links pointing at it
+// (the header links to /search from every page). Disallow plus noindex is
+// strictly worse than noindex alone (ADR 0016).
 
 // Dynamic, like every other route here, and for the same reason: the
 // canonical origin is read from server env at runtime (ADR 0005). Prerendering

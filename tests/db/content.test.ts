@@ -6,6 +6,7 @@ import {
   listPublished,
   listPublishedTags,
   PAGE_SIZE,
+  searchPublished,
 } from '@/core/content/queries'
 import { db } from '@/db'
 import { resources, resourceTranslations } from '@/db/schema'
@@ -325,6 +326,123 @@ describe('retired sections', () => {
     await insertOrphan()
     const { items } = await adminListResources('en')
     expect(items.map((item) => item.type)).toEqual(['retired_section'])
+  })
+
+  test('an orphaned resource is not searchable', async () => {
+    await insertOrphan()
+    const { items, total } = await searchPublished('en', { q: 'Ghost' })
+    expect(items).toEqual([])
+    expect(total).toBe(0)
+  })
+})
+
+describe('searchPublished', () => {
+  test('finds resources across sections in one query', async () => {
+    await insertResource('deploy-cli', [
+      { locale: 'en', title: 'Deploy CLI', summary: 'Ship it' },
+    ])
+    await insertResource(
+      'deploy-course',
+      [{ locale: 'en', title: 'Deployment course' }],
+      { type: 'course' },
+    )
+    await insertResource(
+      'deploy-video',
+      [{ locale: 'en', title: 'Deploying in practice' }],
+      { type: 'video' },
+    )
+    await insertResource('unrelated', [
+      { locale: 'en', title: 'Something else' },
+    ])
+
+    const { items, total } = await searchPublished('en', { q: 'deploy' })
+    expect(total).toBe(3)
+    expect(items.map((item) => item.type).sort()).toEqual([
+      'course',
+      'tool',
+      'video',
+    ])
+  })
+
+  test('narrows to one section when asked', async () => {
+    await insertResource('deploy-cli', [{ locale: 'en', title: 'Deploy CLI' }])
+    await insertResource(
+      'deploy-course',
+      [{ locale: 'en', title: 'Deployment course' }],
+      { type: 'course' },
+    )
+
+    const { items, total } = await searchPublished('en', {
+      q: 'deploy',
+      type: 'course',
+    })
+    expect(total).toBe(1)
+    expect(items[0].slug).toBe('deploy-course')
+  })
+
+  test('matches the body and the other locale, case-insensitively', async () => {
+    await insertResource(
+      'gateway',
+      [{ locale: 'zh', title: '内部推理网关', body: 'OpenAI 协议兼容' }],
+      { type: 'model' },
+    )
+
+    const byBody = await searchPublished('en', { q: 'openai' })
+    expect(byBody.items.map((item) => item.slug)).toEqual(['gateway'])
+    // Requested locale has no translation, so the zh one is shown and flagged.
+    expect(byBody.items[0].isFallback).toBe(true)
+  })
+
+  test('a literal % or _ is matched, not treated as a wildcard', async () => {
+    await insertResource('literal', [{ locale: 'en', title: '100% coverage' }])
+    await insertResource('other', [{ locale: 'en', title: 'Plain title' }])
+
+    expect(
+      (await searchPublished('en', { q: '100%' })).items.map((i) => i.slug),
+    ).toEqual(['literal'])
+    expect((await searchPublished('en', { q: 'a_b' })).total).toBe(0)
+  })
+
+  test('excludes drafts and resources with no translation at all', async () => {
+    await insertResource('draft', [{ locale: 'en', title: 'Draft widget' }], {
+      status: 'draft',
+    })
+    await insertResource('bare', [], { type: 'guide' })
+    await insertResource('real', [{ locale: 'en', title: 'Real widget' }])
+
+    const { items, total } = await searchPublished('en', { q: 'widget' })
+    expect(total).toBe(1)
+    expect(items.map((item) => item.slug)).toEqual(['real'])
+  })
+
+  test('paginates across sections and clamps an out-of-range page', async () => {
+    const types = ['tool', 'course', 'video'] as const
+    for (let i = 0; i < PAGE_SIZE + 3; i++) {
+      await insertResource(
+        `match-${i}`,
+        [{ locale: 'en', title: `Widget ${i}` }],
+        { type: types[i % types.length] },
+      )
+    }
+
+    const first = await searchPublished('en', { q: 'widget' })
+    expect(first.total).toBe(PAGE_SIZE + 3)
+    expect(first.items).toHaveLength(PAGE_SIZE)
+
+    const last = await searchPublished('en', { q: 'widget', page: 999 })
+    expect(last.page).toBe(2)
+    expect(last.items).toHaveLength(3)
+
+    // No resource may appear on both pages, and none may be missed.
+    const seen = [...first.items, ...last.items].map((item) => item.slug)
+    expect(new Set(seen).size).toBe(PAGE_SIZE + 3)
+  })
+
+  test('an empty query returns the whole registered catalog', async () => {
+    await insertResource('a', [{ locale: 'en', title: 'A' }])
+    await insertResource('b', [{ locale: 'en', title: 'B' }], { type: 'guide' })
+
+    expect((await searchPublished('en')).total).toBe(2)
   })
 })
 

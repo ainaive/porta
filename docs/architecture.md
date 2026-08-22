@@ -306,6 +306,12 @@ Nav, gating, the admin type filter and the admin form fields all follow from
 the manifest. `bun run verify` fails if a key collides or a message is
 missing.
 
+A section can also declare a `landingTile` and appear on the landing page's
+bento (ADR 0015) — `list`, `stat` or `fields`, plus two copy keys in the
+module's own bundle. It is opt-in and core owns the layout: width follows the
+kind, order is registry order, and the tile is suppressed while the section
+has nothing published. A module never declares its own span.
+
 ## Adding a module
 
 `bun run module:new <id>` scaffolds all of this and leaves the tree green;
@@ -315,7 +321,9 @@ what it generates is:
    The manifest needs `id` (also its i18n namespace), `nav`, `sections` and
    `messages`; add `redirects` if it is taking over existing paths, and
    `frameSrc` if it embeds an external origin in an iframe — that is the only
-   way to widen the CSP.
+   way to widen the CSP. Add `landingTile` to a section once it has something
+   worth showing on the landing page; the scaffolder deliberately generates
+   none.
 2. Route mounts under `src/app/[locale]/`. A module with several sections
    usually wants `createModuleIndexPage('<id>')` at its base path.
 3. **One line** in `src/core/module/registry.ts`.

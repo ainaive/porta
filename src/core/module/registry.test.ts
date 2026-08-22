@@ -3,6 +3,7 @@ import coreEn from '../../../messages/en.json'
 import type { FeatureModule } from './define'
 import {
   gatedModulePatterns,
+  messageKey,
   metaFieldLabelKey,
   navEntries,
   sectionDescriptionKey,
@@ -82,6 +83,33 @@ describe('registry shape', () => {
       expect({ [section.key]: new Set(names).size }).toEqual({
         [section.key]: names.length,
       })
+    }
+  })
+
+  test('a landing tile only quotes meta fields its section declares', () => {
+    for (const section of sections) {
+      const tile = section.landingTile
+      if (!tile) continue
+      const names = section.metaFields.map((field) => field.name)
+      for (const quoted of tile.fields ?? []) {
+        // The tile resolves each label through the matching MetaField, so a
+        // name with no descriptor would render as the raw name — and the
+        // panel would silently drift away from the admin form it quotes.
+        expect({
+          [`${section.key}.${quoted}`]: names.includes(quoted),
+        }).toEqual({ [`${section.key}.${quoted}`]: true })
+      }
+    }
+  })
+
+  test('only a fields tile names fields, and it names at least one', () => {
+    for (const section of sections) {
+      const tile = section.landingTile
+      if (!tile) continue
+      const count = tile.fields?.length ?? 0
+      expect({
+        [section.key]: tile.kind === 'fields' ? count > 0 : count === 0,
+      }).toEqual({ [section.key]: true })
     }
   })
 
@@ -167,12 +195,23 @@ describe('message keys', () => {
         if (!shipped.has(entry.labelKey)) missing.push(entry.labelKey)
       }
       for (const section of sections) {
+        const tile = section.landingTile
         const referenced = [
           sectionTitleKey(section.key),
           sectionDescriptionKey(section.key),
           ...section.metaFields.map((field) =>
             metaFieldLabelKey(section, field),
           ),
+          // A landing tile names copy the same way a section does, so it has
+          // to be checked the same way — otherwise the one thing this test
+          // exists to guarantee would silently exclude the newest thing a
+          // manifest can say.
+          ...(tile
+            ? [
+                messageKey(section.moduleId, tile.titleKey),
+                messageKey(section.moduleId, tile.descriptionKey),
+              ]
+            : []),
         ]
         for (const key of referenced) {
           // A manifest may only name strings in its own namespace.

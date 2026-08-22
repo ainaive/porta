@@ -8,15 +8,27 @@
   },
   "courses": {
     "title": "Courses",
-    "description": "Structured learning paths from the team."
+    "description": "Structured learning paths from the team.",
+    "landing": {
+      "title": "Courses and chapters",
+      "description": "Structured learning paths, split into ordered chapters you can link straight into."
+    }
   },
   "videos": {
     "title": "Videos",
-    "description": "Teaching videos and recorded sessions."
+    "description": "Teaching videos and recorded sessions.",
+    "landing": {
+      "title": "Teaching videos",
+      "description": "Recorded sessions and walkthroughs, embedded from YouTube and Bilibili."
+    }
   },
   "guides": {
     "title": "Guides",
-    "description": "Written how-tos for the things people ask about most."
+    "description": "Written how-tos for the things people ask about most.",
+    "landing": {
+      "title": "Written guides",
+      "description": "Step-by-step instructions in plain text, tagged and searchable alongside everything else."
+    }
   },
   "chapters": "Chapters",
   "previousChapter": "Previous",

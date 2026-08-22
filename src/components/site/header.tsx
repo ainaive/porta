@@ -1,3 +1,4 @@
+import { SearchIcon } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 import { Button } from '@/components/ui/button'
 import { navEntries } from '@/core/module/derive'
@@ -11,10 +12,11 @@ import { UserMenu } from './user-menu'
 export async function SiteHeader() {
   // Section links come from the module registry; `t` is unnamespaced because
   // each module's labels live under its own namespace.
-  const [t, nav, common, session] = await Promise.all([
+  const [t, nav, common, search, session] = await Promise.all([
     getTranslations('nav'),
     getTranslations(),
     getTranslations('common'),
+    getTranslations('search'),
     getSession(),
   ])
 
@@ -25,10 +27,16 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4">
         <MobileNav
           label={t('menu')}
-          items={navEntries.map((entry) => ({
-            href: entry.href,
-            label: nav(entry.labelKey),
-          }))}
+          items={[
+            ...navEntries.map((entry) => ({
+              href: entry.href,
+              label: nav(entry.labelKey),
+            })),
+            // Search is platform-level, not a module's, so it is appended
+            // rather than derived — but it belongs in the phone menu, where
+            // the desktop search link is hidden.
+            { href: '/search', label: search('title') },
+          ]}
         />
         <Link href="/" className="flex items-center gap-2.5">
           <BrandMark />
@@ -52,6 +60,16 @@ export async function SiteHeader() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon-sm"
+            className="max-sm:hidden"
+          >
+            <Link href="/search" aria-label={search('title')}>
+              <SearchIcon />
+            </Link>
+          </Button>
           <LocaleSwitcher />
           {session ? (
             <UserMenu
