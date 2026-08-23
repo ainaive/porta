@@ -265,6 +265,14 @@ anything else should reuse.
 - **`--brand*` are constants**, not theme state. The app chrome is
   deliberately achromatic; the accent belongs to the landing and the brand
   mark.
+- **One `main` landmark, and the layout opens it.** `[locale]/layout.tsx`
+  renders `<main id="main-content" tabIndex={-1}>` around `{children}`; a page
+  renders a plain box inside it and must not open a `main` of its own, which
+  would nest the landmark and break the skip link's target. The skip link
+  (`src/components/site/skip-link.tsx`) is the first focusable element on every
+  page — the header puts the phone menu, the brand, every section link, search
+  and the locale toggle ahead of the content. See
+  [ADR 0017](./adr/0017-page-metadata-derived-from-the-registry.md).
 - Landing copy is held to shipped capability, enforced by an e2e test. See
   [ADR 0008](./adr/0008-landing-visual-system.md).
 
@@ -296,15 +304,21 @@ Entirely inside the module — no core file, no migration:
    (globally unique, stored in `resources.type`), a `path`, title/description
    message keys, a zod `meta` schema, and `metaFields` descriptors.
 2. Add those keys to **both** `src/modules/<id>/messages/*.json`.
-3. Add a listing page — `createListingPage('<key>')` from
-   `@/core/content/listing-page` is usually the whole file — and a detail page
-   that renders your `meta`.
-4. Mount them: `src/app/[locale]/<path>/page.tsx` re-exporting the page plus
-   `export const dynamic = 'force-dynamic'`.
+3. Add a listing page — `createListingPage('<key>')` plus
+   `createListingMetadata('<key>')`, both from
+   `@/core/content/listing-page`, are usually the whole file — and a detail
+   page that renders your `meta`.
+4. Mount them: `src/app/[locale]/<path>/page.tsx` re-exporting `default` and
+   `generateMetadata` plus `export const dynamic = 'force-dynamic'`.
 
-Nav, gating, the admin type filter and the admin form fields all follow from
-the manifest. `bun run verify` fails if a key collides or a message is
+Nav, gating, the admin type filter, the admin form fields, and the page's
+title, description, canonical URL and link unfurl all follow from the
+manifest (ADR 0017). `bun run verify` fails if a key collides or a message is
 missing.
+
+Those title and description strings are read twice — as the page heading and
+as the `<meta name="description">` a crawler indexes — so write the
+description as a sentence that stands alone.
 
 A section can also declare a `landingTile` and appear on the landing page's
 bento (ADR 0015) — `list`, `stat` or `fields`, plus two copy keys in the
@@ -325,7 +339,10 @@ what it generates is:
    worth showing on the landing page; the scaffolder deliberately generates
    none.
 2. Route mounts under `src/app/[locale]/`. A module with several sections
-   usually wants `createModuleIndexPage('<id>')` at its base path.
+   usually wants `createModuleIndexPage('<id>')` and
+   `createModuleIndexMetadata('<id>')` at its base path — and those sections'
+   paths must hang off the module's nav href, which is how the index page
+   derives its own URL.
 3. **One line** in `src/core/module/registry.ts`.
 
 Optional: `schema.ts` if the module needs tables of its own — drizzle-kit
