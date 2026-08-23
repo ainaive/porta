@@ -21,7 +21,7 @@ export function createModuleIndexPage(moduleId: string) {
     const own = sections.filter((section) => section.moduleId === moduleId)
 
     return (
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
         <h1 className="text-2xl font-semibold tracking-tight">
           {label(`${moduleId}.index.title`)}
         </h1>
@@ -49,7 +49,7 @@ export function createModuleIndexPage(moduleId: string) {
             </Link>
           ))}
         </div>
-      </main>
+      </div>
     )
   }
 }

@@ -12,6 +12,7 @@ import { getTranslations } from 'next-intl/server'
 import { ChromeShell } from '@/components/site/chrome-shell'
 import { SiteFooter } from '@/components/site/footer'
 import { SiteHeader } from '@/components/site/header'
+import { MAIN_CONTENT_ID, SkipLink } from '@/components/site/skip-link'
 import { Toaster } from '@/components/ui/sonner'
 import { routing } from '@/i18n/routing'
 import '../globals.css'
@@ -83,8 +84,24 @@ export default async function LocaleLayout({
       <body className="flex min-h-svh flex-col">
         <NextIntlClientProvider>
           <ChromeShell>
+            <SkipLink />
             <SiteHeader />
-            <div className="flex flex-1 flex-col">{children}</div>
+            {/* The app's one `main` landmark. Pages render their own boxes
+                inside it rather than a `main` each: nesting the landmark
+                would break the skip link's target and give assistive tech
+                two answers to "where does the content start?".
+
+                `tabIndex={-1}` so following the skip link actually moves
+                focus here and not just the scroll position; `outline-none`
+                because a ring around the entire page is not useful feedback
+                — the skip link itself is what shows focus. */}
+            <main
+              id={MAIN_CONTENT_ID}
+              tabIndex={-1}
+              className="flex flex-1 flex-col focus:outline-none"
+            >
+              {children}
+            </main>
             <SiteFooter />
           </ChromeShell>
           <Toaster />

@@ -36,7 +36,7 @@ export default async function SignUpPage({
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
+    <div className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         {allowed ? (
           <>
@@ -64,6 +64,6 @@ export default async function SignUpPage({
           </CardHeader>
         )}
       </Card>
-    </main>
+    </div>
   )
 }

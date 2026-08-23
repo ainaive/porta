@@ -39,7 +39,7 @@ export default async function CourseChapterPage({
   ])
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+    <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <Link
         href={`/help/courses/${slug}`}
         className="text-sm text-muted-foreground hover:text-foreground"
@@ -79,6 +79,6 @@ export default async function CourseChapterPage({
           </Button>
         ) : null}
       </div>
-    </main>
+    </div>
   )
 }

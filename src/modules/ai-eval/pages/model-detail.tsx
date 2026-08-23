@@ -34,7 +34,7 @@ export default async function ModelDetailPage({
   const t = await getTranslations('ai-eval')
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+    <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <ResourceDetailHeader resource={resource} />
 
       {meta?.endpoint || meta?.provider ? (
@@ -79,6 +79,6 @@ export default async function ModelDetailPage({
       <div className="mt-8">
         <Markdown>{resource.body}</Markdown>
       </div>
-    </main>
+    </div>
   )
 }

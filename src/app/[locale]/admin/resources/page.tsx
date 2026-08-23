@@ -60,7 +60,7 @@ export default async function AdminResourcesPage({
   })
 
   return (
-    <main>
+    <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">
           {t('resources')}
@@ -192,6 +192,6 @@ export default async function AdminResourcesPage({
           )}
         </nav>
       ) : null}
-    </main>
+    </div>
   )
 }

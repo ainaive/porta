@@ -30,7 +30,7 @@ export default async function VideoDetailPage({
   const meta = videoMeta.safeParse(resource.meta).data
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+    <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <ResourceDetailHeader resource={resource} />
       {meta ? (
         <div className="mt-6 aspect-video overflow-hidden rounded-lg border bg-muted">
@@ -46,6 +46,6 @@ export default async function VideoDetailPage({
       <div className="mt-8">
         <Markdown>{resource.body}</Markdown>
       </div>
-    </main>
+    </div>
   )
 }

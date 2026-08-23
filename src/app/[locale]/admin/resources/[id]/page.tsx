@@ -32,7 +32,7 @@ export default async function EditResourcePage({
   const section = findSection(resource.type)
 
   return (
-    <main>
+    <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -106,6 +106,6 @@ export default async function EditResourcePage({
           </ConfirmButton>
         </TabsContent>
       </Tabs>
-    </main>
+    </div>
   )
 }

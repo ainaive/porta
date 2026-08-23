@@ -39,7 +39,7 @@ export default async function CourseDetailPage({
   const meta = courseMeta.safeParse(resource.meta).data
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+    <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <ResourceDetailHeader resource={resource} />
 
       {meta?.level || meta?.estimatedHours ? (
@@ -80,6 +80,6 @@ export default async function CourseDetailPage({
           </li>
         ))}
       </ol>
-    </main>
+    </div>
   )
 }

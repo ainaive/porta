@@ -31,7 +31,7 @@ export default async function AdminUsersPage() {
   ])
 
   return (
-    <main>
+    <div>
       <h1 className="text-2xl font-semibold tracking-tight">{t('users')}</h1>
 
       <div className="mt-6 rounded-lg border">
@@ -107,6 +107,6 @@ export default async function AdminUsersPage() {
           </TableBody>
         </Table>
       </div>
-    </main>
+    </div>
   )
 }

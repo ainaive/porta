@@ -31,7 +31,7 @@ export default async function HomePage({
     // viewport edge and have to be clipped, but `hidden` on one axis computes
     // the other to `auto`, which turns this into a viewport-height scroll
     // container and stops the page scrolling at all. `clip` is exempt.
-    <main className="flex-1 overflow-x-clip">
+    <div className="flex-1 overflow-x-clip">
       <Hero signedIn={session !== null}>
         <PreviewMock locale={locale} items={overview.latest} />
       </Hero>
@@ -52,6 +52,6 @@ export default async function HomePage({
       ) : null}
 
       <AccessCta signedIn={session !== null} />
-    </main>
+    </div>
   )
 }

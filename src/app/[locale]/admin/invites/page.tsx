@@ -36,7 +36,7 @@ export default async function AdminInvitesPage() {
   }
 
   return (
-    <main>
+    <div>
       <h1 className="text-2xl font-semibold tracking-tight">{t('invites')}</h1>
       <div className="mt-6">
         <InviteForm />
@@ -104,6 +104,6 @@ export default async function AdminInvitesPage() {
           </TableBody>
         </Table>
       </div>
-    </main>
+    </div>
   )
 }

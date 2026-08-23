@@ -33,7 +33,7 @@ export default async function ToolDetailPage({
   const t = await getTranslations('tool-shelf')
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+    <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <ResourceDetailHeader resource={resource} />
       {meta.url || meta.docsUrl ? (
         <div className="mt-6 flex flex-wrap gap-3">
@@ -56,6 +56,6 @@ export default async function ToolDetailPage({
       <div className="mt-8">
         <Markdown>{resource.body}</Markdown>
       </div>
-    </main>
+    </div>
   )
 }

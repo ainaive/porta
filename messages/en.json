@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Silicon Ecosystem",
+    "skipToContent": "Skip to content",
     "untranslated": "Untranslated"
   },
   "nav": {

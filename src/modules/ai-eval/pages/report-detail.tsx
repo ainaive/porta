@@ -33,7 +33,7 @@ export default async function ReportDetailPage({
   const t = await getTranslations('ai-eval')
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+    <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <ResourceDetailHeader resource={resource} />
 
       {meta?.subject ? (
@@ -53,6 +53,6 @@ export default async function ReportDetailPage({
           </Button>
         </div>
       ) : null}
-    </main>
+    </div>
   )
 }
