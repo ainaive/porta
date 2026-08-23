@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { publicPaths } from '@/core/module/derive'
 import { routing } from '@/i18n/routing'
-import { canonicalBaseURL } from '@/lib/auth'
+import { canonicalBaseURL, localeUrls } from '@/lib/metadata'
 
 // The public surface, straight from the module registry: the landing, each
 // module's index, each section's listing — once per locale, cross-linked with
@@ -30,14 +30,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
   if (!base) return []
 
   const paths = ['', ...publicPaths]
-  return paths.flatMap((path) =>
-    routing.locales.map((locale) => ({
-      url: `${base}/${locale}${path}`,
-      alternates: {
-        languages: Object.fromEntries(
-          routing.locales.map((alt) => [alt, `${base}/${alt}${path}`]),
-        ),
-      },
-    })),
-  )
+  // `localeUrls` also backs each page's canonical/hreflang, so a URL listed
+  // here and the one that page claims for itself are the same string by
+  // construction rather than by agreement.
+  return paths.flatMap((path) => {
+    const languages = localeUrls(base, path)
+    return routing.locales.map((locale) => ({
+      url: languages[locale],
+      alternates: { languages },
+    }))
+  })
 }

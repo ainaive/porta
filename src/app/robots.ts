@@ -1,8 +1,8 @@
 import type { MetadataRoute } from 'next'
 import { gatedPathPrefixes } from '@/core/module/derive'
 import { routing } from '@/i18n/routing'
-import { canonicalBaseURL } from '@/lib/auth'
 import { platformGatedPaths } from '@/lib/gating'
+import { canonicalBaseURL } from '@/lib/metadata'
 
 // Crawl rules, derived rather than listed. Every locale-prefixed form of a
 // gated path is disallowed, so a module that gates a new section stops it
