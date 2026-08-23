@@ -15,7 +15,14 @@ export async function generateMetadata({
 }) {
   const { locale, slug } = await params
   const resource = await getPublishedBySlug('tool', slug, locale)
-  return { title: resource?.title }
+  // Gated behind requireSession, so this is a tab title and an in-app share
+  // rather than anything a crawler reads — sitemap.ts deliberately omits
+  // detail pages. The summary costs nothing: getPublishedBySlug is
+  // React-cached, so the page below reuses this very query.
+  return {
+    title: resource?.title,
+    description: resource?.summary || undefined,
+  }
 }
 
 export default async function ToolDetailPage({

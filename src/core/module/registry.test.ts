@@ -5,6 +5,7 @@ import {
   gatedModulePatterns,
   messageKey,
   metaFieldLabelKey,
+  moduleIndexPath,
   navEntries,
   sectionDescriptionKey,
   sectionForPath,
@@ -166,6 +167,39 @@ describe('navigation', () => {
     expect(orders).toEqual([...orders].sort((a, b) => a - b))
     const hrefs = navEntries.map((entry) => entry.href)
     expect(new Set(hrefs).size).toBe(hrefs.length)
+  })
+})
+
+describe('module index paths', () => {
+  // A module with several sections renders an index at the path they hang
+  // off, and that page needs to know its own URL to claim a canonical. The
+  // path is derived rather than declared, so what is worth pinning is that
+  // the derivation agrees with the sections it is derived from.
+  for (const feature of modules) {
+    const own = sections.filter((section) => section.moduleId === feature.id)
+    const nested = own.every((section) => section.path.includes('/', 1))
+
+    if (!nested) {
+      // Tool Shelf's one section sits at its nav href, so there is no index
+      // page and no path to give. Guessing one would put a canonical on a
+      // page that does not exist.
+      test(`${feature.id} has no index path to give`, () => {
+        expect(() => moduleIndexPath(feature.id)).toThrow()
+      })
+      continue
+    }
+
+    test(`${feature.id}'s index path is the prefix its sections hang off`, () => {
+      const path = moduleIndexPath(feature.id)
+      expect(navEntries.map((entry) => entry.href)).toContain(path)
+      for (const section of own) {
+        expect(section.path.startsWith(`${path}/`)).toBe(true)
+      }
+    })
+  }
+
+  test('an unregistered module has no index path', () => {
+    expect(() => moduleIndexPath('no-such-module')).toThrow()
   })
 })
 

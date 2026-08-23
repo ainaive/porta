@@ -150,6 +150,24 @@ export const publicPaths: readonly string[] = [
   )
   .sort()
 
+/** Where a module's index page lives: the nav entry every one of its sections
+ *  hangs off. A module whose single section sits at the nav href itself (Tool
+ *  Shelf) has no index page and no path to give — asking for one is a
+ *  registry error, not a runtime condition, so this throws the way
+ *  `getSection` does rather than returning a guess. */
+export function moduleIndexPath(moduleId: string): string {
+  const own = sections.filter((section) => section.moduleId === moduleId)
+  const entry = (
+    declared.find((feature) => feature.id === moduleId)?.nav ?? []
+  ).find(
+    (nav) =>
+      own.length > 0 &&
+      own.every((section) => section.path.startsWith(`${nav.href}/`)),
+  )
+  if (!entry) throw new Error(`No module index path for module: ${moduleId}`)
+  return entry.href
+}
+
 // ---------- Redirects ----------
 
 export const moduleRedirects: readonly { from: string; to: string }[] =
