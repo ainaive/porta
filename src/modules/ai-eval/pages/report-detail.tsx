@@ -15,7 +15,14 @@ export async function generateMetadata({
 }) {
   const { locale, slug } = await params
   const resource = await getPublishedBySlug('report', slug, locale)
-  return { title: resource?.title }
+  // Gated behind requireSession, so this is a tab title and an in-app share
+  // rather than anything a crawler reads — sitemap.ts deliberately omits
+  // detail pages. The summary costs nothing: getPublishedBySlug is
+  // React-cached, so the page below reuses this very query.
+  return {
+    title: resource?.title,
+    description: resource?.summary || undefined,
+  }
 }
 
 export default async function ReportDetailPage({
@@ -33,7 +40,7 @@ export default async function ReportDetailPage({
   const t = await getTranslations('ai-eval')
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+    <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <ResourceDetailHeader resource={resource} />
 
       {meta?.subject ? (
@@ -53,6 +60,6 @@ export default async function ReportDetailPage({
           </Button>
         </div>
       ) : null}
-    </main>
+    </div>
   )
 }

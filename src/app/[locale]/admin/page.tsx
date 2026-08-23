@@ -47,7 +47,7 @@ export default async function AdminDashboardPage() {
   ]
 
   return (
-    <main>
+    <div>
       <h1 className="text-2xl font-semibold tracking-tight">
         {t('dashboard')}
       </h1>
@@ -63,6 +63,6 @@ export default async function AdminDashboardPage() {
           </Card>
         ))}
       </div>
-    </main>
+    </div>
   )
 }

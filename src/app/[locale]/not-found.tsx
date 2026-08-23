@@ -6,7 +6,7 @@ export default async function NotFoundPage() {
   const t = await getTranslations('errors')
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center">
       <p className="text-6xl font-semibold tracking-tight text-muted-foreground">
         404
       </p>
@@ -17,6 +17,6 @@ export default async function NotFoundPage() {
       <Button asChild className="mt-2">
         <Link href="/">{t('backHome')}</Link>
       </Button>
-    </main>
+    </div>
   )
 }

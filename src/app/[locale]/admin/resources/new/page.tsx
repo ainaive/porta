@@ -10,13 +10,13 @@ export default async function NewResourcePage() {
   const t = await getTranslations('admin')
 
   return (
-    <main>
+    <div>
       <h1 className="text-2xl font-semibold tracking-tight">
         {t('newResource')}
       </h1>
       <div className="mt-6">
         <CreateResourceForm types={resourceTypes} />
       </div>
-    </main>
+    </div>
   )
 }

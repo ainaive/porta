@@ -20,7 +20,7 @@ export default async function ResetPasswordPage({
   const token = firstParam(sp.token) ?? null
 
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
+    <div className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>{t('resetTitle')}</CardTitle>
@@ -30,6 +30,6 @@ export default async function ResetPasswordPage({
           <ResetPasswordForm token={token} />
         </CardContent>
       </Card>
-    </main>
+    </div>
   )
 }

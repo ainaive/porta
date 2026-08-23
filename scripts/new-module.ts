@@ -230,9 +230,13 @@ for (const [locale, nav, sTitle, sDesc, url] of [
 
 await write(
   `src/modules/${id}/pages/${listingFile}.tsx`,
-  `import { createListingPage } from '@/core/content/listing-page'
+  `import {
+  createListingMetadata,
+  createListingPage,
+} from '@/core/content/listing-page'
 
 export default createListingPage('${section}')
+export const generateMetadata = createListingMetadata('${section}')
 `,
 )
 
@@ -241,7 +245,10 @@ await write(
   `// Route mount: the page itself belongs to the module that owns this section.
 // \`dynamic\` is declared here rather than re-exported because route segment
 // config is read from the route file (ADR 0013, ADR 0005 — no DB at build).
-export { default } from '@/modules/${id}/pages/${listingFile}'
+export {
+  default,
+  generateMetadata,
+} from '@/modules/${id}/pages/${listingFile}'
 
 export const dynamic = 'force-dynamic'
 `,
@@ -253,7 +260,8 @@ console.log(`
 Done. Next:
   1. Replace the TODO copy in src/modules/${id}/messages/*.json — both
      locales. Nothing will stop you shipping it: i18n:check compares key
-     sets, not values, so "TODO" would ship as the section's description.
+     sets, not values, so "TODO" would ship as the section's description —
+     and, since ADR 0017, as the page's meta description too.
   2. Give the section a real meta schema and metaFields in module.ts.
   3. Add a detail page if resources in this section have their own page.
   4. bun run format && bun run verify

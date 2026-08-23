@@ -12,8 +12,10 @@ import { getTranslations } from 'next-intl/server'
 import { ChromeShell } from '@/components/site/chrome-shell'
 import { SiteFooter } from '@/components/site/footer'
 import { SiteHeader } from '@/components/site/header'
+import { MAIN_CONTENT_ID, SkipLink } from '@/components/site/skip-link'
 import { Toaster } from '@/components/ui/sonner'
 import { routing } from '@/i18n/routing'
+import { canonicalBaseURL } from '@/lib/metadata'
 import '../globals.css'
 
 const geistSans = Geist({
@@ -62,9 +64,21 @@ export async function generateMetadata({
     getTranslations({ locale, namespace: 'common' }),
   ])
   const appName = common('appName')
+  const base = canonicalBaseURL()
   return {
+    // Read at request time, never baked into a build (ADR 0005): one image
+    // runs anywhere, and every page under this layout is force-dynamic, so
+    // there is nothing that could prerender the wrong origin. Undefined when
+    // none is configured — the same honesty sitemap.ts shows by emitting no
+    // entries rather than guessing.
+    metadataBase: base ? new URL(base) : undefined,
     title: { default: appName, template: `%s · ${appName}` },
     description: t('subtitle'),
+    // Deliberately no `alternates` and no `openGraph.url` here. Metadata is
+    // inherited by every page below, so a canonical set at the layout would
+    // be claimed by pages that never declare one — telling a crawler that
+    // /en/sign-in is really the landing. Pages that know their own public
+    // path set it themselves, through `pageMetadata`.
   }
 }
 
@@ -83,8 +97,24 @@ export default async function LocaleLayout({
       <body className="flex min-h-svh flex-col">
         <NextIntlClientProvider>
           <ChromeShell>
+            <SkipLink />
             <SiteHeader />
-            <div className="flex flex-1 flex-col">{children}</div>
+            {/* The app's one `main` landmark. Pages render their own boxes
+                inside it rather than a `main` each: nesting the landmark
+                would break the skip link's target and give assistive tech
+                two answers to "where does the content start?".
+
+                `tabIndex={-1}` so following the skip link actually moves
+                focus here and not just the scroll position; `outline-none`
+                because a ring around the entire page is not useful feedback
+                — the skip link itself is what shows focus. */}
+            <main
+              id={MAIN_CONTENT_ID}
+              tabIndex={-1}
+              className="flex flex-1 flex-col focus:outline-none"
+            >
+              {children}
+            </main>
             <SiteFooter />
           </ChromeShell>
           <Toaster />

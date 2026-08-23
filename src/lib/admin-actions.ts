@@ -32,9 +32,10 @@ import {
 } from '@/db/schema'
 import { redirect } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { auth, canonicalBaseURL } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { canonicalBaseURL } from '@/lib/metadata'
 import { requireAdmin } from '@/lib/session'
 
 // Accepts exactly the sections the registry knows about, so an unregistered

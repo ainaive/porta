@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Markdown } from '@/components/resource/markdown'
@@ -8,6 +9,36 @@ import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { requireSession } from '@/lib/session'
 import { listChapters } from '../chapters'
+
+// The deepest content route, and the only detail page that had no metadata
+// of its own — every chapter fell back to the site-wide title. The course
+// name rides along in the title because chapter names repeat across courses
+// ("Introduction" is not a page you can find again).
+//
+// Returns nothing rather than 404ing on a bad chapter: the page below owns
+// that decision, and metadata should not be a second place it can be made.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale; slug: string; chapter: string }>
+}): Promise<Metadata> {
+  const { locale, slug, chapter } = await params
+  if (!/^[1-9]\d*$/.test(chapter)) return {}
+
+  const course = await getPublishedBySlug('course', slug, locale)
+  if (!course) return {}
+
+  const chapters = await listChapters(course.id, locale)
+  const current = chapters.find(
+    (c) => c.position === Number.parseInt(chapter, 10),
+  )
+  if (!current) return {}
+
+  return {
+    title: `${current.title} · ${course.title}`,
+    description: course.summary || undefined,
+  }
+}
 
 export default async function CourseChapterPage({
   params,
@@ -39,7 +70,7 @@ export default async function CourseChapterPage({
   ])
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+    <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
       <Link
         href={`/help/courses/${slug}`}
         className="text-sm text-muted-foreground hover:text-foreground"
@@ -79,6 +110,6 @@ export default async function CourseChapterPage({
           </Button>
         ) : null}
       </div>
-    </main>
+    </div>
   )
 }

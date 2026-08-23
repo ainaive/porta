@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { AccessCta } from '@/components/landing/access-cta'
 import { Bento } from '@/components/landing/bento'
@@ -6,9 +7,38 @@ import { PreviewMock } from '@/components/landing/preview-mock'
 import { ResourceCard } from '@/components/resource/card'
 import { getHomeOverview } from '@/core/content/queries'
 import type { Locale } from '@/i18n/routing'
+import { pageMetadata } from '@/lib/metadata'
 import { getSession } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
+
+// The landing carries its own canonical rather than inheriting one from the
+// layout — see the note there on why a layout-level canonical would be wrong
+// for every other page.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const [home, common] = await Promise.all([
+    getTranslations({ locale, namespace: 'home' }),
+    getTranslations({ locale, namespace: 'common' }),
+  ])
+  const appName = common('appName')
+  return {
+    // `absolute`, or the layout's `%s · appName` template would render the
+    // landing's own title as "appName · appName".
+    title: { absolute: appName },
+    ...pageMetadata({
+      title: appName,
+      description: home('subtitle'),
+      siteName: appName,
+      path: '',
+      locale,
+    }),
+  }
+}
 
 export default async function HomePage({
   params,
@@ -31,7 +61,7 @@ export default async function HomePage({
     // viewport edge and have to be clipped, but `hidden` on one axis computes
     // the other to `auto`, which turns this into a viewport-height scroll
     // container and stops the page scrolling at all. `clip` is exempt.
-    <main className="flex-1 overflow-x-clip">
+    <div className="flex-1 overflow-x-clip">
       <Hero signedIn={session !== null}>
         <PreviewMock locale={locale} items={overview.latest} />
       </Hero>
@@ -52,6 +82,6 @@ export default async function HomePage({
       ) : null}
 
       <AccessCta signedIn={session !== null} />
-    </main>
+    </div>
   )
 }

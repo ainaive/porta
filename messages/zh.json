@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "硅基生态平台",
+    "skipToContent": "跳到正文",
     "untranslated": "未翻译"
   },
   "nav": {
@@ -11,11 +12,11 @@
     "account": "账户"
   },
   "home": {
-    "subtitle": "内部工具、模型 API 资源、课程与教学视频——统一收录，中英双语。",
+    "subtitle": "内部工具、AI 评测与教程——整条生态工具链统一收录，中英双语一处可搜。",
     "kicker": "生态工具链门户",
     "heroLine1": "一个入口，",
     "heroLine2": "连接全部生态工具链",
-    "heroSub": "内部工具、模型 API 资源、课程与教学视频——统一收录，中英双语。",
+    "heroSub": "内部工具、AI 评测与教程——整条生态工具链统一收录，中英双语一处可搜。",
     "ctaPrimary": "登录",
     "ctaSecondary": "浏览目录",
     "preview": {

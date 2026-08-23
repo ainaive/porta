@@ -29,12 +29,12 @@ export default function ErrorPage({
   }, [error])
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center">
       <h1 className="text-xl font-semibold">{t('errorTitle')}</h1>
       <p className="max-w-md text-muted-foreground">{t('errorDescription')}</p>
       <Button onClick={retry} className="mt-2">
         {t('retry')}
       </Button>
-    </main>
+    </div>
   )
 }

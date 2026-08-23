@@ -16,7 +16,7 @@ export default async function SignInPage() {
   ])
 
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
+    <div className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>{t('signInTitle')}</CardTitle>
@@ -30,6 +30,6 @@ export default async function SignInPage() {
           </Suspense>
         </CardContent>
       </Card>
-    </main>
+    </div>
   )
 }

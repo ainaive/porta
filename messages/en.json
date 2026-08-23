@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Silicon Ecosystem",
+    "skipToContent": "Skip to content",
     "untranslated": "Untranslated"
   },
   "nav": {
@@ -11,11 +12,11 @@
     "account": "Account"
   },
   "home": {
-    "subtitle": "Internal tools, model API resources, courses, and teaching videos — catalogued in one place, in both languages.",
+    "subtitle": "Internal tools, AI evaluations, and tutorials — the whole ecosystem toolchain, catalogued in one place and searchable in both languages.",
     "kicker": "ECOSYSTEM TOOLCHAIN PORTAL",
     "heroLine1": "One portal,",
     "heroLine2": "the entire toolchain",
-    "heroSub": "Internal tools, model API resources, courses, and teaching videos — catalogued in one place, in both languages.",
+    "heroSub": "Internal tools, AI evaluations, and tutorials — the whole ecosystem toolchain, catalogued in one place and searchable in both languages.",
     "ctaPrimary": "Sign in",
     "ctaSecondary": "Browse the catalog",
     "preview": {

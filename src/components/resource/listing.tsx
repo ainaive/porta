@@ -45,7 +45,7 @@ export async function ResourceListing({
   })
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
+    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -122,6 +122,6 @@ export async function ResourceListing({
           )}
         </nav>
       ) : null}
-    </main>
+    </div>
   )
 }

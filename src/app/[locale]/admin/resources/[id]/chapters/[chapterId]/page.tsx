@@ -22,7 +22,7 @@ export default async function AdminChapterEditPage({
   const t = await getTranslations('admin')
 
   return (
-    <main>
+    <div>
       <Link
         href={`/admin/resources/${id}/chapters`}
         className="text-sm text-muted-foreground hover:text-foreground"
@@ -66,6 +66,6 @@ export default async function AdminChapterEditPage({
           />
         </TabsContent>
       </Tabs>
-    </main>
+    </div>
   )
 }

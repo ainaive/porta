@@ -36,7 +36,7 @@ export default async function AdminChaptersPage({
     data.translations.en?.title ?? data.translations.zh?.title ?? t('untitled')
 
   return (
-    <main>
+    <div>
       <Link
         href={`/admin/resources/${id}`}
         className="text-sm text-muted-foreground hover:text-foreground"
@@ -128,6 +128,6 @@ export default async function AdminChaptersPage({
           </TableBody>
         </Table>
       </div>
-    </main>
+    </div>
   )
 }

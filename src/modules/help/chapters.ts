@@ -1,4 +1,5 @@
 import { and, asc, count, eq, exists, sql } from 'drizzle-orm'
+import { cache } from 'react'
 import { z } from 'zod'
 import { pickTranslation } from '@/core/content/fallback'
 import { db } from '@/db'
@@ -50,7 +51,9 @@ export function groupChapters(
   return result.sort((a, b) => a.position - b.position)
 }
 
-export async function listChapters(
+// React-cached so a chapter page and its generateMetadata share one query,
+// the same reason core wraps getPublishedBySlug.
+export const listChapters = cache(async function listChapters(
   courseId: string,
   locale: Locale,
 ): Promise<TranslatedChapter[]> {
@@ -65,7 +68,7 @@ export async function listChapters(
     .orderBy(asc(courseChapters.position))
 
   return groupChapters(rows, locale)
-}
+})
 
 // Every facet of "reachable" applied here rather than inherited: a draft
 // course's chapters must not inflate a public number, nor an untranslated
