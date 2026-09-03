@@ -1,6 +1,6 @@
 # 0008 — Landing visual system: a dark token scope, a brand accent, and copy limited to shipped capability
 
-- **Status**: accepted
+- **Status**: superseded by [0017](./0017-workbench-visual-system.md)
 - **Date**: 2026-08-06
 
 ## Context

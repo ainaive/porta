@@ -119,8 +119,8 @@ flowchart LR
 - One `resources` table (`type` as **text**, validated against the registry at
   write time; slug unique per type; draft/published; `tags text[]`; `meta`
   jsonb) + `resource_translations` per locale. Modules may add tables of their
-  own — Help & Tutorials owns `course_chapters` (+ translations) with dense
-  1..n positions.
+  own — the Handbook owns `track_steps` (+ translations) with dense 1..n
+  positions.
 - `meta` is validated at write time against the section's zod schema, which
   lives in the owning module — the database stays schema-light, the
   application stays typed.
@@ -164,9 +164,9 @@ flowchart LR
 - One admin editor serves every section: type-specific fields render from the
   `metaFields` descriptors the module registered, with labels resolved in that
   module's namespace, so adding a field needs no change in core.
-- Chapter reordering does two-phase position swaps (unique constraint), and
-  deletion renumbers to keep positions dense — chapter URLs are positional.
-  Both live in `src/modules/help/actions.ts`.
+- Step reordering does two-phase position swaps (unique constraint), and
+  deletion renumbers to keep positions dense — step URLs are positional.
+  Both live in `src/modules/handbook/actions.ts`.
 
 ## Deployment targets & constraints
 
@@ -218,9 +218,10 @@ Split by what each layer can reach ([ADR 0014](./adr/0014-security-headers-csp-a
   `style-src` keeps `'unsafe-inline'`: React inline styles compile to style
   *attributes*, which a nonce cannot cover.
 - **`frame-src` is derived from the registry.** A module declares what it
-  embeds via `frameSrc` on its manifest; nothing in core lists a host. Help &
-  Tutorials declares its video origins from the same constant `videoMeta`
-  validates against, so the policy and the storable data cannot drift.
+  embeds via `frameSrc` on its manifest; nothing in core lists a host. No
+  module embeds anything today, so the directive narrows to `'self'` on its
+  own — which is the point: a module that stops embedding stops widening the
+  policy without anyone editing `src/lib/csp.ts`.
 - `CSP_REPORT_ONLY=1` switches the response header to the report-only
   spelling for a rollout.
 - `upgrade-insecure-requests` is gated on the *request* being https
@@ -243,30 +244,32 @@ matcher excludes paths containing a dot.
 Tailwind v4, CSS-first — there is no `tailwind.config.*`. `src/app/globals.css`
 holds the whole token set. **Semantic UI colour** — surfaces, text, borders,
 states — comes from tokens via utilities (`bg-background`,
-`text-muted-foreground`, `border-border`); components should not hard-code it,
-so a scope swap like `.landing` below reaches everything.
+`text-muted-foreground`, `border-border`, `bg-panel`, `text-label`);
+components should not hard-code it.
 
-Decorative colour is the exception and is allowed inline: the landing's
-ambient glows (`src/components/landing/primitives.tsx`), preview-card tints,
-and status dots are one-off ramps carried straight from the design, not tokens
-anything else should reuse.
-
-- **Two canvases.** The app is light; the landing page (`/`) is dark. A
-  `.landing` class re-points the standard tokens at the landing palette and is
-  applied together with `.dark` so the shadcn primitives' `dark:` variants
-  stay correct. `src/components/site/chrome-shell.tsx` reads the
-  locale-stripped pathname and opens that scope around the header, page and
-  footer. **`SiteHeader`, `SiteFooter` and any shared chrome therefore render
-  on both canvases — check both when changing them.**
+- **One canvas.** The site is light throughout. There is no `.dark`, no
+  route-scoped palette and no theme toggle, so a colour is defined once, in
+  `:root`. The header and footer render on the same surface as every page.
+- **Five tokens beyond the shadcn set** — `--panel` (filter panels, table
+  headers), `--surface-hover`, `--rule`, `--label`, `--faint` — plus three
+  `--status-*` triples for the maturity badges. The design leans on all of
+  them constantly; spelling them as one-off alphas in markup is what made the
+  previous system impossible to retune.
+- **`--radius: 0`.** Every primitive derives its corners from it through the
+  multiplier ladder, so the square look is one value, not a sweep.
 - **Font families are indirected** through `--font-*-stack` properties in
   `:root`, because `@theme inline` pastes its value straight into each utility
-  and so must name a property that exists at runtime. That indirection is also
-  what lets a scope swap a family list.
-- **`--brand*` are constants**, not theme state. The app chrome is
-  deliberately achromatic; the accent belongs to the landing and the brand
-  mark.
-- Landing copy is held to shipped capability, enforced by an e2e test. See
-  [ADR 0008](./adr/0008-landing-visual-system.md).
+  and so must name a property that exists at runtime. Two families carry the
+  design — Libre Franklin and Roboto Mono — with Noto Sans SC behind both for
+  Han. `--font-display-stack` points at the sans: there is no separate display
+  face, but the token is still what `font-display` resolves to across the
+  primitives.
+- **`--brand*` is a working UI colour**, not a brand-mark-only accent: links,
+  kickers, the active nav underline, focus rings and the adoption bars.
+- Copy on the overview and the adoption page is held to shipped capability,
+  enforced by an e2e test. See
+  [ADR 0017](./adr/0017-workbench-visual-system.md) and
+  [ADR 0018](./adr/0018-portal-content-directory.md).
 
 ## Testing & QA gates
 
@@ -306,11 +309,12 @@ Nav, gating, the admin type filter and the admin form fields all follow from
 the manifest. `bun run verify` fails if a key collides or a message is
 missing.
 
-A section can also declare a `landingTile` and appear on the landing page's
-bento (ADR 0015) — `list`, `stat` or `fields`, plus two copy keys in the
-module's own bundle. It is opt-in and core owns the layout: width follows the
-kind, order is registry order, and the tile is suppressed while the section
-has nothing published. A module never declares its own span.
+A section also declares how its listing draws — `listing` is `cards`, `table`,
+or `grouped` by a named `select` field — and which `select` fields it facets
+on. Core owns every layout, the filtering, the counting and the chips; the
+module names what its content is like (ADR 0019). Where a layout needs data
+core cannot reach — a track's steps, an event's date — the module ships the
+page itself under `pages/`, and the generic factory stays generic.
 
 ## Adding a module
 
@@ -321,11 +325,11 @@ what it generates is:
    The manifest needs `id` (also its i18n namespace), `nav`, `sections` and
    `messages`; add `redirects` if it is taking over existing paths, and
    `frameSrc` if it embeds an external origin in an iframe — that is the only
-   way to widen the CSP. Add `landingTile` to a section once it has something
-   worth showing on the landing page; the scaffolder deliberately generates
-   none.
-2. Route mounts under `src/app/[locale]/`. A module with several sections
-   usually wants `createModuleIndexPage('<id>')` at its base path.
+   way to widen the CSP. Add `listing` and `facets` to a section once its
+   content wants something other than a card grid; the scaffolder deliberately
+   generates neither.
+2. Route mounts under `src/app/[locale]/`, one per section — each section is
+   its own nav entry, and no module renders an index page of its own.
 3. **One line** in `src/core/module/registry.ts`.
 
 Optional: `schema.ts` if the module needs tables of its own — drizzle-kit

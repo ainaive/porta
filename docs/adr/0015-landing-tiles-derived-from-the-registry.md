@@ -1,6 +1,6 @@
 # 0015 — The landing page's tiles are derived from the module registry
 
-- **Status**: accepted
+- **Status**: superseded by [0018](./0018-portal-content-directory.md)
 - **Date**: 2026-08-22
 
 Amends [ADR 0013](./0013-feature-modules-and-the-module-registry.md), whose
