@@ -43,6 +43,13 @@ describe('parseMeta', () => {
     expect(bad.error).toContain('estimatedHours')
   })
 
+  test('required fields submit empty strings so the schema can reject them', () => {
+    // `event.date` is required: an empty input must fail validation rather
+    // than silently drop out of the object the way an optional one does.
+    const { error } = parseMeta('event', form({ date: '', time: '16:00' }))
+    expect(error).toContain('date')
+  })
+
   test('an unregistered section is rejected, not stored', () => {
     const { meta, error } = parseMeta(
       'not-a-section' as (typeof resourceTypes)[number],
