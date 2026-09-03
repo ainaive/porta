@@ -11,11 +11,11 @@ export async function SiteFooter() {
   ])
 
   return (
-    <footer className="mt-auto border-t">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-6 text-sm">
-        <div className="flex items-center gap-2.5">
-          <BrandMark className="size-5" />
-          <span className="font-mono text-xs text-muted-foreground">
+    <footer className="mt-auto border-t bg-panel">
+      <div className="mx-auto flex w-full max-w-[90rem] flex-wrap items-center gap-x-7 gap-y-3 px-7 py-7 text-[13px]">
+        <div className="flex items-baseline gap-2.5">
+          <BrandMark />
+          <span className="font-mono text-[11px] tracking-[0.04em] text-label">
             © {new Date().getFullYear()} {common('appName')}
           </span>
         </div>
@@ -24,7 +24,7 @@ export async function SiteFooter() {
             <Link
               key={entry.href}
               href={entry.href}
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground transition-colors hover:text-brand"
             >
               {nav(entry.labelKey)}
             </Link>

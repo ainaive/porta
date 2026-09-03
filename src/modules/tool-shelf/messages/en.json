@@ -1,13 +1,13 @@
 {
   "nav": {
-    "title": "Tool Shelf"
+    "title": "Tool catalog"
   },
   "tools": {
-    "title": "Tool Shelf",
-    "description": "Internal and ecosystem tools, ready to use.",
+    "title": "Tool catalog",
+    "description": "Everything the platform supports. Deprecated tools stay listed until their replacement path is documented.",
     "landing": {
-      "title": "Tools directory",
-      "description": "Internal and ecosystem tools, each with a summary, tags, and links to the tool itself and its documentation."
+      "title": "Tool catalog",
+      "description": "Every supported tool, filterable by what you are doing rather than by which team owns it."
     }
   },
   "openTool": "Open tool",

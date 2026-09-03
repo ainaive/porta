@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { navEntries } from '@/core/module/derive'
 import { Link } from '@/i18n/navigation'
 import { getSession } from '@/lib/session'
+import { ActiveNavLink } from './active-nav-link'
 import { BrandMark } from './brand-mark'
 import { LocaleSwitcher } from './locale-switcher'
 import { MobileNav } from './mobile-nav'
@@ -21,10 +22,10 @@ export async function SiteHeader() {
   ])
 
   return (
-    // Styled entirely from tokens so the same bar reads correctly on the light
-    // app and inside the landing page's dark scope (see ChromeShell).
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/65">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4">
+    // One light canvas, so the bar is opaque: the design separates it from
+    // the page with a hairline rule, not a blur.
+    <header className="sticky top-0 z-40 border-b bg-background">
+      <div className="mx-auto flex w-full max-w-[90rem] items-center gap-5 px-7">
         <MobileNav
           label={t('menu')}
           items={[
@@ -38,28 +39,29 @@ export async function SiteHeader() {
             { href: '/search', label: search('title') },
           ]}
         />
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link
+          href="/"
+          className="flex shrink-0 items-baseline gap-2.5 py-[18px]"
+        >
           <BrandMark />
           {/* Below sm the mark alone identifies the site: the wordmark plus a
               hamburger, a locale toggle and a sign-in button do not fit a
               390px bar. `sr-only` rather than `hidden` so this link keeps its
               accessible name. */}
-          <span className="font-display text-[17px] font-extrabold tracking-[-0.03em] max-sm:sr-only">
+          <span className="text-[15.5px] font-bold tracking-[-0.01em] whitespace-nowrap max-sm:sr-only">
             {common('appName')}
           </span>
         </Link>
-        <nav className="flex items-center gap-1 text-sm max-sm:hidden">
+        {/* Six items and two locales: the row scrolls rather than wrapping,
+            which would double the header's height on a narrow laptop. */}
+        <nav className="flex min-w-0 flex-1 flex-nowrap overflow-x-auto [scrollbar-width:none] max-sm:hidden">
           {navEntries.map((entry) => (
-            <Link
-              key={entry.href}
-              href={entry.href}
-              className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
+            <ActiveNavLink key={entry.href} href={entry.href}>
               {nav(entry.labelKey)}
-            </Link>
+            </ActiveNavLink>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-3 py-3.5">
           <Button
             asChild
             variant="ghost"
@@ -81,7 +83,7 @@ export async function SiteHeader() {
               signOutLabel={t('signOut')}
             />
           ) : (
-            <Button asChild size="lg" className="px-4">
+            <Button asChild size="lg" className="px-5">
               <Link href="/sign-in">{t('signIn')}</Link>
             </Button>
           )}

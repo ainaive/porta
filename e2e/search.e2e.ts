@@ -29,7 +29,7 @@ test.describe('global search', () => {
     await expect(guide).toBeVisible()
     // Cards from a cross-section result have to name their section — a title
     // alone does not say whether you found a tool or the guide about it.
-    await expect(tool).toContainText('Tool Shelf')
+    await expect(tool).toContainText('Tool catalog')
     await expect(guide).toContainText('Docs & guides')
   })
 
@@ -63,7 +63,11 @@ test.describe('global search', () => {
     await page.goto('/en/search?q=silicon')
     // Derived from the registry, so this is the guard against the chips
     // drifting back into a hand-kept list.
-    for (const section of ['Tool Shelf', 'Docs & guides', 'Getting started']) {
+    for (const section of [
+      'Tool catalog',
+      'Docs & guides',
+      'Getting started',
+    ]) {
       await expect(
         filters(page).getByRole('link', { name: section, exact: true }),
       ).toBeVisible()

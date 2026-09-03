@@ -49,7 +49,7 @@ test.describe('public smoke', () => {
 
   test('every section listing responds', async ({ page }) => {
     for (const [path, heading] of [
-      ['/en/tools', 'Tool Shelf'],
+      ['/en/tools', 'Tool catalog'],
       ['/en/docs', 'Help & Tutorials'],
       ['/en/start', 'Getting started'],
       ['/en/docs', 'Docs & guides'],
