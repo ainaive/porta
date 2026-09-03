@@ -98,14 +98,25 @@ export function metaFieldOptionLabelKey(
 
 // ---------- Navigation ----------
 
-export const navEntries: readonly NavEntry[] = modules
-  .flatMap((feature) =>
+/** The platform's own nav entries — pages that belong to no module and so
+ *  have no manifest to declare them. Declared once here, the way
+ *  `platformGatedPaths` lives once in `src/lib/gating.ts`, so the header and
+ *  footer keep rendering one derived list and stay free of hardcoded hrefs.
+ *  Their keys are absolute: core's bundle is the unnamespaced one. */
+export const coreNav: readonly NavEntry[] = [
+  { href: '/', labelKey: 'nav.overview', order: 0 },
+  { href: '/adoption', labelKey: 'nav.adoption', order: 50 },
+]
+
+export const navEntries: readonly NavEntry[] = [
+  ...coreNav,
+  ...modules.flatMap((feature) =>
     feature.nav.map((entry) => ({
       ...entry,
       labelKey: messageKey(feature.id, entry.labelKey),
     })),
-  )
-  .sort((a, b) => a.order - b.order)
+  ),
+].sort((a, b) => a.order - b.order)
 
 // ---------- Gating ----------
 
@@ -154,6 +165,9 @@ export const publicPaths: readonly string[] = [
 ]
   .filter(
     (path) =>
+      // The landing is in the sitemap already, as the bare locale root. Its
+      // nav entry would add `/en/` alongside `/en` — the same page twice.
+      path !== '/' &&
       !modulePathsGatedOutright.some(
         (gated) => path === gated || path.startsWith(`${gated}/`),
       ),

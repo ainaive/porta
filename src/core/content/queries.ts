@@ -16,7 +16,7 @@ import { z } from 'zod'
 import { isSectionKey } from '@/core/module/derive'
 import { db } from '@/db'
 import { resources, resourceTranslations } from '@/db/schema'
-import type { Locale } from '@/i18n/routing'
+import { type Locale, routing } from '@/i18n/routing'
 import {
   groupResources,
   pickTranslation,
@@ -29,6 +29,8 @@ import { type ResourceType, resourceTypes } from './meta'
 export type { TranslatedResource } from './fallback'
 
 const uuidColumn = z.uuid()
+
+const locales = routing.locales
 
 export const PAGE_SIZE = 24
 
@@ -252,6 +254,92 @@ export async function listPublishedTags(type: ResourceType): Promise<string[]> {
     .from(resources)
     .where(and(eq(resources.type, type), eq(resources.status, 'published')))
   return [...new Set(rows.flatMap((r) => r.tags))].sort()
+}
+
+export type SectionAdoption = {
+  type: ResourceType
+  published: number
+  /** Published resources carrying a translation in both locales. */
+  bilingual: number
+}
+
+export type AdoptionStats = {
+  sections: SectionAdoption[]
+  published: number
+  bilingual: number
+  tags: { tag: string; count: number }[]
+}
+
+/** What the catalog actually contains, for the Adoption page.
+ *
+ *  Everything here is counted from the catalog itself. There is no CLI, no
+ *  telemetry pipeline and no usage data, so there is nothing to report about
+ *  who uses what — reporting it anyway is the failure ADR 0008 was written
+ *  about. Coverage is the honest analogue: a resource published in one
+ *  language only is reaching half its readers, and that is a number the
+ *  platform can actually stand behind. */
+export async function getAdoptionStats(): Promise<AdoptionStats> {
+  // One row per published, renderable resource with how many locales it has.
+  // Counted in SQL rather than by hydrating the catalog: this page is public
+  // and grows with the catalog, and it needs numbers, not content.
+  const rows = await db
+    .select({
+      type: resources.type,
+      locales: sql<number>`count(distinct ${resourceTranslations.locale})`,
+    })
+    .from(resources)
+    .innerJoin(
+      resourceTranslations,
+      eq(resourceTranslations.resourceId, resources.id),
+    )
+    .where(
+      and(
+        eq(resources.status, 'published'),
+        inArray(resources.type, [...resourceTypes]),
+      ),
+    )
+    .groupBy(resources.id, resources.type)
+
+  const bySection = new Map<ResourceType, SectionAdoption>(
+    resourceTypes.map((type) => [type, { type, published: 0, bilingual: 0 }]),
+  )
+  for (const row of rows) {
+    const section = bySection.get(row.type as ResourceType)
+    if (!section) continue
+    section.published += 1
+    if (Number(row.locales) >= locales.length) section.bilingual += 1
+  }
+  const sections = [...bySection.values()]
+
+  const tagRows = await db
+    .select({ tags: resources.tags })
+    .from(resources)
+    .where(
+      and(
+        eq(resources.status, 'published'),
+        inArray(resources.type, [...resourceTypes]),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(resourceTranslations)
+            .where(eq(resourceTranslations.resourceId, resources.id)),
+        ),
+      ),
+    )
+  const tally = new Map<string, number>()
+  for (const row of tagRows) {
+    for (const tag of row.tags) tally.set(tag, (tally.get(tag) ?? 0) + 1)
+  }
+
+  return {
+    sections,
+    published: sections.reduce((sum, s) => sum + s.published, 0),
+    bilingual: sections.reduce((sum, s) => sum + s.bilingual, 0),
+    tags: [...tally.entries()]
+      .map(([tag, count]) => ({ tag, count }))
+      // Ties broken alphabetically so the order is stable between requests.
+      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)),
+  }
 }
 
 export type HomeSection = {

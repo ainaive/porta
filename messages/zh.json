@@ -8,7 +8,9 @@
     "signIn": "登录",
     "signOut": "退出登录",
     "menu": "菜单",
-    "account": "账户"
+    "account": "账户",
+    "overview": "总览",
+    "adoption": "使用情况"
   },
   "home": {
     "subtitle": "内部工具、课程与文字指南——统一收录，中英双语。",
@@ -40,6 +42,29 @@
       "kicker": "仅限受邀",
       "title": "公开可浏览，登录可阅读",
       "description": "本页与各板块列表对所有人开放。查看资源详情需要账号，而账号只能通过邀请链接创建——没有开放注册。"
+    }
+  },
+  "adoption": {
+    "title": "使用情况",
+    "description": "目录里到底有什么，以及哪些地方还很薄。数据全部来自目录本身——本页背后没有任何使用遥测。",
+    "empty": "目前还没有已发布的内容。",
+    "ofPublished": "{bilingual}/{published}",
+    "stats": {
+      "published": "已发布资源",
+      "sections": "有内容的板块",
+      "bilingual": "中英双语齐全",
+      "tags": "在用标签"
+    },
+    "coverage": {
+      "title": "各板块双语覆盖率",
+      "description": "只有一种语言的资源照常展示，并标注未翻译——但它只触达了一半的读者。"
+    },
+    "gaps": {
+      "title": "目录的薄弱之处",
+      "untranslated": "待翻译",
+      "untranslatedDescription": "已发布但只有一种语言的资源数量。",
+      "untagged": "高频标签",
+      "untaggedDescription": "标签全目录通用，同一个词在哪里都是同一个意思。"
     }
   },
   "search": {

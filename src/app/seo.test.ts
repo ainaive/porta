@@ -78,6 +78,14 @@ describe('sitemap', () => {
     expect(paths.length).toBe((publicPaths.length + 1) * routing.locales.length)
   })
 
+  // The landing has a nav entry of its own now that core contributes one
+  // (`coreNav`), and publicPaths is derived from nav hrefs — so without the
+  // filter it would arrive here as both `/en` and `/en/`, one page twice.
+  test('does not list the landing twice', () => {
+    expect(publicPaths).not.toContain('/')
+    expect(paths.filter((path) => path === '/en')).toHaveLength(1)
+  })
+
   // The regression this exists for: a gated URL in a sitemap sends crawlers
   // to a sign-in redirect and publishes slugs that were never public.
   test('lists nothing the proxy would gate', () => {

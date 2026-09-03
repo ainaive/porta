@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import coreEn from '../../../messages/en.json'
+import coreZh from '../../../messages/zh.json'
 import type { FeatureModule } from './define'
 import {
   gatedModulePatterns,
@@ -29,7 +30,9 @@ function flatKeys(value: unknown, prefix = ''): string[] {
   )
 }
 
-/** Every message key a module ships, absolute (namespaced by module id). */
+/** Every message key the app ships: a module's, namespaced by module id, and
+ *  core's own, which are unnamespaced — `coreNav` names those, so the nav
+ *  check below has to see both. */
 async function absoluteKeys(locale: 'en' | 'zh'): Promise<Set<string>> {
   const perModule = await Promise.all(
     modules.map(async (feature) =>
@@ -38,7 +41,10 @@ async function absoluteKeys(locale: 'en' | 'zh'): Promise<Set<string>> {
       ),
     ),
   )
-  return new Set(perModule.flat())
+  // Statically imported: boundaries.test.ts fails closed on a dynamic import
+  // it cannot reduce to a path, and a template literal is exactly that.
+  const core = flatKeys(locale === 'en' ? coreEn : coreZh)
+  return new Set([...perModule.flat(), ...core])
 }
 
 describe('registry shape', () => {
