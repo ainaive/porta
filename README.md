@@ -1,23 +1,28 @@
 # 硅基生态平台 / Silicon Ecosystem
 
-Ecosystem toolchain portal — a public-facing website whose primary users are
+Internal developer portal — a public-facing website whose primary users are
 internal employees. The repository, package, and databases are named `porta`,
 which is the codename rather than the product name (ADR 0009). It is built as
 three feature modules over one generic content model, each owned end to end by
 a different team and wired in by a single line of a registry (ADR 0013):
 
-- **Tool Shelf** (工具货架) `/tools` — internal and ecosystem tools directory
-- **AI Evaluation** (AI 评测) `/evals` — agent and model evaluations, plus
-  reports; carries the model API docs, endpoints, and usage guides
-- **Help & Tutorials** (帮助与教程) `/help` — courses with ordered chapters,
-  teaching videos (embedded YouTube/Bilibili, no hosting), and written guides
+- **Tool Shelf** (工具目录) `/tools` — the supported tools, filterable by
+  category, maturity and language
+- **Handbook** (文档与快速上手) — `/docs`, reference and task-shaped guides
+  grouped by kind; and `/start`, guided tracks split into ordered steps
+- **Events** (活动) `/events` — office hours, workshops, migration clinics and
+  quarterly reviews, upcoming and past
+
+Two more pages belong to no module: the overview at `/`, and `/adoption`,
+which reports what the catalog contains and where it is thin — counted from
+the catalog itself, since there is no usage telemetry (ADR 0018).
 
 More modules are expected; adding one touches no core file.
 
-Public visitors can browse the landing page and section listings; opening a
-resource's full content requires sign-in. Sign-up is invite-only (admins
-create copyable invite links), and content is managed in a role-gated admin
-area with per-locale English/中文 editing.
+Public visitors can browse the overview, the section listings and `/adoption`;
+opening a resource's full content requires sign-in. Sign-up is invite-only
+(admins create copyable invite links), and content is managed in a role-gated
+admin area with per-locale English/中文 editing.
 
 ## Stack
 

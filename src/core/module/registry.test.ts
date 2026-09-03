@@ -1,10 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 import coreEn from '../../../messages/en.json'
+import coreZh from '../../../messages/zh.json'
 import type { FeatureModule } from './define'
 import {
   gatedModulePatterns,
   messageKey,
   metaFieldLabelKey,
+  metaFieldOptionLabelKey,
   navEntries,
   sectionDescriptionKey,
   sectionForPath,
@@ -28,7 +30,9 @@ function flatKeys(value: unknown, prefix = ''): string[] {
   )
 }
 
-/** Every message key a module ships, absolute (namespaced by module id). */
+/** Every message key the app ships: a module's, namespaced by module id, and
+ *  core's own, which are unnamespaced — `coreNav` names those, so the nav
+ *  check below has to see both. */
 async function absoluteKeys(locale: 'en' | 'zh'): Promise<Set<string>> {
   const perModule = await Promise.all(
     modules.map(async (feature) =>
@@ -37,7 +41,10 @@ async function absoluteKeys(locale: 'en' | 'zh'): Promise<Set<string>> {
       ),
     ),
   )
-  return new Set(perModule.flat())
+  // Statically imported: boundaries.test.ts fails closed on a dynamic import
+  // it cannot reduce to a path, and a template literal is exactly that.
+  const core = flatKeys(locale === 'en' ? coreEn : coreZh)
+  return new Set([...perModule.flat(), ...core])
 }
 
 describe('registry shape', () => {
@@ -110,6 +117,34 @@ describe('registry shape', () => {
       expect({
         [section.key]: tile.kind === 'fields' ? count > 0 : count === 0,
       }).toEqual({ [section.key]: true })
+    }
+  })
+
+  test('a grouped listing groups by a select meta field it declares', () => {
+    for (const section of sections) {
+      const listing = section.listing
+      if (listing?.kind !== 'grouped') continue
+      const field = section.metaFields.find((f) => f.name === listing.groupBy)
+      // The layout renders one row per option of that descriptor, in the
+      // order it declares them. A name with no descriptor renders no groups
+      // at all, silently — every resource would fall into the catch-all.
+      expect({
+        [`${section.key}.${listing.groupBy}`]: field?.kind ?? 'missing',
+      }).toEqual({ [`${section.key}.${listing.groupBy}`]: 'select' })
+    }
+  })
+
+  test('a facet names a select meta field its section declares', () => {
+    for (const section of sections) {
+      for (const name of section.facets ?? []) {
+        const field = section.metaFields.find((f) => f.name === name)
+        // A facet resolves its label and its whole option list through the
+        // matching MetaField. A name with no descriptor would render an empty
+        // chip row; a non-select one has no closed set of values to count.
+        expect({
+          [`${section.key}.${name}`]: field?.kind ?? 'missing',
+        }).toEqual({ [`${section.key}.${name}`]: 'select' })
+      }
     }
   })
 
@@ -212,6 +247,13 @@ describe('message keys', () => {
                 messageKey(section.moduleId, tile.descriptionKey),
               ]
             : []),
+          // An option that translates its label names a key too, and it is
+          // the one a reader sees most often — every facet chip on a listing.
+          ...section.metaFields.flatMap((field) =>
+            (field.options ?? [])
+              .map((option) => metaFieldOptionLabelKey(section, option))
+              .filter((key): key is string => key !== null),
+          ),
         ]
         for (const key of referenced) {
           // A manifest may only name strings in its own namespace.

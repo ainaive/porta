@@ -8,38 +8,50 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "menu": "Menu",
-    "account": "Account"
+    "account": "Account",
+    "overview": "Overview",
+    "adoption": "Adoption"
   },
   "home": {
-    "subtitle": "Internal tools, model API resources, courses, and teaching videos — catalogued in one place, in both languages.",
-    "kicker": "ECOSYSTEM TOOLCHAIN PORTAL",
-    "heroLine1": "One portal,",
-    "heroLine2": "the entire toolchain",
-    "heroSub": "Internal tools, model API resources, courses, and teaching videos — catalogued in one place, in both languages.",
-    "ctaPrimary": "Sign in",
-    "ctaSecondary": "Browse the catalog",
-    "preview": {
-      "title": "Tools directory",
-      "search": "Search tools, docs, courses…"
+    "subtitle": "Internal tools, courses, and written guides — catalogued in one place, in both languages.",
+    "kicker": "Internal developer portal",
+    "heroTitle": "Every tool, guide and session, in one place.",
+    "heroSub": "The supported tools, the guides that go with them, and what is coming up. Search once instead of asking in three channels.",
+    "searchPlaceholder": "Search tools, guides, sessions…",
+    "popular": "Common",
+    "pathsTitle": "Start here",
+    "allPaths": "All paths",
+    "featuredTitle": "Recently added",
+    "allResources": "Search everything",
+    "colName": "Resource",
+    "colWhat": "What it is",
+    "colWhere": "Status",
+    "nextUp": "Next up",
+    "allEvents": "All events",
+    "atAGlance": "The catalog",
+    "allMetrics": "Adoption in detail"
+  },
+  "adoption": {
+    "title": "Adoption",
+    "description": "What the catalog actually contains, and where it is still thin. Counted from the catalog itself — there is no usage telemetry behind this page.",
+    "empty": "Nothing is published yet.",
+    "ofPublished": "{bilingual}/{published}",
+    "stats": {
+      "published": "Published resources",
+      "sections": "Sections with content",
+      "bilingual": "Available in both languages",
+      "tags": "Tags in use"
     },
-    "bento": {
-      "title": "Every resource, one system",
-      "subtitle": "Stop digging through chat history for links. Every section shares one catalog, one set of tags, and one publishing flow.",
-      "bilingual": {
-        "title": "Bilingual by default",
-        "description": "Every page exists in English and Chinese. Anything missing a translation still shows up, marked so you know what you are reading.",
-        "label": "中 / EN"
-      },
-      "search": {
-        "title": "One search across every section",
-        "description": "Search the whole catalog from one box, both languages at once — or filter a single section by free text and tags. Tags are shared, so the same word means the same thing everywhere.",
-        "label": "Search"
-      }
+    "coverage": {
+      "title": "Coverage by section — share available in both languages",
+      "description": "A resource published in one language only still shows up, marked untranslated. It is reaching half its readers."
     },
-    "access": {
-      "kicker": "INVITE ONLY",
-      "title": "Public to browse, sign in to read",
-      "description": "Anyone can see this page and every section listing. Full resource pages need an account, and accounts are created from an invite link — there is no open sign-up."
+    "gaps": {
+      "title": "Where the catalog is thin",
+      "untranslated": "Waiting on a translation",
+      "untranslatedDescription": "Published resources that exist in one language only.",
+      "untagged": "Most-used tags",
+      "untaggedDescription": "Tags are shared across every section, so the same word means the same thing everywhere."
     }
   },
   "search": {
@@ -61,7 +73,13 @@
     "pagination": "Pagination",
     "prevPage": "Previous",
     "nextPage": "Next",
-    "pageOf": "Page {page} of {total}"
+    "pageOf": "Page {page} of {total}",
+    "showing": "{shown} of {total}",
+    "clearFilters": "Clear filters",
+    "tags": "Tags",
+    "colName": "Name",
+    "colWhat": "What it is",
+    "colStatus": "Status"
   },
   "errors": {
     "notFoundTitle": "Page not found",

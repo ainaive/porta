@@ -1,41 +1,26 @@
 import type { Metadata } from 'next'
-import {
-  Geist,
-  Geist_Mono,
-  JetBrains_Mono,
-  Noto_Sans_SC,
-  Sora,
-} from 'next/font/google'
+import { Libre_Franklin, Noto_Sans_SC, Roboto_Mono } from 'next/font/google'
 import { notFound } from 'next/navigation'
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
-import { ChromeShell } from '@/components/site/chrome-shell'
 import { SiteFooter } from '@/components/site/footer'
 import { SiteHeader } from '@/components/site/header'
 import { Toaster } from '@/components/ui/sonner'
 import { routing } from '@/i18n/routing'
 import '../globals.css'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-})
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-})
-
-// Display face for the landing page. Latin-only upstream, so Chinese
-// headings fall through to Noto Sans SC (see --font-display-stack).
-const sora = Sora({
-  variable: '--font-sora',
+// Two families carry the whole design. There is no third: the design sets
+// headings in the sans, so the display token points at it too.
+const libreFranklin = Libre_Franklin({
+  variable: '--font-libre-franklin',
   subsets: ['latin'],
   display: 'swap',
 })
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-jetbrains-mono',
+// Load-bearing, not decoration: kickers, section headings, stat values, table
+// column heads, install commands and every micro-label are mono.
+const robotoMono = Roboto_Mono({
+  variable: '--font-roboto-mono',
   subsets: ['latin'],
   display: 'swap',
 })
@@ -78,15 +63,13 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} ${sora.variable} ${jetbrainsMono.variable} ${notoSansSC.variable} h-full antialiased`}
+      className={`${libreFranklin.variable} ${robotoMono.variable} ${notoSansSC.variable} h-full antialiased`}
     >
       <body className="flex min-h-svh flex-col">
         <NextIntlClientProvider>
-          <ChromeShell>
-            <SiteHeader />
-            <div className="flex flex-1 flex-col">{children}</div>
-            <SiteFooter />
-          </ChromeShell>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col">{children}</div>
+          <SiteFooter />
           <Toaster />
         </NextIntlClientProvider>
       </body>

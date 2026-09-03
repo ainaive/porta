@@ -8,7 +8,7 @@ export function NativeSelect({
   return (
     <select
       className={cn(
-        'border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30',
+        'h-9 w-full min-w-0 rounded-md border border-input bg-card px-3 py-1 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
         className,
       )}
       {...props}

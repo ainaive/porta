@@ -4,7 +4,7 @@
 // all are dropped entirely. Pure functions — the DB queries live in queries.ts.
 //
 // `pickTranslation` is the primitive a module reuses when grouping its own
-// translated rows (see src/modules/help/chapters.ts).
+// translated rows (see src/modules/handbook/chapters.ts).
 import type { resources, resourceTranslations } from '@/db/schema'
 import type { Locale } from '@/i18n/routing'
 

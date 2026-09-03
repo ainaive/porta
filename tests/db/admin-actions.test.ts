@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import { asc, eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { invites, resources } from '@/db/schema'
-import { courseChapters } from '@/modules/help/schema'
+import { trackSteps } from '@/modules/handbook/schema'
 import { resetDb } from './harness'
 
 const FAKE_ADMIN = {
@@ -41,35 +41,36 @@ const {
   setUserRole,
   toggleUserBan,
 } = await import('@/lib/admin-actions')
-// Chapter mutations moved to the help module, but they are gated by the
+// Step mutations moved to the help module, but they are gated by the
 // same mocked requireAdmin, so they stay in this suite's contract.
-const { addChapter, saveChapterTranslation, moveChapter, deleteChapter } =
-  await import('@/modules/help/actions')
+const { addStep, saveStepTranslation, moveStep, deleteStep } = await import(
+  '@/modules/handbook/actions'
+)
 
-async function seedChapters(
+async function seedSteps(
   positions: number[],
-): Promise<{ courseId: string; ids: string[] }> {
+): Promise<{ trackId: string; ids: string[] }> {
   const [course] = await db
     .insert(resources)
-    .values({ type: 'course', slug: 'contract-course', status: 'published' })
+    .values({ type: 'track', slug: 'contract-course', status: 'published' })
     .returning({ id: resources.id })
   const ids: string[] = []
   for (const position of positions) {
     const [ch] = await db
-      .insert(courseChapters)
-      .values({ courseId: course.id, position })
-      .returning({ id: courseChapters.id })
+      .insert(trackSteps)
+      .values({ trackId: course.id, position })
+      .returning({ id: trackSteps.id })
     ids.push(ch.id)
   }
-  return { courseId: course.id, ids }
+  return { trackId: course.id, ids }
 }
 
-async function orderedIds(courseId: string): Promise<string[]> {
+async function orderedIds(trackId: string): Promise<string[]> {
   const rows = await db
-    .select({ id: courseChapters.id, position: courseChapters.position })
-    .from(courseChapters)
-    .where(eq(courseChapters.courseId, courseId))
-    .orderBy(asc(courseChapters.position))
+    .select({ id: trackSteps.id, position: trackSteps.position })
+    .from(trackSteps)
+    .where(eq(trackSteps.trackId, trackId))
+    .orderBy(asc(trackSteps.position))
   // Positions must be dense 1..n at all times.
   expect(rows.map((r) => r.position)).toEqual(rows.map((_, i) => i + 1))
   return rows.map((r) => r.id)
@@ -80,37 +81,37 @@ beforeEach(async () => {
   denied = false
 })
 
-describe('chapter ordering contracts', () => {
-  test('moveChapter up swaps with the previous sibling', async () => {
-    const { courseId, ids } = await seedChapters([1, 2, 3])
+describe('step ordering contracts', () => {
+  test('moveStep up swaps with the previous sibling', async () => {
+    const { trackId, ids } = await seedSteps([1, 2, 3])
     const [a, b, c] = ids
-    await moveChapter(b, 'up')
-    expect(await orderedIds(courseId)).toEqual([b, a, c])
+    await moveStep(b, 'up')
+    expect(await orderedIds(trackId)).toEqual([b, a, c])
   })
 
-  test('moveChapter down swaps with the next sibling', async () => {
-    const { courseId, ids } = await seedChapters([1, 2, 3])
+  test('moveStep down swaps with the next sibling', async () => {
+    const { trackId, ids } = await seedSteps([1, 2, 3])
     const [a, b, c] = ids
-    await moveChapter(b, 'down')
-    expect(await orderedIds(courseId)).toEqual([a, c, b])
+    await moveStep(b, 'down')
+    expect(await orderedIds(trackId)).toEqual([a, c, b])
   })
 
-  test('moveChapter no-ops at the boundaries', async () => {
-    const { courseId, ids } = await seedChapters([1, 2, 3])
+  test('moveStep no-ops at the boundaries', async () => {
+    const { trackId, ids } = await seedSteps([1, 2, 3])
     const [a, , c] = ids
-    await moveChapter(a, 'up')
-    expect(await orderedIds(courseId)).toEqual(ids)
-    await moveChapter(c, 'down')
-    expect(await orderedIds(courseId)).toEqual(ids)
+    await moveStep(a, 'up')
+    expect(await orderedIds(trackId)).toEqual(ids)
+    await moveStep(c, 'down')
+    expect(await orderedIds(trackId)).toEqual(ids)
   })
 
-  test('deleteChapter renumbers survivors to a dense 1..n', async () => {
-    const { courseId, ids } = await seedChapters([1, 2, 3, 4])
+  test('deleteStep renumbers survivors to a dense 1..n', async () => {
+    const { trackId, ids } = await seedSteps([1, 2, 3, 4])
     const [a, b, c, d] = ids
-    await deleteChapter(b)
+    await deleteStep(b)
     // orderedIds asserts density; the ids prove which rows survived and in
     // what order.
-    expect(await orderedIds(courseId)).toEqual([a, c, d])
+    expect(await orderedIds(trackId)).toEqual([a, c, d])
   })
 })
 
@@ -121,7 +122,7 @@ describe('input validation returns handled errors, not 500s', () => {
     expect(await saveTranslation('not-a-uuid', 'en', {}, f)).toEqual({
       error: 'resourceNotFound',
     })
-    expect(await saveChapterTranslation('not-a-uuid', 'en', {}, f)).toEqual({
+    expect(await saveStepTranslation('not-a-uuid', 'en', {}, f)).toEqual({
       error: 'resourceNotFound',
     })
     expect(await saveSettings('not-a-uuid', {}, new FormData())).toEqual({
@@ -138,7 +139,7 @@ describe('input validation returns handled errors, not 500s', () => {
     expect(await saveTranslation(orphan, 'en', {}, f)).toEqual({
       error: 'resourceNotFound',
     })
-    expect(await saveChapterTranslation(orphan, 'en', {}, f)).toEqual({
+    expect(await saveStepTranslation(orphan, 'en', {}, f)).toEqual({
       error: 'resourceNotFound',
     })
   })
@@ -216,13 +217,13 @@ describe('every mutation is gated', () => {
       ['saveTranslation', () => saveTranslation(uuid, 'en', {}, form())],
       ['saveSettings', () => saveSettings(uuid, {}, form())],
       ['deleteResource', () => deleteResource(uuid)],
-      ['addChapter', () => addChapter(uuid)],
+      ['addStep', () => addStep(uuid)],
       [
-        'saveChapterTranslation',
-        () => saveChapterTranslation(uuid, 'en', {}, form()),
+        'saveStepTranslation',
+        () => saveStepTranslation(uuid, 'en', {}, form()),
       ],
-      ['moveChapter', () => moveChapter(uuid, 'up')],
-      ['deleteChapter', () => deleteChapter(uuid)],
+      ['moveStep', () => moveStep(uuid, 'up')],
+      ['deleteStep', () => deleteStep(uuid)],
       ['createInvite', () => createInvite({}, form())],
       ['deleteInvite', () => deleteInvite(uuid)],
       ['setUserRole', () => setUserRole(uuid, form())],

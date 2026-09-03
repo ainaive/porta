@@ -1,0 +1,30 @@
+{
+  "nav": {
+    "title": "Events"
+  },
+  "events": {
+    "title": "Events & workshops",
+    "description": "Office hours, hands-on workshops, and a migration clinic whenever something ships a breaking change.",
+    "landing": {
+      "title": "Events & workshops",
+      "description": "Office hours, workshops and clinics — what is coming up, where it is, and how to register."
+    }
+  },
+  "register": "Register",
+  "kinds": {
+    "office-hours": "Office hours",
+    "workshop": "Workshop",
+    "clinic": "Migration clinic",
+    "review": "Quarterly review"
+  },
+  "meta": {
+    "date": "Date",
+    "time": "Time",
+    "place": "Place",
+    "kind": "Kind",
+    "registerUrl": "Registration URL"
+  },
+  "allKinds": "All",
+  "upcoming": "Upcoming",
+  "past": "Past"
+}

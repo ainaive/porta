@@ -33,7 +33,7 @@ await migrator.end({ timeout: 5 })
 export async function resetDb(): Promise<void> {
   await db.execute(
     sql`TRUNCATE "user", "session", "account", "verification", "invites",
-        "resources", "resource_translations", "course_chapters",
-        "course_chapter_translations", "rate_limit" CASCADE`,
+        "resources", "resource_translations", "track_steps",
+        "track_step_translations", "rate_limit" CASCADE`,
   )
 }

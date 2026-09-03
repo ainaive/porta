@@ -8,38 +8,50 @@
     "signIn": "登录",
     "signOut": "退出登录",
     "menu": "菜单",
-    "account": "账户"
+    "account": "账户",
+    "overview": "总览",
+    "adoption": "使用情况"
   },
   "home": {
-    "subtitle": "内部工具、模型 API 资源、课程与教学视频——统一收录，中英双语。",
-    "kicker": "生态工具链门户",
-    "heroLine1": "一个入口，",
-    "heroLine2": "连接全部生态工具链",
-    "heroSub": "内部工具、模型 API 资源、课程与教学视频——统一收录，中英双语。",
-    "ctaPrimary": "登录",
-    "ctaSecondary": "浏览目录",
-    "preview": {
-      "title": "内部工具目录",
-      "search": "搜索工具、文档、课程…"
+    "subtitle": "内部工具、课程与文字指南——统一收录，中英双语。",
+    "kicker": "内部开发者门户",
+    "heroTitle": "工具、指南与活动，集中在一处。",
+    "heroSub": "受支持的工具、配套指南，以及近期活动。一次搜索，不必再在三个群里逐个询问。",
+    "searchPlaceholder": "搜索工具、指南、活动…",
+    "popular": "常用",
+    "pathsTitle": "从这里开始",
+    "allPaths": "全部路径",
+    "featuredTitle": "最新添加",
+    "allResources": "搜索全部内容",
+    "colName": "资源",
+    "colWhat": "简介",
+    "colWhere": "状态",
+    "nextUp": "近期活动",
+    "allEvents": "全部活动",
+    "atAGlance": "目录概览",
+    "allMetrics": "查看使用情况"
+  },
+  "adoption": {
+    "title": "使用情况",
+    "description": "目录里到底有什么，以及哪些地方还很薄。数据全部来自目录本身——本页背后没有任何使用遥测。",
+    "empty": "目前还没有已发布的内容。",
+    "ofPublished": "{bilingual}/{published}",
+    "stats": {
+      "published": "已发布资源",
+      "sections": "有内容的板块",
+      "bilingual": "中英双语齐全",
+      "tags": "在用标签"
     },
-    "bento": {
-      "title": "所有资源，一套体系",
-      "subtitle": "不必再翻聊天记录找链接。所有板块共用一套目录、一套标签、一套发布流程。",
-      "bilingual": {
-        "title": "双语优先",
-        "description": "每个页面都有中英两版。缺少译文的内容照常展示，并明确标注，让你知道自己在读哪一版。",
-        "label": "中 / EN"
-      },
-      "search": {
-        "title": "一次搜索，覆盖所有板块",
-        "description": "一个搜索框检索整个目录，中英文一并命中；也可以只在某个板块内按关键词或标签筛选。标签全目录通用，同一个词在哪里都是同一个意思。",
-        "label": "搜索"
-      }
+    "coverage": {
+      "title": "各板块双语覆盖率",
+      "description": "只有一种语言的资源照常展示，并标注未翻译——但它只触达了一半的读者。"
     },
-    "access": {
-      "kicker": "仅限受邀",
-      "title": "公开可浏览，登录可阅读",
-      "description": "本页与各板块列表对所有人开放。查看资源详情需要账号，而账号只能通过邀请链接创建——没有开放注册。"
+    "gaps": {
+      "title": "目录的薄弱之处",
+      "untranslated": "待翻译",
+      "untranslatedDescription": "已发布但只有一种语言的资源数量。",
+      "untagged": "高频标签",
+      "untaggedDescription": "标签全目录通用，同一个词在哪里都是同一个意思。"
     }
   },
   "search": {
@@ -61,7 +73,13 @@
     "pagination": "分页",
     "prevPage": "上一页",
     "nextPage": "下一页",
-    "pageOf": "第 {page} 页 / 共 {total} 页"
+    "pageOf": "第 {page} 页 / 共 {total} 页",
+    "showing": "共 {total} 条，显示 {shown} 条",
+    "clearFilters": "清除筛选",
+    "tags": "标签",
+    "colName": "名称",
+    "colWhat": "简介",
+    "colStatus": "状态"
   },
   "errors": {
     "notFoundTitle": "页面不存在",

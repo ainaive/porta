@@ -1,12 +1,18 @@
 import { getTranslations } from 'next-intl/server'
-import { AccessCta } from '@/components/landing/access-cta'
-import { Bento } from '@/components/landing/bento'
-import { Hero } from '@/components/landing/hero'
-import { PreviewMock } from '@/components/landing/preview-mock'
-import { ResourceCard } from '@/components/resource/card'
-import { getHomeOverview } from '@/core/content/queries'
+import { CatalogStats } from '@/components/landing/catalog-stats'
+import { HeroSearch } from '@/components/landing/hero-search'
+import { LatestTable } from '@/components/landing/latest-table'
+import { PathCards } from '@/components/landing/path-cards'
+import { UpcomingEvents } from '@/components/landing/upcoming-events'
+import {
+  getAdoptionStats,
+  getHomeOverview,
+  listPublished,
+  listUpcomingEvents,
+  type TranslatedResource,
+} from '@/core/content/queries'
 import type { Locale } from '@/i18n/routing'
-import { getSession } from '@/lib/session'
+import { trackMeta } from '@/modules/handbook/module'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,42 +22,46 @@ export default async function HomePage({
   params: Promise<{ locale: Locale }>
 }) {
   const { locale } = await params
-  const [t, overview, session] = await Promise.all([
-    getTranslations('content'),
-    getHomeOverview(locale),
-    // React-cached; the header already asked, so this costs nothing.
-    getSession(),
+  const [overview, tracks, events, stats, handbook] = await Promise.all([
+    getHomeOverview(locale, 6),
+    listPublished('track', locale),
+    listUpcomingEvents(locale),
+    getAdoptionStats(),
+    getTranslations('handbook'),
   ])
 
+  // A track's corner label: its estimated hours, else its level, else
+  // nothing — rather than an invented "~25 min" for every card.
+  const trackLabel = (track: TranslatedResource): string | null => {
+    const meta = trackMeta.safeParse(track.meta).data
+    if (meta?.estimatedHours) {
+      return handbook('estimatedHours', { hours: meta.estimatedHours })
+    }
+    return meta?.level ? handbook(`levels.${meta.level}`) : null
+  }
+
   return (
-    // The dark token scope is opened by ChromeShell around the whole tree, so
-    // the header and footer darken with the page instead of floating above it.
-    //
-    // `overflow-x-clip`, not `-hidden`: the ambient glows extend past the
-    // viewport edge and have to be clipped, but `hidden` on one axis computes
-    // the other to `auto`, which turns this into a viewport-height scroll
-    // container and stops the page scrolling at all. `clip` is exempt.
-    <main className="flex-1 overflow-x-clip">
-      <Hero signedIn={session !== null}>
-        <PreviewMock locale={locale} items={overview.latest} />
-      </Hero>
+    <main className="flex-1">
+      {/* Most-used tags, not the alphabetical head of the list: the chips
+          are meant to be the queries people actually run. */}
+      <HeroSearch
+        locale={locale}
+        popularTags={stats.tags.slice(0, 4).map((tag) => tag.tag)}
+      />
+      {/* Oldest first. listPublished returns newest first, which numbers a
+          curated set of tracks backwards — 01 should be where you start. */}
+      <PathCards
+        tracks={tracks.items.slice(0, 4).reverse()}
+        meta={trackLabel}
+      />
+      <LatestTable items={overview.latest} />
 
-      <Bento overview={overview} />
-
-      {overview.latest.length > 0 ? (
-        <section className="mx-auto w-full max-w-6xl px-4 pb-24 sm:pb-32">
-          <h2 className="font-display text-2xl font-bold tracking-tight">
-            {t('latest')}
-          </h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {overview.latest.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <AccessCta signedIn={session !== null} />
+      <section className="px-7 py-13 sm:px-12">
+        <div className="mx-auto grid w-full max-w-[80rem] gap-12 [grid-template-columns:repeat(auto-fit,minmax(18.75rem,1fr))]">
+          <UpcomingEvents events={events} locale={locale} />
+          <CatalogStats stats={stats} />
+        </div>
+      </section>
     </main>
   )
 }

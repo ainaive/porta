@@ -56,28 +56,40 @@ export async function ResourceSearch({
     : 1
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-      <p className="mt-1 text-muted-foreground">{t('description')}</p>
+    <main className="mx-auto w-full max-w-[80rem] flex-1 px-7 py-16 sm:px-12">
+      <h1 className="text-[clamp(1.75rem,3.5vw,2.375rem)] font-bold tracking-[-0.028em]">
+        {t('title')}
+      </h1>
+      <p className="mt-2.5 max-w-[44em] text-base leading-relaxed text-muted-foreground">
+        {t('description')}
+      </p>
 
       {/* A GET form, so a search is a URL: shareable, bookmarkable, and back
           out of without a client component. */}
       <form
         action={`/${locale}/search`}
         method="get"
-        className="mt-6 flex gap-2"
+        className="mt-9 flex max-w-[39rem] items-stretch border-[1.5px] border-foreground bg-card"
       >
+        <span
+          aria-hidden
+          className="flex items-center pl-4 font-mono text-[13px] text-brand"
+        >
+          /
+        </span>
         <Input
           type="search"
           name="q"
           defaultValue={query}
           placeholder={t('placeholder')}
           aria-label={t('title')}
-          className="max-w-md"
+          className="h-auto min-w-0 flex-1 border-0 bg-transparent px-4 py-3.5 text-[15px] shadow-none focus-visible:ring-0"
           autoFocus
         />
         {type ? <input type="hidden" name="type" value={type} /> : null}
-        <Button type="submit">{t('submit')}</Button>
+        <Button type="submit" size="lg" className="px-6">
+          {t('submit')}
+        </Button>
       </form>
 
       {query ? (
@@ -86,7 +98,7 @@ export async function ResourceSearch({
         // reaches a third identical list of links with nothing to say which.
         <nav
           aria-label={t('filterLabel')}
-          className="mt-6 flex flex-wrap items-center gap-2"
+          className="mt-5 flex flex-wrap items-center gap-1.5"
         >
           <Link href={filterHref()}>
             <Badge variant={type ? 'outline' : 'default'}>
@@ -104,17 +116,19 @@ export async function ResourceSearch({
       ) : null}
 
       {result === null ? (
-        <p className="mt-16 text-center text-muted-foreground">{t('prompt')}</p>
+        <p className="mt-12 border py-16 text-center text-muted-foreground">
+          {t('prompt')}
+        </p>
       ) : result.total === 0 ? (
-        <p className="mt-16 text-center text-muted-foreground">
+        <p className="mt-12 border py-16 text-center text-muted-foreground">
           {t('noResults', { q: query })}
         </p>
       ) : (
         <>
-          <p className="mt-8 text-sm text-muted-foreground">
+          <p className="mt-8 font-mono text-[11.5px] text-label">
             {t('results', { total: result.total, q: query })}
           </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(15.5rem,1fr))]">
             {result.items.map((resource) => (
               // Results span sections, so each card has to say which one it
               // came from — a title alone does not tell you whether you found

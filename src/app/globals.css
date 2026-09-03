@@ -8,9 +8,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* Indirected through `*-stack` properties so a scope like `.landing` can
-     swap the whole family list. `@theme inline` pastes the value into each
-     utility, so it has to name a property that actually exists at runtime. */
+  /* Indirected through `*-stack` properties: `@theme inline` pastes the value
+     into each utility, so it has to name a property that exists at runtime.
+     Nothing re-points them any more — the route-scoped palette is gone — but
+     the indirection is what makes a family swap one line instead of forty. */
   --font-sans: var(--font-sans-stack);
   --font-mono: var(--font-mono-stack);
   --font-display: var(--font-display-stack);
@@ -47,6 +48,20 @@
   --color-brand: var(--brand);
   --color-brand-2: var(--brand-2);
   --color-brand-3: var(--brand-3);
+  --color-panel: var(--panel);
+  --color-surface-hover: var(--surface-hover);
+  --color-rule: var(--rule);
+  --color-label: var(--label);
+  --color-faint: var(--faint);
+  --color-status-ga: var(--status-ga);
+  --color-status-ga-bg: var(--status-ga-bg);
+  --color-status-ga-border: var(--status-ga-border);
+  --color-status-beta: var(--status-beta);
+  --color-status-beta-bg: var(--status-beta-bg);
+  --color-status-beta-border: var(--status-beta-border);
+  --color-status-retired: var(--status-retired);
+  --color-status-retired-bg: var(--status-retired-bg);
+  --color-status-retired-border: var(--status-retired-border);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -56,166 +71,95 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Not `inline`: keyframes only get emitted from a real @theme block. */
-@theme {
-  --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  --animate-caret: caret 1.1s step-end infinite;
-
-  @keyframes fade-up {
-    from {
-      opacity: 0;
-      transform: translateY(24px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  /* Ends on opacity 1 so a reduced-motion snap leaves the caret visible. */
-  @keyframes caret {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0;
-    }
-  }
-}
-
+/* The Workbench system: one light canvas, warm paper and rust, hairline
+   borders and square corners. There is no second surface — no `.dark`, no
+   route-scoped palette — so a colour is defined once, here (ADR 0017). */
 :root {
-  /* Latin from Geist, Han from Noto Sans SC — the zh locale had no declared
-     CJK family at all before this. Display type is Sora, which ships Latin
-     only, so it falls through to Noto for Chinese headings. */
+  /* Latin from Libre Franklin, Han from Noto Sans SC. There is no separate
+     display face: the design sets headings in the same sans at 600/700 with
+     tight tracking, so `--font-display-stack` deliberately equals the sans
+     one rather than being dropped — the token is still what `font-display`
+     resolves to across the primitives. */
   --font-sans-stack:
-    var(--font-geist-sans), var(--font-noto-sans-sc), ui-sans-serif, system-ui,
-    sans-serif;
-  --font-mono-stack: var(--font-geist-mono), ui-monospace, monospace;
+    var(--font-libre-franklin), var(--font-noto-sans-sc), ui-sans-serif,
+    system-ui, sans-serif;
+  --font-mono-stack: var(--font-roboto-mono), ui-monospace, monospace;
   --font-display-stack:
-    var(--font-sora), var(--font-noto-sans-sc), ui-sans-serif, sans-serif;
+    var(--font-libre-franklin), var(--font-noto-sans-sc), ui-sans-serif,
+    sans-serif;
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.9654 0.0062 75.41);
+  --foreground: oklch(0.2161 0.0061 56.04);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.2161 0.0061 56.04);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.2161 0.0061 56.04);
+  /* Ink, not a grey: the design's primary buttons and active chips invert to
+     the foreground colour rather than to a neutral. */
+  --primary: oklch(0.2161 0.0061 56.04);
+  --primary-foreground: oklch(0.9654 0.0062 75.41);
+  --secondary: oklch(0.9776 0.0051 67.76);
+  --secondary-foreground: oklch(0.4364 0.0123 57.97);
+  --muted: oklch(0.9423 0.0097 72.66);
+  --muted-foreground: oklch(0.4364 0.0123 57.97);
+  --accent: oklch(0.9891 0.0034 67.78);
+  --accent-foreground: oklch(0.2161 0.0061 56.04);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: oklch(0.8945 0.0144 74.42);
+  --input: oklch(0.8797 0.0162 73.67);
+  --ring: oklch(0.5559 0.1384 41.37);
 
-  /* Brand accents. Constants, not theme-dependent — the app chrome stays
-     achromatic (ADR 0008); only the landing scope currently spends them. */
-  --brand: oklch(0.62 0.19 25);
-  --brand-2: oklch(0.72 0.16 55);
-  --brand-3: oklch(0.65 0.14 300);
+  /* Surfaces and rules the shadcn token set has no name for, but the design
+     leans on constantly: the filter/table-header panel, the row hover, the
+     hairline between table rows, and the two quieter greys. */
+  --panel: oklch(0.9776 0.0051 67.76);
+  --surface-hover: oklch(0.9891 0.0034 67.78);
+  --rule: oklch(0.9423 0.0097 72.66);
+  --label: oklch(0.607 0.0152 53.21);
+  --faint: oklch(0.7108 0.0127 59.49);
 
-  /* Declared at root so it is reachable from outside `.landing` — the body
-     rule below and the logo mark both need it. */
-  --landing-background: oklch(0.145 0.003 286);
+  --chart-1: oklch(0.5559 0.1384 41.37);
+  --chart-2: oklch(0.6762 0.0942 40.41);
+  --chart-3: oklch(0.7381 0.0565 47.34);
+  --chart-4: oklch(0.607 0.0152 53.21);
+  --chart-5: oklch(0.7108 0.0127 59.49);
+
+  /* Square. The design has no rounded corner anywhere, and every primitive
+     derives its radius from this one value through the ladder above. */
+  --radius: 0rem;
+
+  --sidebar: oklch(0.9776 0.0051 67.76);
+  --sidebar-foreground: oklch(0.2161 0.0061 56.04);
+  --sidebar-primary: oklch(0.2161 0.0061 56.04);
+  --sidebar-primary-foreground: oklch(0.9654 0.0062 75.41);
+  --sidebar-accent: oklch(0.9891 0.0034 67.78);
+  --sidebar-accent-foreground: oklch(0.2161 0.0061 56.04);
+  --sidebar-border: oklch(0.8945 0.0144 74.42);
+  --sidebar-ring: oklch(0.5559 0.1384 41.37);
+
+  /* Rust. Unlike ADR 0008's accent this is a working UI colour, not a
+     landing-only one: links, kickers, the active nav underline and the
+     adoption bars all take it. */
+  --brand: oklch(0.5559 0.1384 41.37);
+  --brand-2: oklch(0.4683 0.1172 40.61);
+  --brand-3: oklch(0.6762 0.0942 40.41);
+
+  /* Status. Three closed pairs, because a tool's maturity is a closed enum
+     and every one of its values has to read at a glance. */
+  --status-ga: oklch(0.4854 0.0715 153.48);
+  --status-ga-bg: oklch(0.9612 0.0092 150.69);
+  --status-ga-border: oklch(0.8588 0.0263 154.4);
+  --status-beta: oklch(0.5279 0.0957 76.96);
+  --status-beta-bg: oklch(0.9669 0.0192 80.12);
+  --status-beta-border: oklch(0.8754 0.0418 76.71);
+  --status-retired: oklch(0.607 0.0152 53.21);
+  --status-retired-bg: oklch(0.9568 0.0079 73.74);
+  --status-retired-border: oklch(0.8945 0.0144 74.42);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
-/* Landing scope. Always paired with `.dark` so the shadcn primitives' `dark:`
-   variants stay correct; `.landing` then deepens the palette to the near-black
-   canvas the marketing page is designed on. Everything inside can keep using
-   plain `bg-background` / `text-muted-foreground` / `border-border`.
-   Note `&:is(.dark *)` never matches the wrapper itself — style the children. */
-.landing {
-  /* The design uses JetBrains Mono for its kickers and code panels; scoped
-     here so the admin textareas keep Geist Mono. The wrapper carries
-     `font-mono`-adjacent utilities that resolve against `.landing` rather
-     than the value inherited from `html`. Body text deliberately stays on the
-     root stack (Geist for Latin, Noto Sans SC for Han) rather than the
-     design's Noto-first order, which put Latin copy in a CJK face. */
-  --font-mono-stack: var(--font-jetbrains-mono), ui-monospace, monospace;
-
-  --background: var(--landing-background);
-  --foreground: oklch(0.967 0.001 106);
-  --card: oklch(0.185 0.004 286);
-  --card-foreground: oklch(0.967 0.001 106);
-  --popover: oklch(0.185 0.004 286);
-  --popover-foreground: oklch(0.967 0.001 106);
-  --primary: oklch(0.967 0.001 106);
-  --primary-foreground: oklch(0.145 0.003 286);
-  --secondary: oklch(1 0 0 / 5%);
-  --secondary-foreground: oklch(0.869 0.005 56);
-  /* Also drives skeletons and ghost-button hovers, so it has to stay visible
-     against the near-black canvas. */
-  --muted: oklch(1 0 0 / 6%);
-  --muted-foreground: oklch(0.709 0.01 56);
-  --accent: oklch(1 0 0 / 7%);
-  --accent-foreground: oklch(0.967 0.001 106);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.62 0.19 25);
-}
-
-.landing ::selection {
-  background: oklch(0.62 0.19 25 / 0.35);
-}
-
-/* The overscroll gutter paints from the body background, so the dark canvas
-   has to reach body or a rubber-band scroll flashes white on the landing. */
-body:has(.landing) {
-  background-color: var(--landing-background);
+::selection {
+  background: var(--brand);
+  color: var(--background);
 }
 
 @layer base {
@@ -229,7 +173,8 @@ body:has(.landing) {
     @apply font-sans;
   }
 
-  /* The imported design animates on load; honour the OS-level opt-out. */
+  /* The design itself has no entrance animation, but hovers and the odd
+     transition remain; honour the OS-level opt-out for all of it. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

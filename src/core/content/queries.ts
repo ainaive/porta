@@ -16,7 +16,7 @@ import { z } from 'zod'
 import { isSectionKey } from '@/core/module/derive'
 import { db } from '@/db'
 import { resources, resourceTranslations } from '@/db/schema'
-import type { Locale } from '@/i18n/routing'
+import { type Locale, routing } from '@/i18n/routing'
 import {
   groupResources,
   pickTranslation,
@@ -29,6 +29,8 @@ import { type ResourceType, resourceTypes } from './meta'
 export type { TranslatedResource } from './fallback'
 
 const uuidColumn = z.uuid()
+
+const locales = routing.locales
 
 export const PAGE_SIZE = 24
 
@@ -45,7 +47,17 @@ function likePattern(query: string): string {
   return `%${query.replace(/[\\%_]/g, '\\$&')}%`
 }
 
-export type PublicFilters = { q?: string; tag?: string; page?: number }
+/** Active facet selections, keyed by the `meta` field name a section declared
+ *  in `facets`. Several values on one field are an OR; different fields AND
+ *  together, which is how a reader expects "Go tools that are GA" to behave. */
+export type FacetFilters = Readonly<Record<string, readonly string[]>>
+
+export type PublicFilters = {
+  q?: string
+  tag?: string
+  page?: number
+  facets?: FacetFilters
+}
 
 /** What every public read of the catalog has in common: published, actually
  *  renderable, and narrowed by whatever the visitor filtered on. The section
@@ -65,6 +77,16 @@ function publishedConditions(filters: PublicFilters): SQL[] {
     ),
   ]
   if (filters.tag) conditions.push(arrayContains(resources.tags, [filters.tag]))
+  for (const [field, values] of Object.entries(filters.facets ?? {})) {
+    if (values.length === 0) continue
+    // `->>` compares as text, which is what a select field stores. The field
+    // name reaches here from the section's own `facets` declaration, never
+    // from the query string, so it cannot be turned into an injection point —
+    // the values are parameterised either way.
+    conditions.push(
+      sql`${resources.meta}->>${field} in ${values}` as unknown as SQL,
+    )
+  }
   if (filters.q) {
     // Match a resource when any of its translations (either locale) contains
     // the query in title, summary, or body — searched in SQL, not after a
@@ -184,12 +206,169 @@ export async function searchPublished(
   )
 }
 
+/** How many published resources each value of each declared facet would
+ *  match, given every *other* active filter. Counting with the facet's own
+ *  selection excluded is what keeps its chips usable: a count that collapsed
+ *  to the current selection would read `Go 12` and every sibling `0`, and
+ *  there would be no way to see what widening the choice buys. */
+export async function listFacetCounts(
+  type: ResourceType,
+  fields: readonly string[],
+  filters: PublicFilters = {},
+): Promise<Record<string, Record<string, number>>> {
+  const entries = await Promise.all(
+    fields.map(async (field) => {
+      const others = Object.fromEntries(
+        Object.entries(filters.facets ?? {}).filter(([name]) => name !== field),
+      )
+      const rows = await db
+        .select({
+          value: sql<string | null>`${resources.meta}->>${field}`,
+          total: count(),
+        })
+        .from(resources)
+        .where(
+          and(
+            eq(resources.type, type),
+            ...publishedConditions({ ...filters, facets: others }),
+          ),
+        )
+        // Grouped by ordinal, not by repeating the expression: the field
+        // name binds as a parameter, and Postgres will not prove that
+        // `meta->>$1` in the select and `meta->>$4` in the GROUP BY are the
+        // same expression.
+        .groupBy(sql`1`)
+      const counts: Record<string, number> = {}
+      for (const row of rows) {
+        if (row.value !== null) counts[row.value] = row.total
+      }
+      return [field, counts] as const
+    }),
+  )
+  return Object.fromEntries(entries)
+}
+
 export async function listPublishedTags(type: ResourceType): Promise<string[]> {
   const rows = await db
     .select({ tags: resources.tags })
     .from(resources)
     .where(and(eq(resources.type, type), eq(resources.status, 'published')))
   return [...new Set(rows.flatMap((r) => r.tags))].sort()
+}
+
+/** The soonest published sessions, today onwards.
+ *
+ *  Ordered on `meta.date`, which is a `YYYY-MM-DD` string — so it sorts and
+ *  compares lexicographically, which for a zero-padded ISO day is the same as
+ *  chronologically. That is the whole reason the field is stored that way
+ *  rather than as a timestamp. */
+export async function listUpcomingEvents(
+  locale: Locale,
+  limit = 3,
+  today = new Date().toISOString().slice(0, 10),
+): Promise<TranslatedResource[]> {
+  const rows = await db
+    .select({ resource: resources, translation: resourceTranslations })
+    .from(resources)
+    .leftJoin(
+      resourceTranslations,
+      eq(resourceTranslations.resourceId, resources.id),
+    )
+    .where(
+      and(
+        eq(resources.type, 'event'),
+        eq(resources.status, 'published'),
+        sql`${resources.meta}->>'date' >= ${today}`,
+      ),
+    )
+    .orderBy(sql`${resources.meta}->>'date' asc`, resources.id)
+  return groupResources(rows, locale).slice(0, limit)
+}
+
+export type SectionAdoption = {
+  type: ResourceType
+  published: number
+  /** Published resources carrying a translation in both locales. */
+  bilingual: number
+}
+
+export type AdoptionStats = {
+  sections: SectionAdoption[]
+  published: number
+  bilingual: number
+  tags: { tag: string; count: number }[]
+}
+
+/** What the catalog actually contains, for the Adoption page.
+ *
+ *  Everything here is counted from the catalog itself. There is no CLI, no
+ *  telemetry pipeline and no usage data, so there is nothing to report about
+ *  who uses what — reporting it anyway is the failure ADR 0008 was written
+ *  about. Coverage is the honest analogue: a resource published in one
+ *  language only is reaching half its readers, and that is a number the
+ *  platform can actually stand behind. */
+export async function getAdoptionStats(): Promise<AdoptionStats> {
+  // One row per published, renderable resource with how many locales it has.
+  // Counted in SQL rather than by hydrating the catalog: this page is public
+  // and grows with the catalog, and it needs numbers, not content.
+  const rows = await db
+    .select({
+      type: resources.type,
+      locales: sql<number>`count(distinct ${resourceTranslations.locale})`,
+    })
+    .from(resources)
+    .innerJoin(
+      resourceTranslations,
+      eq(resourceTranslations.resourceId, resources.id),
+    )
+    .where(
+      and(
+        eq(resources.status, 'published'),
+        inArray(resources.type, [...resourceTypes]),
+      ),
+    )
+    .groupBy(resources.id, resources.type)
+
+  const bySection = new Map<ResourceType, SectionAdoption>(
+    resourceTypes.map((type) => [type, { type, published: 0, bilingual: 0 }]),
+  )
+  for (const row of rows) {
+    const section = bySection.get(row.type as ResourceType)
+    if (!section) continue
+    section.published += 1
+    if (Number(row.locales) >= locales.length) section.bilingual += 1
+  }
+  const sections = [...bySection.values()]
+
+  const tagRows = await db
+    .select({ tags: resources.tags })
+    .from(resources)
+    .where(
+      and(
+        eq(resources.status, 'published'),
+        inArray(resources.type, [...resourceTypes]),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(resourceTranslations)
+            .where(eq(resourceTranslations.resourceId, resources.id)),
+        ),
+      ),
+    )
+  const tally = new Map<string, number>()
+  for (const row of tagRows) {
+    for (const tag of row.tags) tally.set(tag, (tally.get(tag) ?? 0) + 1)
+  }
+
+  return {
+    sections,
+    published: sections.reduce((sum, s) => sum + s.published, 0),
+    bilingual: sections.reduce((sum, s) => sum + s.bilingual, 0),
+    tags: [...tally.entries()]
+      .map(([tag, count]) => ({ tag, count }))
+      // Ties broken alphabetically so the order is stable between requests.
+      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)),
+  }
 }
 
 export type HomeSection = {

@@ -226,18 +226,16 @@ describe('getHomeOverview', () => {
     await insertResource('t1', [{ locale: 'en', title: 'Tool 1' }])
     await insertResource('t2', [{ locale: 'en', title: 'Tool 2' }])
     await insertResource('c1', [{ locale: 'en', title: 'Course 1' }], {
-      type: 'course',
+      type: 'track',
     })
-    await insertResource('v1', [{ locale: 'en', title: 'Video 1' }], {
-      type: 'video',
+    await insertResource('g1', [{ locale: 'en', title: 'Guide 1' }], {
+      type: 'doc',
     })
 
     const { sections } = await getHomeOverview('en')
     expect(sections.tool.count).toBe(2)
-    expect(sections.course.count).toBe(1)
-    expect(sections.video.count).toBe(1)
-    // Every type has an entry even with nothing published for it.
-    expect(sections.model).toEqual({ count: 0, items: [] })
+    expect(sections.track.count).toBe(1)
+    expect(sections.doc.count).toBe(1)
   })
 
   test('counts only what a visitor can reach', async () => {
@@ -259,7 +257,7 @@ describe('getHomeOverview', () => {
       await insertResource(`tool-${n}`, [{ locale: 'en', title: `Tool ${n}` }])
     }
     await insertResource('a-course', [{ locale: 'en', title: 'Course' }], {
-      type: 'course',
+      type: 'track',
     })
 
     const overview = await getHomeOverview('en')
@@ -344,12 +342,12 @@ describe('searchPublished', () => {
     await insertResource(
       'deploy-course',
       [{ locale: 'en', title: 'Deployment course' }],
-      { type: 'course' },
+      { type: 'track' },
     )
     await insertResource(
-      'deploy-video',
+      'deploy-guide',
       [{ locale: 'en', title: 'Deploying in practice' }],
-      { type: 'video' },
+      { type: 'doc' },
     )
     await insertResource('unrelated', [
       { locale: 'en', title: 'Something else' },
@@ -358,9 +356,9 @@ describe('searchPublished', () => {
     const { items, total } = await searchPublished('en', { q: 'deploy' })
     expect(total).toBe(3)
     expect(items.map((item) => item.type).sort()).toEqual([
-      'course',
+      'doc',
       'tool',
-      'video',
+      'track',
     ])
   })
 
@@ -369,12 +367,12 @@ describe('searchPublished', () => {
     await insertResource(
       'deploy-course',
       [{ locale: 'en', title: 'Deployment course' }],
-      { type: 'course' },
+      { type: 'track' },
     )
 
     const { items, total } = await searchPublished('en', {
       q: 'deploy',
-      type: 'course',
+      type: 'track',
     })
     expect(total).toBe(1)
     expect(items[0].slug).toBe('deploy-course')
@@ -384,7 +382,7 @@ describe('searchPublished', () => {
     await insertResource(
       'gateway',
       [{ locale: 'zh', title: '内部推理网关', body: 'OpenAI 协议兼容' }],
-      { type: 'model' },
+      { type: 'doc' },
     )
 
     const byBody = await searchPublished('en', { q: 'openai' })
@@ -407,7 +405,7 @@ describe('searchPublished', () => {
     await insertResource('draft', [{ locale: 'en', title: 'Draft widget' }], {
       status: 'draft',
     })
-    await insertResource('bare', [], { type: 'guide' })
+    await insertResource('bare', [], { type: 'doc' })
     await insertResource('real', [{ locale: 'en', title: 'Real widget' }])
 
     const { items, total } = await searchPublished('en', { q: 'widget' })
@@ -416,7 +414,7 @@ describe('searchPublished', () => {
   })
 
   test('paginates across sections and clamps an out-of-range page', async () => {
-    const types = ['tool', 'course', 'video'] as const
+    const types = ['tool', 'track', 'doc'] as const
     for (let i = 0; i < PAGE_SIZE + 3; i++) {
       await insertResource(
         `match-${i}`,
@@ -440,7 +438,7 @@ describe('searchPublished', () => {
 
   test('an empty query returns the whole registered catalog', async () => {
     await insertResource('a', [{ locale: 'en', title: 'A' }])
-    await insertResource('b', [{ locale: 'en', title: 'B' }], { type: 'guide' })
+    await insertResource('b', [{ locale: 'en', title: 'B' }], { type: 'doc' })
 
     expect((await searchPublished('en')).total).toBe(2)
   })

@@ -124,33 +124,3 @@ test.describe('security headers', () => {
     expect(violations).toEqual([])
   })
 })
-
-test.describe('signed in', () => {
-  test('the declared video host is framable under the policy', async ({
-    page,
-  }) => {
-    const response = await page.goto(
-      '/en/help/videos/getting-started-with-silicon',
-    )
-    const csp = policyOf(response?.headers() ?? {})
-    const iframe = page.locator('iframe')
-    await expect(iframe).toBeVisible()
-
-    // The host the page actually embeds has to appear in frame-src, or the
-    // player is a blank box. This is the pairing the manifest's `frameSrc`
-    // exists to keep honest.
-    const src = await iframe.getAttribute('src')
-    const origin = new URL(src ?? '').origin
-
-    // Matched as a source token, not as a substring of the whole policy:
-    // `toContain(origin)` would also pass on https://www.youtube.com.evil.test,
-    // and would not care which directive the origin turned up in.
-    const frameSrc = csp
-      .split('; ')
-      .find((part) => part.startsWith('frame-src '))
-      ?.split(/\s+/)
-      .slice(1)
-    expect(frameSrc).toBeDefined()
-    expect(frameSrc).toContain(origin)
-  })
-})

@@ -1,19 +1,49 @@
 {
   "nav": {
-    "title": "工具货架"
+    "title": "工具目录"
   },
   "tools": {
-    "title": "工具货架",
-    "description": "开箱即用的内部与生态工具。",
+    "title": "工具目录",
+    "description": "平台支持的全部工具。已弃用的工具会保留在列表中，直到替代方案文档就绪。",
     "landing": {
-      "title": "内部工具目录",
-      "description": "内部与生态工具，每一项都带简介、标签，以及工具本体与文档的链接。"
+      "title": "工具目录",
+      "description": "全部受支持的工具，按你要做的事筛选，而不是按团队归属。"
     }
   },
   "openTool": "打开工具",
   "documentation": "查看文档",
   "meta": {
-    "url": "URL",
-    "docsUrl": "文档 URL"
+    "url": "链接",
+    "docsUrl": "文档链接",
+    "category": "分类",
+    "maturity": "成熟度",
+    "language": "语言"
+  },
+  "values": {
+    "category": {
+      "build": "构建",
+      "cicd": "持续集成",
+      "observability": "可观测性",
+      "testing": "测试",
+      "security": "安全",
+      "data": "数据",
+      "platform": "平台",
+      "runtime": "运行时",
+      "environments": "环境",
+      "finops": "成本"
+    },
+    "maturity": {
+      "ga": "正式版",
+      "beta": "公测版",
+      "deprecated": "已弃用"
+    },
+    "language": {
+      "go": "Go",
+      "typescript": "TypeScript",
+      "python": "Python",
+      "rust": "Rust",
+      "java": "Java",
+      "multi": "多语言"
+    }
   }
 }

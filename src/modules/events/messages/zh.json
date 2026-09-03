@@ -1,0 +1,30 @@
+{
+  "nav": {
+    "title": "活动"
+  },
+  "events": {
+    "title": "活动与工作坊",
+    "description": "答疑时间、实操工作坊，以及每次发布破坏性变更时的迁移诊所。",
+    "landing": {
+      "title": "活动与工作坊",
+      "description": "答疑、工作坊与迁移诊所——近期有什么、在哪里举行，以及如何报名。"
+    }
+  },
+  "register": "报名",
+  "kinds": {
+    "office-hours": "答疑时间",
+    "workshop": "工作坊",
+    "clinic": "迁移诊所",
+    "review": "季度评审"
+  },
+  "meta": {
+    "date": "日期",
+    "time": "时间",
+    "place": "地点",
+    "kind": "类型",
+    "registerUrl": "报名链接"
+  },
+  "allKinds": "全部",
+  "upcoming": "即将举行",
+  "past": "已结束"
+}

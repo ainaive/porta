@@ -41,7 +41,9 @@ export default async function SignUpPage({
         {allowed ? (
           <>
             <CardHeader>
-              <CardTitle>{t('signUpTitle')}</CardTitle>
+              <CardTitle className="text-lg font-semibold tracking-[-0.015em]">
+                {t('signUpTitle')}
+              </CardTitle>
               <CardDescription>
                 {t(bootstrap ? 'signUpBootstrap' : 'signUpInvited', {
                   appName: common('appName'),
@@ -57,7 +59,9 @@ export default async function SignUpPage({
           </>
         ) : (
           <CardHeader>
-            <CardTitle>{t('inviteRequiredTitle')}</CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-[-0.015em]">
+              {t('inviteRequiredTitle')}
+            </CardTitle>
             <CardDescription>
               {token ? t('inviteInvalid') : t('inviteMissing')}
             </CardDescription>

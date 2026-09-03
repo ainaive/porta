@@ -18,14 +18,14 @@ export default async function AdminLayout({
   ] as const
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 gap-8 px-4 py-8 max-md:flex-col">
-      <aside className="w-44 shrink-0 max-md:w-full">
+    <div className="mx-auto flex w-full max-w-[80rem] flex-1 gap-10 px-7 py-12 sm:px-12 max-md:flex-col">
+      <aside className="w-48 shrink-0 max-md:w-full">
         <nav className="flex flex-col gap-1 text-sm max-md:flex-row max-md:flex-wrap">
           {items.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="border-l-2 border-transparent px-3 py-2 text-muted-foreground transition-colors hover:border-brand hover:text-foreground max-md:border-l-0 max-md:border-b-2"
             >
               {item.label}
             </Link>

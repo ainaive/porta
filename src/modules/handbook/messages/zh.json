@@ -1,0 +1,50 @@
+{
+  "docs": {
+    "nav": "文档与指南",
+    "title": "文档与指南",
+    "description": "接口文档与工具本身放在一起。这里收录跨工具的通用指南——无人专属、但人人需要的内容。",
+    "landing": {
+      "title": "文档与指南",
+      "description": "以任务为单位的实操教程及其参考资料，与其他内容共用标签，一并可检索。"
+    }
+  },
+  "tracks": {
+    "nav": "快速上手",
+    "title": "快速上手",
+    "description": "按目的分为若干路径。每条路径的终点都是跑通一件事，而不是读完一篇文档。",
+    "landing": {
+      "title": "快速上手",
+      "description": "分步骤的引导路径，每一步都可以直接链接跳转。"
+    }
+  },
+  "groups": {
+    "foundations": "基础",
+    "guides": "操作指南",
+    "working-with-us": "与我们协作"
+  },
+  "steps": "步骤",
+  "previousStep": "上一步",
+  "nextStep": "下一步",
+  "level": "难度",
+  "levels": {
+    "beginner": "入门",
+    "intermediate": "进阶",
+    "advanced": "高级"
+  },
+  "estimatedHours": "约 {hours} 小时",
+  "source": "来源",
+  "meta": {
+    "level": "难度",
+    "hours": "预计时长（小时）",
+    "group": "分组",
+    "readingTime": "阅读时长",
+    "sourceUrl": "来源链接"
+  },
+  "stepZero": {
+    "kicker": "开始之前 —— 先拿到账号",
+    "request": "向管理员索取邀请链接",
+    "signIn": "登录并设置密码",
+    "browse": "选择与你的目的匹配的路径",
+    "note": "平台不开放自助注册。邀请链接有效期七天且只能使用一次，收到后请尽快使用。"
+  }
+}
