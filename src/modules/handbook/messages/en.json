@@ -39,5 +39,12 @@
     "group": "Group",
     "readingTime": "Reading time",
     "sourceUrl": "Source URL"
+  },
+  "stepZero": {
+    "kicker": "Before you start — get an account",
+    "request": "Ask an admin for an invite link",
+    "signIn": "Sign in and set a password",
+    "browse": "Pick the track that matches why you are here",
+    "note": "There is no open sign-up. An invite link lasts seven days and works once, so claim it when you get it."
   }
 }

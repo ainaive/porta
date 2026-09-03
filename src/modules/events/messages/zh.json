@@ -23,5 +23,8 @@
     "place": "地点",
     "kind": "类型",
     "registerUrl": "报名链接"
-  }
+  },
+  "allKinds": "全部",
+  "upcoming": "即将举行",
+  "past": "已结束"
 }

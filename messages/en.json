@@ -73,7 +73,13 @@
     "pagination": "Pagination",
     "prevPage": "Previous",
     "nextPage": "Next",
-    "pageOf": "Page {page} of {total}"
+    "pageOf": "Page {page} of {total}",
+    "showing": "{shown} of {total}",
+    "clearFilters": "Clear filters",
+    "tags": "Tags",
+    "colName": "Name",
+    "colWhat": "What it is",
+    "colStatus": "Status"
   },
   "errors": {
     "notFoundTitle": "Page not found",

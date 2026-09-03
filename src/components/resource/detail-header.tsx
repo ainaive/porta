@@ -11,7 +11,7 @@ export async function ResourceDetailHeader({
 
   return (
     <div>
-      <h1 className="flex flex-wrap items-center gap-3 text-3xl font-semibold tracking-tight">
+      <h1 className="flex flex-wrap items-center gap-3 text-[clamp(1.75rem,3.5vw,2.375rem)] font-bold tracking-[-0.028em] text-pretty">
         {resource.title}
         {resource.isFallback ? (
           <Badge variant="outline" className="font-normal">
@@ -20,12 +20,14 @@ export async function ResourceDetailHeader({
         ) : null}
       </h1>
       {resource.summary ? (
-        <p className="mt-2 text-lg text-muted-foreground">{resource.summary}</p>
+        <p className="mt-3 max-w-[42em] text-[17px] leading-relaxed text-muted-foreground text-pretty">
+          {resource.summary}
+        </p>
       ) : null}
       {resource.tags.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap gap-1.5">
           {resource.tags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="font-normal">
+            <Badge key={tag} variant="outline">
               {tag}
             </Badge>
           ))}

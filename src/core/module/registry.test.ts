@@ -120,6 +120,20 @@ describe('registry shape', () => {
     }
   })
 
+  test('a grouped listing groups by a select meta field it declares', () => {
+    for (const section of sections) {
+      const listing = section.listing
+      if (listing?.kind !== 'grouped') continue
+      const field = section.metaFields.find((f) => f.name === listing.groupBy)
+      // The layout renders one row per option of that descriptor, in the
+      // order it declares them. A name with no descriptor renders no groups
+      // at all, silently — every resource would fall into the catch-all.
+      expect({
+        [`${section.key}.${listing.groupBy}`]: field?.kind ?? 'missing',
+      }).toEqual({ [`${section.key}.${listing.groupBy}`]: 'select' })
+    }
+  })
+
   test('a facet names a select meta field its section declares', () => {
     for (const section of sections) {
       for (const name of section.facets ?? []) {

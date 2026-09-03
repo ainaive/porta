@@ -23,5 +23,8 @@
     "place": "Place",
     "kind": "Kind",
     "registerUrl": "Registration URL"
-  }
+  },
+  "allKinds": "All",
+  "upcoming": "Upcoming",
+  "past": "Past"
 }

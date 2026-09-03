@@ -47,14 +47,25 @@ export const handbook = defineModule({
           labelKey: 'meta.group',
           emptyOption: true,
           options: [
-            { value: 'foundations', label: 'foundations' },
-            { value: 'guides', label: 'guides' },
-            { value: 'working-with-us', label: 'working-with-us' },
+            {
+              value: 'foundations',
+              label: 'foundations',
+              labelKey: 'groups.foundations',
+            },
+            { value: 'guides', label: 'guides', labelKey: 'groups.guides' },
+            {
+              value: 'working-with-us',
+              label: 'working-with-us',
+              labelKey: 'groups.working-with-us',
+            },
           ],
         },
         { name: 'readingTime', kind: 'text', labelKey: 'meta.readingTime' },
         { name: 'sourceUrl', kind: 'text', labelKey: 'meta.sourceUrl' },
       ],
+      // Reference reads best under its own heading; `group` is what makes
+      // "read this once" and "look this up" different shelves.
+      listing: { kind: 'grouped', groupBy: 'group' },
       landingTile: {
         kind: 'stat',
         titleKey: 'docs.landing.title',
@@ -74,9 +85,21 @@ export const handbook = defineModule({
           labelKey: 'meta.level',
           emptyOption: true,
           options: [
-            { value: 'beginner', label: 'beginner' },
-            { value: 'intermediate', label: 'intermediate' },
-            { value: 'advanced', label: 'advanced' },
+            {
+              value: 'beginner',
+              label: 'beginner',
+              labelKey: 'levels.beginner',
+            },
+            {
+              value: 'intermediate',
+              label: 'intermediate',
+              labelKey: 'levels.intermediate',
+            },
+            {
+              value: 'advanced',
+              label: 'advanced',
+              labelKey: 'levels.advanced',
+            },
           ],
         },
         {

@@ -21,8 +21,10 @@ test('zh chrome renders and en-only content is badged untranslated', async ({
 
 test('zh-only content is badged untranslated on /en', async ({ page }) => {
   await page.goto('/en/tools')
-  const card = page.getByRole('link', { name: /内部镜像源/ })
-  await expect(card).toContainText('Untranslated')
+  // The catalog is a real table, so the badge and the title share a row
+  // rather than being nested — assert on the row, not on the link.
+  const row = page.getByRole('row').filter({ hasText: '内部镜像源' })
+  await expect(row).toContainText('Untranslated')
 })
 
 test('locale switcher toggles the same page between locales', async ({

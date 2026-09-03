@@ -86,6 +86,8 @@ export const toolShelf = defineModule({
           options: options('language', LANGUAGES),
         },
       ],
+      // Scanned and compared, not browsed — a table beats a card grid.
+      listing: { kind: 'table' },
       facets: ['category', 'maturity', 'language'],
       landingTile: {
         kind: 'list',

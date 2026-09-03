@@ -47,10 +47,18 @@ export const events = defineModule({
           labelKey: 'meta.kind',
           emptyOption: true,
           options: [
-            { value: 'office-hours', label: 'office-hours' },
-            { value: 'workshop', label: 'workshop' },
-            { value: 'clinic', label: 'clinic' },
-            { value: 'review', label: 'review' },
+            {
+              value: 'office-hours',
+              label: 'office-hours',
+              labelKey: 'kinds.office-hours',
+            },
+            {
+              value: 'workshop',
+              label: 'workshop',
+              labelKey: 'kinds.workshop',
+            },
+            { value: 'clinic', label: 'clinic', labelKey: 'kinds.clinic' },
+            { value: 'review', label: 'review', labelKey: 'kinds.review' },
           ],
         },
         {

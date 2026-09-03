@@ -73,7 +73,13 @@
     "pagination": "分页",
     "prevPage": "上一页",
     "nextPage": "下一页",
-    "pageOf": "第 {page} 页 / 共 {total} 页"
+    "pageOf": "第 {page} 页 / 共 {total} 页",
+    "showing": "共 {total} 条，显示 {shown} 条",
+    "clearFilters": "清除筛选",
+    "tags": "标签",
+    "colName": "名称",
+    "colWhat": "简介",
+    "colStatus": "状态"
   },
   "errors": {
     "notFoundTitle": "页面不存在",

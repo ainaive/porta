@@ -90,6 +90,16 @@ export type SectionDefinition = {
   /** This section's landing-page tile. Omit it and the section simply has no
    *  tile — the landing is derived from whichever sections declare one. */
   landingTile?: LandingTile
+  /** How this section's listing renders its rows. Data, like `landingTile`:
+   *  core owns every layout and a module names the one that suits its
+   *  content, rather than shipping a component.
+   *
+   *  - `cards`   — the default grid. Good for short, self-describing entries.
+   *  - `table`   — a dense row per resource. For a catalog people scan and
+   *                compare rather than browse.
+   *  - `grouped` — cards under a heading per value of `groupBy`, which must
+   *                name a `select` meta field on this section. */
+  listing?: { kind: 'cards' | 'table' } | { kind: 'grouped'; groupBy: string }
   /** Which `meta` fields this section's listing filters on, as chips with
    *  live counts. Names entries in this section's own `metaFields`, the same
    *  way `landingTile.fields` does — so a facet's label and its options come

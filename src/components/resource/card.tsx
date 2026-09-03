@@ -35,14 +35,14 @@ export async function ResourceCard({
       href={`${section.path}/${resource.slug}`}
       className="group focus-visible:outline-none"
     >
-      <Card className="h-full transition-colors group-hover:border-foreground/20 group-focus-visible:ring-2 group-focus-visible:ring-ring">
+      <Card className="h-full transition-colors group-hover:border-brand-3 group-hover:bg-surface-hover group-focus-visible:ring-2 group-focus-visible:ring-ring">
         <CardHeader>
           {showSection ? (
-            <div className="mb-1 font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
+            <div className="mb-1 font-mono text-[10px] tracking-[0.1em] text-faint uppercase">
               {label(sectionTitleKey(section.key))}
             </div>
           ) : null}
-          <CardTitle className="flex items-start justify-between gap-2 text-base">
+          <CardTitle className="flex items-start justify-between gap-2 text-[15px] font-semibold">
             <span>{resource.title}</span>
             {resource.isFallback ? (
               <Badge variant="outline" className="shrink-0 font-normal">
@@ -51,14 +51,14 @@ export async function ResourceCard({
             ) : null}
           </CardTitle>
           {resource.summary ? (
-            <CardDescription className="line-clamp-2">
+            <CardDescription className="line-clamp-2 text-[13px] leading-relaxed">
               {resource.summary}
             </CardDescription>
           ) : null}
           {resource.tags.length > 0 ? (
             <div className="mt-1 flex flex-wrap gap-1.5">
               {resource.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="font-normal">
+                <Badge key={tag} variant="outline">
                   {tag}
                 </Badge>
               ))}
