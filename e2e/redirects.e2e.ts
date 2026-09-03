@@ -22,8 +22,8 @@ test('a redirect keeps its query string', async ({ page }) => {
 test('a moved detail link lands on the new gated URL, not the old one', async ({
   page,
 }) => {
-  await page.goto('/en/help/courses/prompt-engineering-101/2')
+  await page.goto('/en/help/courses/shipping-a-new-service/2')
   await expect(page).toHaveURL(
-    /\/en\/sign-in\?next=%2Fen%2Fstart%2Fprompt-engineering-101%2F2$/,
+    /\/en\/sign-in\?next=%2Fen%2Fstart%2Fshipping-a-new-service%2F2$/,
   )
 })

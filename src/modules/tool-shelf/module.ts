@@ -69,6 +69,9 @@ export const toolShelf = defineModule({
           options: options('category', CATEGORIES),
         },
         {
+          // "Maturity", not "Status": the admin form already has a Status
+          // select for draft/published, and two of them on one page is a
+          // trap for whoever is publishing.
           name: 'maturity',
           kind: 'select',
           labelKey: 'meta.maturity',

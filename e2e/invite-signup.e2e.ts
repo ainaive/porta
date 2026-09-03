@@ -33,10 +33,8 @@ test('invite → member signup → member is gated from admin', async ({
   await expect(memberPage).toHaveURL(/\/en$/)
 
   // Members can open gated details…
-  await memberPage.goto('/en/tools/silicon-cli')
-  await expect(
-    memberPage.getByRole('heading', { name: 'Silicon CLI' }),
-  ).toBeVisible()
+  await memberPage.goto('/en/tools/forge')
+  await expect(memberPage.getByRole('heading', { name: 'Forge' })).toBeVisible()
 
   // …but the admin area 404s for them (concealment, not a redirect).
   await memberPage.goto('/en/admin')

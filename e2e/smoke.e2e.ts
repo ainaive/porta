@@ -3,34 +3,58 @@ import { expect, test } from '@playwright/test'
 test.describe('public smoke', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('home renders hero, bento, and latest additions', async ({ page }) => {
+  test('home renders every band of the overview', async ({ page }) => {
     await page.goto('/en')
-    // Asserted line by line: the headline is one h1 split across two spans,
-    // so its accessible name depends on how the two are joined.
-    const hero = page.getByRole('heading', { level: 1 })
-    await expect(hero).toContainText('One portal')
-    await expect(hero).toContainText('the entire toolchain')
-    await expect(
-      page.getByRole('heading', { name: 'Every resource, one system' }),
-    ).toBeVisible()
-    await expect(page.getByText('Latest additions')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      'Every tool, guide and session',
+    )
+    // The bands are h2s, so the page still reads as an outline.
+    for (const band of [
+      'Start here',
+      'Recently added',
+      'Next up',
+      'The catalog',
+    ]) {
+      await expect(page.getByRole('heading', { name: band })).toBeVisible()
+    }
     // The footer is rendered by the shared layout, so this covers every page.
     await expect(page.getByRole('contentinfo')).toBeVisible()
   })
 
-  // Guards the rule in ADR 0008: the imported design advertised SSO, a ⌘K
-  // global search, a `porta keys create` CLI and course progress, none of
-  // which exist. Re-pasting that copy should fail rather than ship.
-  test('landing claims nothing the product does not do', async ({ page }) => {
+  test('the hero search box reaches the global search', async ({ page }) => {
+    // A plain GET form, so this also proves the main path needs no
+    // JavaScript beyond what the browser does for a form.
     await page.goto('/en')
-    for (const claim of [
-      'Sign in with SSO',
-      '⌘K',
-      'porta keys create',
-      'OPERATIONAL',
-      'completed',
-    ]) {
-      await expect(page.getByText(claim)).toHaveCount(0)
+    await page.getByRole('searchbox', { name: 'Search' }).fill('forge')
+    await page.getByRole('button', { name: 'Search' }).click()
+    await expect(page).toHaveURL(/\/en\/search\?q=forge$/)
+    await expect(
+      page.getByRole('main').getByRole('link', { name: /Forge/ }),
+    ).toBeVisible()
+  })
+
+  // Guards the rule in ADR 0008, re-aimed at the design this page came from.
+  // That artboard was a mock of a fictional product — a `wb` CLI with an
+  // install script, a "Workbench" wordmark, per-tool install counts and
+  // quarterly CLI telemetry. None of it exists. Re-pasting that copy should
+  // fail rather than ship.
+  test('the overview claims nothing the product does not do', async ({
+    page,
+  }) => {
+    for (const path of ['/en', '/en/adoption', '/en/start']) {
+      await page.goto(path)
+      for (const claim of [
+        'wb install',
+        'wb doctor',
+        'wb login',
+        'Workbench',
+        'all systems nominal',
+        'Active CLI users',
+        'Median CI duration',
+        'Drop-off at install',
+      ]) {
+        await expect(page.getByText(claim)).toHaveCount(0)
+      }
     }
   })
 
@@ -42,63 +66,54 @@ test.describe('public smoke', () => {
     await page.getByRole('button', { name: 'Menu' }).click()
     await page
       .getByRole('dialog')
-      .getByRole('link', { name: 'Help & Tutorials' })
+      .getByRole('link', { name: 'Docs & guides' })
       .click()
-    await expect(page).toHaveURL(/\/en\/help$/)
+    await expect(page).toHaveURL(/\/en\/docs$/)
   })
 
   test('every section listing responds', async ({ page }) => {
     for (const [path, heading] of [
       ['/en/tools', 'Tool catalog'],
-      ['/en/docs', 'Help & Tutorials'],
-      ['/en/start', 'Getting started'],
       ['/en/docs', 'Docs & guides'],
+      ['/en/start', 'Getting started'],
+      ['/en/events', 'Events & workshops'],
+      ['/en/adoption', 'Adoption'],
     ] as const) {
       await page.goto(path)
       await expect(page.getByRole('heading', { name: heading })).toBeVisible()
     }
   })
 
-  test('the bento shows a tile for every section that has content', async ({
-    page,
-  }) => {
-    // The tiles are derived from the registry (ADR 0015). Before that they
-    // were hardcoded and guides could not appear here at all — so this
-    // asserts the one that used to be impossible.
+  test('the overview links into every section it shows', async ({ page }) => {
     await page.goto('/en')
-    for (const tile of [
-      'Tools directory',
-      'Getting started',
-      'Docs & guides',
-    ]) {
-      await expect(page.getByRole('heading', { name: tile })).toBeVisible()
-    }
+    const main = page.getByRole('main')
+
+    // "Start here" is fed by the published tracks, so the first card has to
+    // reach a track detail page rather than a hand-written destination.
+    await main.getByRole('link').filter({ hasText: /^0\d/ }).first().click()
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fen%2Fstart%2F.+/)
+
+    await page.goto('/en')
+    await main.getByRole('link', { name: 'All events' }).click()
+    await expect(page).toHaveURL(/\/en\/events$/)
+
+    await page.goto('/en')
+    await main.getByRole('link', { name: 'Adoption in detail' }).click()
+    await expect(page).toHaveURL(/\/en\/adoption$/)
   })
 
-  test('a tile links to its section, and a list tile links each resource', async ({
+  test('the adoption page counts the catalog and invents nothing', async ({
     page,
   }) => {
-    await page.goto('/en')
-    // The tools tile takes no whole-tile link precisely so that the anchors
-    // inside it stay clickable — an inset overlay would swallow them. Which
-    // three tools it shows is whatever is newest, and other specs publish
-    // resources, so click into the tile rather than naming one.
-    const toolsTile = page
-      .getByRole('heading', { name: 'Tools directory' })
-      .locator('..')
-    await toolsTile.getByRole('link').first().click()
-    // This block is signed out, so a tool detail page bounces to sign-in —
-    // and `next` carries the path proving which link took the click.
-    await expect(page).toHaveURL(/\/sign-in\?next=%2Fen%2Ftools%2F.+/)
-
-    await page.goto('/en')
-    // Scoped to main: "Getting started" is also a header nav item and a
-    // footer link, so an unscoped match is ambiguous.
-    await page
-      .getByRole('main')
-      .getByRole('link', { name: 'Getting started' })
-      .click()
-    await expect(page).toHaveURL(/\/en\/start$/)
+    await page.goto('/en/adoption')
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      'Adoption',
+    )
+    await expect(
+      page.getByRole('heading', { name: /Coverage by section/ }),
+    ).toBeVisible()
+    // Every section with content gets a coverage row.
+    await expect(page.getByText('Tool catalog')).not.toHaveCount(0)
   })
 
   test('draft resources never surface publicly', async ({ page }) => {
@@ -123,9 +138,9 @@ test.describe('public smoke', () => {
   })
 
   test('section search filters the listing', async ({ page }) => {
-    await page.goto('/en/tools?q=dashboard')
-    await expect(page.getByText('CI Dashboard')).toBeVisible()
-    await expect(page.getByText('Silicon CLI')).toHaveCount(0)
+    await page.goto('/en/tools?q=trace')
+    await expect(page.getByText('Lens')).toBeVisible()
+    await expect(page.getByText('Gatekeeper')).toHaveCount(0)
 
     // A query that matches nothing lands on the empty state.
     await page.goto('/en/tools?q=zzzznomatchzzzz')
@@ -134,20 +149,20 @@ test.describe('public smoke', () => {
 })
 
 test.describe('signed in', () => {
-  test('course chapters navigate with prev/next', async ({ page }) => {
-    await page.goto('/en/start/prompt-engineering-101')
-    await page.getByRole('link', { name: /Why prompts matter/ }).click()
-    await expect(page).toHaveURL(/\/start\/prompt-engineering-101\/1$/)
+  test('track steps navigate with prev/next', async ({ page }) => {
+    await page.goto('/en/start/shipping-a-new-service')
+    await page.getByRole('link', { name: /Scaffold with Forge/ }).click()
+    await expect(page).toHaveURL(/\/start\/shipping-a-new-service\/1$/)
     await page.getByRole('link', { name: /Next/ }).click()
-    await expect(page).toHaveURL(/\/start\/prompt-engineering-101\/2$/)
+    await expect(page).toHaveURL(/\/start\/shipping-a-new-service\/2$/)
   })
 
-  test('a non-numeric chapter segment shows not-found, not chapter 1', async ({
+  test('a non-numeric step segment shows not-found, not step 1', async ({
     page,
   }) => {
     // Dynamic/streaming pages can't rewind an already-committed 200, so assert
     // the not-found UI renders (the codebase's convention) rather than status.
-    await page.goto('/en/start/prompt-engineering-101/1abc')
+    await page.goto('/en/start/shipping-a-new-service/1abc')
     await expect(page.getByText('Page not found')).toBeVisible()
   })
 

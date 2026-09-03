@@ -256,6 +256,35 @@ export async function listPublishedTags(type: ResourceType): Promise<string[]> {
   return [...new Set(rows.flatMap((r) => r.tags))].sort()
 }
 
+/** The soonest published sessions, today onwards.
+ *
+ *  Ordered on `meta.date`, which is a `YYYY-MM-DD` string — so it sorts and
+ *  compares lexicographically, which for a zero-padded ISO day is the same as
+ *  chronologically. That is the whole reason the field is stored that way
+ *  rather than as a timestamp. */
+export async function listUpcomingEvents(
+  locale: Locale,
+  limit = 3,
+  today = new Date().toISOString().slice(0, 10),
+): Promise<TranslatedResource[]> {
+  const rows = await db
+    .select({ resource: resources, translation: resourceTranslations })
+    .from(resources)
+    .leftJoin(
+      resourceTranslations,
+      eq(resourceTranslations.resourceId, resources.id),
+    )
+    .where(
+      and(
+        eq(resources.type, 'event'),
+        eq(resources.status, 'published'),
+        sql`${resources.meta}->>'date' >= ${today}`,
+      ),
+    )
+    .orderBy(sql`${resources.meta}->>'date' asc`, resources.id)
+  return groupResources(rows, locale).slice(0, limit)
+}
+
 export type SectionAdoption = {
   type: ResourceType
   published: number

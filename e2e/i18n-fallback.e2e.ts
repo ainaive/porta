@@ -9,11 +9,13 @@ test('zh chrome renders and en-only content is badged untranslated', async ({
   await page.goto('/zh/tools')
   // Scoped to the header: the footer carries the same section links.
   await expect(
-    page.getByRole('banner').getByRole('link', { name: '帮助与教程' }),
+    page.getByRole('banner').getByRole('link', { name: '文档与指南' }),
   ).toBeVisible()
 
-  // ci-dashboard is seeded English-only → falls back with a badge on /zh.
-  const card = page.getByRole('link', { name: /CI Dashboard/ })
+  // publishing-a-resource is seeded English-only → on /zh it falls back to
+  // the English text and is badged for it.
+  await page.goto('/zh/docs')
+  const card = page.getByRole('link', { name: /Publishing a resource/ })
   await expect(card).toContainText('未翻译')
 })
 
