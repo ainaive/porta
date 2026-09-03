@@ -14,6 +14,36 @@
   "documentation": "Documentation",
   "meta": {
     "url": "URL",
-    "docsUrl": "Docs URL"
+    "docsUrl": "Docs URL",
+    "category": "Category",
+    "maturity": "Status",
+    "language": "Language"
+  },
+  "values": {
+    "category": {
+      "build": "Build",
+      "cicd": "CI/CD",
+      "observability": "Observability",
+      "testing": "Testing",
+      "security": "Security",
+      "data": "Data",
+      "platform": "Platform",
+      "runtime": "Runtime",
+      "environments": "Environments",
+      "finops": "FinOps"
+    },
+    "maturity": {
+      "ga": "GA",
+      "beta": "Beta",
+      "deprecated": "Deprecated"
+    },
+    "language": {
+      "go": "Go",
+      "typescript": "TypeScript",
+      "python": "Python",
+      "rust": "Rust",
+      "java": "Java",
+      "multi": "Multi"
+    }
   }
 }

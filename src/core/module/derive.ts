@@ -1,6 +1,7 @@
 import type {
   FeatureModule,
   MetaField,
+  MetaFieldOption,
   NavEntry,
   SectionDefinition,
 } from './define'
@@ -84,6 +85,15 @@ export function metaFieldLabelKey(
   field: MetaField,
 ): string {
   return messageKey(section.moduleId, field.labelKey)
+}
+
+/** The message key for one `<option>`, or `null` when the option's label is
+ *  literal and needs no translation. */
+export function metaFieldOptionLabelKey(
+  section: ResolvedSection,
+  option: MetaFieldOption,
+): string | null {
+  return option.labelKey ? messageKey(section.moduleId, option.labelKey) : null
 }
 
 // ---------- Navigation ----------

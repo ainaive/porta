@@ -45,7 +45,17 @@ function likePattern(query: string): string {
   return `%${query.replace(/[\\%_]/g, '\\$&')}%`
 }
 
-export type PublicFilters = { q?: string; tag?: string; page?: number }
+/** Active facet selections, keyed by the `meta` field name a section declared
+ *  in `facets`. Several values on one field are an OR; different fields AND
+ *  together, which is how a reader expects "Go tools that are GA" to behave. */
+export type FacetFilters = Readonly<Record<string, readonly string[]>>
+
+export type PublicFilters = {
+  q?: string
+  tag?: string
+  page?: number
+  facets?: FacetFilters
+}
 
 /** What every public read of the catalog has in common: published, actually
  *  renderable, and narrowed by whatever the visitor filtered on. The section
@@ -65,6 +75,16 @@ function publishedConditions(filters: PublicFilters): SQL[] {
     ),
   ]
   if (filters.tag) conditions.push(arrayContains(resources.tags, [filters.tag]))
+  for (const [field, values] of Object.entries(filters.facets ?? {})) {
+    if (values.length === 0) continue
+    // `->>` compares as text, which is what a select field stores. The field
+    // name reaches here from the section's own `facets` declaration, never
+    // from the query string, so it cannot be turned into an injection point —
+    // the values are parameterised either way.
+    conditions.push(
+      sql`${resources.meta}->>${field} in ${values}` as unknown as SQL,
+    )
+  }
   if (filters.q) {
     // Match a resource when any of its translations (either locale) contains
     // the query in title, summary, or body — searched in SQL, not after a
@@ -182,6 +202,48 @@ export async function searchPublished(
     locale,
     filters.page,
   )
+}
+
+/** How many published resources each value of each declared facet would
+ *  match, given every *other* active filter. Counting with the facet's own
+ *  selection excluded is what keeps its chips usable: a count that collapsed
+ *  to the current selection would read `Go 12` and every sibling `0`, and
+ *  there would be no way to see what widening the choice buys. */
+export async function listFacetCounts(
+  type: ResourceType,
+  fields: readonly string[],
+  filters: PublicFilters = {},
+): Promise<Record<string, Record<string, number>>> {
+  const entries = await Promise.all(
+    fields.map(async (field) => {
+      const others = Object.fromEntries(
+        Object.entries(filters.facets ?? {}).filter(([name]) => name !== field),
+      )
+      const rows = await db
+        .select({
+          value: sql<string | null>`${resources.meta}->>${field}`,
+          total: count(),
+        })
+        .from(resources)
+        .where(
+          and(
+            eq(resources.type, type),
+            ...publishedConditions({ ...filters, facets: others }),
+          ),
+        )
+        // Grouped by ordinal, not by repeating the expression: the field
+        // name binds as a parameter, and Postgres will not prove that
+        // `meta->>$1` in the select and `meta->>$4` in the GROUP BY are the
+        // same expression.
+        .groupBy(sql`1`)
+      const counts: Record<string, number> = {}
+      for (const row of rows) {
+        if (row.value !== null) counts[row.value] = row.total
+      }
+      return [field, counts] as const
+    }),
+  )
+  return Object.fromEntries(entries)
 }
 
 export async function listPublishedTags(type: ResourceType): Promise<string[]> {

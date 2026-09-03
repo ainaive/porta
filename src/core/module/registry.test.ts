@@ -5,6 +5,7 @@ import {
   gatedModulePatterns,
   messageKey,
   metaFieldLabelKey,
+  metaFieldOptionLabelKey,
   navEntries,
   sectionDescriptionKey,
   sectionForPath,
@@ -113,6 +114,20 @@ describe('registry shape', () => {
     }
   })
 
+  test('a facet names a select meta field its section declares', () => {
+    for (const section of sections) {
+      for (const name of section.facets ?? []) {
+        const field = section.metaFields.find((f) => f.name === name)
+        // A facet resolves its label and its whole option list through the
+        // matching MetaField. A name with no descriptor would render an empty
+        // chip row; a non-select one has no closed set of values to count.
+        expect({
+          [`${section.key}.${name}`]: field?.kind ?? 'missing',
+        }).toEqual({ [`${section.key}.${name}`]: 'select' })
+      }
+    }
+  })
+
   test('select fields declare at least one option', () => {
     for (const section of sections) {
       for (const field of section.metaFields) {
@@ -212,6 +227,13 @@ describe('message keys', () => {
                 messageKey(section.moduleId, tile.descriptionKey),
               ]
             : []),
+          // An option that translates its label names a key too, and it is
+          // the one a reader sees most often — every facet chip on a listing.
+          ...section.metaFields.flatMap((field) =>
+            (field.options ?? [])
+              .map((option) => metaFieldOptionLabelKey(section, option))
+              .filter((key): key is string => key !== null),
+          ),
         ]
         for (const key of referenced) {
           // A manifest may only name strings in its own namespace.

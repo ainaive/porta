@@ -49,6 +49,9 @@ const SEED: SeedResource[] = [
     slug: 'silicon-cli',
     tags: ['cli', 'devops'],
     meta: {
+      category: 'build',
+      maturity: 'ga',
+      language: 'go',
       url: 'https://example.com/silicon-cli',
       docsUrl: 'https://example.com/silicon-cli/docs',
     },
@@ -71,7 +74,12 @@ const SEED: SeedResource[] = [
     type: 'tool',
     slug: 'internal-mirror',
     tags: ['infra'],
-    meta: { url: 'https://mirror.example.internal' },
+    meta: {
+      category: 'platform',
+      maturity: 'ga',
+      language: 'multi',
+      url: 'https://mirror.example.internal',
+    },
     translations: [
       {
         locale: 'zh',
@@ -85,7 +93,12 @@ const SEED: SeedResource[] = [
     type: 'tool',
     slug: 'ci-dashboard',
     tags: ['devops', 'ci'],
-    meta: { url: 'https://ci.example.internal' },
+    meta: {
+      category: 'cicd',
+      maturity: 'beta',
+      language: 'typescript',
+      url: 'https://ci.example.internal',
+    },
     translations: [
       {
         locale: 'en',
@@ -112,7 +125,13 @@ const SEED: SeedResource[] = [
     type: 'track',
     slug: 'prompt-engineering-101',
     tags: ['llm', 'prompting'],
-    meta: { level: 'beginner', estimatedHours: 3 },
+    meta: {
+      category: 'testing',
+      maturity: 'beta',
+      language: 'python',
+      level: 'beginner',
+      estimatedHours: 3,
+    },
     translations: [
       {
         locale: 'en',

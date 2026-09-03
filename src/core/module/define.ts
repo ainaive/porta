@@ -7,9 +7,17 @@ import type { Locale } from '@/i18n/routing'
 // admin form renders from `metaFields` descriptors rather than from module
 // components — both break if a manifest drags rendering in with it.
 
-/** One `<option>` of a select-kind meta field. Labels are literal, not keys:
- *  they are proper nouns (YouTube, Bilibili) or the stored value itself. */
-export type MetaFieldOption = { value: string; label: string }
+/** One `<option>` of a select-kind meta field. `label` is literal, for values
+ *  that read the same in every locale — proper nouns (YouTube, Bilibili) or
+ *  the stored value itself. A field whose options are ordinary words needs
+ *  `labelKey` instead: it resolves against the owning module's namespace, and
+ *  it is what lets a facet chip say "Observability" in one locale and
+ *  "可观测性" in the other while the stored value stays stable. */
+export type MetaFieldOption = {
+  value: string
+  label: string
+  labelKey?: string
+}
 
 /** A type-specific field of `resources.meta`. Drives both the admin form and
  *  `parseMeta`, so a module adds a field without touching core. */
@@ -82,6 +90,13 @@ export type SectionDefinition = {
   /** This section's landing-page tile. Omit it and the section simply has no
    *  tile — the landing is derived from whichever sections declare one. */
   landingTile?: LandingTile
+  /** Which `meta` fields this section's listing filters on, as chips with
+   *  live counts. Names entries in this section's own `metaFields`, the same
+   *  way `landingTile.fields` does — so a facet's label and its options come
+   *  from the descriptor the admin form already renders and cannot drift
+   *  from it. Only `select` fields qualify: a facet needs a closed set of
+   *  values to count, and free text has none. */
+  facets?: readonly string[]
 }
 
 /** A top-level navigation entry. A module contributes as many as it needs —
