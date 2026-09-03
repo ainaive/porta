@@ -6,9 +6,9 @@ import type { ResourceType } from '../src/core/content/meta'
 import { db } from '../src/db'
 import { resources, resourceTranslations } from '../src/db/schema'
 import {
-  courseChapters,
-  courseChapterTranslations,
-} from '../src/modules/help/schema'
+  trackSteps,
+  trackStepTranslations,
+} from '../src/modules/handbook/schema'
 
 // The seed starts by deleting all content, and bun auto-loads .env — so a
 // production DATABASE_URL sitting in the environment must not be enough to
@@ -109,7 +109,7 @@ const SEED: SeedResource[] = [
     ],
   },
   {
-    type: 'course',
+    type: 'track',
     slug: 'prompt-engineering-101',
     tags: ['llm', 'prompting'],
     meta: { level: 'beginner', estimatedHours: 3 },
@@ -118,7 +118,7 @@ const SEED: SeedResource[] = [
         locale: 'en',
         title: 'Prompt Engineering 101',
         summary: 'A practical introduction to writing effective prompts.',
-        body: 'Three short chapters that take you from zero to productive prompting.',
+        body: 'Three short steps that take you from zero to productive prompting.',
       },
       {
         locale: 'zh',
@@ -129,7 +129,7 @@ const SEED: SeedResource[] = [
     ],
   },
   {
-    type: 'guide',
+    type: 'doc',
     slug: 'request-an-invite',
     tags: ['onboarding'],
     meta: { level: 'beginner' },
@@ -150,7 +150,7 @@ const SEED: SeedResource[] = [
     ],
   },
   {
-    type: 'guide',
+    type: 'doc',
     slug: 'publishing-a-resource',
     tags: ['admin'],
     meta: { level: 'intermediate' },
@@ -192,7 +192,7 @@ const COURSE_CHAPTERS = [
       title: 'Iterating and evaluating',
       body: 'Treat prompts like code: version, test, refine.',
     },
-    // Intentionally zh-untranslated to exercise chapter fallback.
+    // Intentionally zh-untranslated to exercise step fallback.
   },
 ]
 
@@ -222,29 +222,29 @@ async function seed() {
     )
 
     if (item.slug === 'prompt-engineering-101') {
-      for (const chapter of COURSE_CHAPTERS) {
+      for (const step of COURSE_CHAPTERS) {
         const [ch] = await db
-          .insert(courseChapters)
-          .values({ courseId: inserted.id, position: chapter.position })
-          .returning({ id: courseChapters.id })
+          .insert(trackSteps)
+          .values({ trackId: inserted.id, position: step.position })
+          .returning({ id: trackSteps.id })
         const rows = []
-        if (chapter.en) {
+        if (step.en) {
           rows.push({
-            chapterId: ch.id,
+            stepId: ch.id,
             locale: 'en' as const,
-            title: chapter.en.title,
-            body: chapter.en.body,
+            title: step.en.title,
+            body: step.en.body,
           })
         }
-        if ('zh' in chapter && chapter.zh) {
+        if ('zh' in step && step.zh) {
           rows.push({
-            chapterId: ch.id,
+            stepId: ch.id,
             locale: 'zh' as const,
-            title: chapter.zh.title,
-            body: chapter.zh.body,
+            title: step.zh.title,
+            body: step.zh.body,
           })
         }
-        await db.insert(courseChapterTranslations).values(rows)
+        await db.insert(trackStepTranslations).values(rows)
       }
     }
   }

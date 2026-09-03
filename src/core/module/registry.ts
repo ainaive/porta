@@ -1,4 +1,4 @@
-import { help } from '@/modules/help/module'
+import { handbook } from '@/modules/handbook/module'
 import { toolShelf } from '@/modules/tool-shelf/module'
 
 // The one file every module team shares: adding a module is one import and
@@ -9,6 +9,6 @@ import { toolShelf } from '@/modules/tool-shelf/module'
 // Kept free of JSX, database and server-only imports: `src/proxy.ts` reaches
 // this file through `gating.ts`, so whatever a manifest drags in ends up in
 // the middleware bundle.
-export const modules = [toolShelf, help] as const
+export const modules = [toolShelf, handbook] as const
 
 export type Modules = typeof modules

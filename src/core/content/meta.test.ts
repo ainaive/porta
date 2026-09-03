@@ -33,13 +33,13 @@ describe('parseMeta', () => {
   })
 
   test('coerces number fields and rejects NaN', () => {
-    const ok = parseMeta('course', form({ estimatedHours: '2.5' }))
+    const ok = parseMeta('track', form({ estimatedHours: '2.5' }))
     expect(ok.meta).toEqual({ estimatedHours: 2.5 })
 
-    const empty = parseMeta('course', form({ estimatedHours: '' }))
+    const empty = parseMeta('track', form({ estimatedHours: '' }))
     expect(empty.meta).toEqual({})
 
-    const bad = parseMeta('course', form({ estimatedHours: 'many' }))
+    const bad = parseMeta('track', form({ estimatedHours: 'many' }))
     expect(bad.error).toContain('estimatedHours')
   })
 

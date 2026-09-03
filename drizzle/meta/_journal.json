@@ -43,6 +43,13 @@
       "when": 1787362935801,
       "tag": "0005_retire_ai_eval_and_video",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787366535801,
+      "tag": "0006_rename_sections_and_steps",
+      "breakpoints": true
     }
   ]
 }

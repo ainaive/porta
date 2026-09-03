@@ -1,0 +1,43 @@
+{
+  "docs": {
+    "nav": "Docs & guides",
+    "title": "Docs & guides",
+    "description": "Reference lives next to the tool it documents. These are the cross-cutting guides — the things nobody owns but everybody needs.",
+    "landing": {
+      "title": "Docs & guides",
+      "description": "Task-shaped walkthroughs and the reference behind them, tagged and searchable alongside everything else."
+    }
+  },
+  "tracks": {
+    "nav": "Getting started",
+    "title": "Getting started",
+    "description": "Tracks depending on why you're here. Each one ends with something running, not something read.",
+    "landing": {
+      "title": "Getting started",
+      "description": "Guided tracks split into ordered steps you can link straight into."
+    }
+  },
+  "groups": {
+    "foundations": "Foundations",
+    "guides": "Guides",
+    "working-with-us": "Working with us"
+  },
+  "steps": "Steps",
+  "previousStep": "Previous",
+  "nextStep": "Next",
+  "level": "Level",
+  "levels": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "estimatedHours": "~{hours} h",
+  "source": "Source",
+  "meta": {
+    "level": "Level",
+    "hours": "Estimated hours",
+    "group": "Group",
+    "readingTime": "Reading time",
+    "sourceUrl": "Source URL"
+  }
+}

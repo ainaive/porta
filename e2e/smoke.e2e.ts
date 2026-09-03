@@ -50,9 +50,9 @@ test.describe('public smoke', () => {
   test('every section listing responds', async ({ page }) => {
     for (const [path, heading] of [
       ['/en/tools', 'Tool Shelf'],
-      ['/en/help', 'Help & Tutorials'],
-      ['/en/help/courses', 'Courses'],
-      ['/en/help/guides', 'Guides'],
+      ['/en/docs', 'Help & Tutorials'],
+      ['/en/start', 'Getting started'],
+      ['/en/docs', 'Docs & guides'],
     ] as const) {
       await page.goto(path)
       await expect(page.getByRole('heading', { name: heading })).toBeVisible()
@@ -68,8 +68,8 @@ test.describe('public smoke', () => {
     await page.goto('/en')
     for (const tile of [
       'Tools directory',
-      'Courses and chapters',
-      'Written guides',
+      'Getting started',
+      'Docs & guides',
     ]) {
       await expect(page.getByRole('heading', { name: tile })).toBeVisible()
     }
@@ -92,8 +92,13 @@ test.describe('public smoke', () => {
     await expect(page).toHaveURL(/\/sign-in\?next=%2Fen%2Ftools%2F.+/)
 
     await page.goto('/en')
-    await page.getByRole('link', { name: 'Courses and chapters' }).click()
-    await expect(page).toHaveURL(/\/en\/help\/courses$/)
+    // Scoped to main: "Getting started" is also a header nav item and a
+    // footer link, so an unscoped match is ambiguous.
+    await page
+      .getByRole('main')
+      .getByRole('link', { name: 'Getting started' })
+      .click()
+    await expect(page).toHaveURL(/\/en\/start$/)
   })
 
   test('draft resources never surface publicly', async ({ page }) => {
@@ -130,11 +135,11 @@ test.describe('public smoke', () => {
 
 test.describe('signed in', () => {
   test('course chapters navigate with prev/next', async ({ page }) => {
-    await page.goto('/en/help/courses/prompt-engineering-101')
+    await page.goto('/en/start/prompt-engineering-101')
     await page.getByRole('link', { name: /Why prompts matter/ }).click()
-    await expect(page).toHaveURL(/\/help\/courses\/prompt-engineering-101\/1$/)
+    await expect(page).toHaveURL(/\/start\/prompt-engineering-101\/1$/)
     await page.getByRole('link', { name: /Next/ }).click()
-    await expect(page).toHaveURL(/\/help\/courses\/prompt-engineering-101\/2$/)
+    await expect(page).toHaveURL(/\/start\/prompt-engineering-101\/2$/)
   })
 
   test('a non-numeric chapter segment shows not-found, not chapter 1', async ({
@@ -142,7 +147,7 @@ test.describe('signed in', () => {
   }) => {
     // Dynamic/streaming pages can't rewind an already-committed 200, so assert
     // the not-found UI renders (the codebase's convention) rather than status.
-    await page.goto('/en/help/courses/prompt-engineering-101/1abc')
+    await page.goto('/en/start/prompt-engineering-101/1abc')
     await expect(page.getByText('Page not found')).toBeVisible()
   })
 

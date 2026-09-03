@@ -33,7 +33,7 @@ describe('sectionTiles', () => {
   test('suppresses a declared tile whose section has nothing published', () => {
     const registered = [
       section('tool', { kind: 'list', titleKey: 't', descriptionKey: 'd' }),
-      section('guide', { kind: 'stat', titleKey: 't', descriptionKey: 'd' }),
+      section('doc', { kind: 'stat', titleKey: 't', descriptionKey: 'd' }),
     ]
     const counts: Record<string, number> = { tool: 3, guide: 0 }
     const tiles = sectionTiles((key) => counts[key] ?? 0, registered)
@@ -57,12 +57,12 @@ describe('sectionTiles', () => {
   test('preserves registry order', () => {
     const tile = { kind: 'stat', titleKey: 't', descriptionKey: 'd' } as const
     const registered = [
-      section('guide', tile),
+      section('doc', tile),
       section('tool', tile),
-      section('course', tile),
+      section('track', tile),
     ]
     expect(sectionTiles(() => 1, registered).map((t) => t.section.key)).toEqual(
-      ['guide', 'tool', 'course'],
+      ['doc', 'tool', 'track'],
     )
   })
 })
