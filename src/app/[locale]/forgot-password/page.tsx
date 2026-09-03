@@ -15,7 +15,9 @@ export default async function ForgotPasswordPage() {
     <main className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>{t('forgotTitle')}</CardTitle>
+          <CardTitle className="text-lg font-semibold tracking-[-0.015em]">
+            {t('forgotTitle')}
+          </CardTitle>
           <CardDescription>{t('forgotDescription')}</CardDescription>
         </CardHeader>
         <CardContent>

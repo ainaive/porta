@@ -23,7 +23,9 @@ export default async function ResetPasswordPage({
     <main className="flex flex-1 items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>{t('resetTitle')}</CardTitle>
+          <CardTitle className="text-lg font-semibold tracking-[-0.015em]">
+            {t('resetTitle')}
+          </CardTitle>
           <CardDescription>{t('resetDescription')}</CardDescription>
         </CardHeader>
         <CardContent>

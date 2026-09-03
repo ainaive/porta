@@ -63,7 +63,7 @@ export function SignInForm() {
         </Button>
         <Link
           href="/forgot-password"
-          className="text-center text-sm text-muted-foreground hover:text-foreground"
+          className="text-center text-sm text-brand hover:underline"
         >
           {t('forgotLink')}
         </Link>
