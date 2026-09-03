@@ -18,8 +18,7 @@ describe('isGatedPath', () => {
   test.each([
     '/en/tools/silicon-cli',
     '/zh/help/courses/some-course/2',
-    '/help/videos/clip',
-    '/en/evals/models/claude-api',
+    '/help/guides/some-guide',
     '/en/admin',
     '/zh/admin/',
     '/admin/resources/abc',
@@ -34,7 +33,6 @@ describe('isGatedPath', () => {
     '/zh/help/courses',
     // A module's base path is an index, not a section listing — public.
     '/en/help',
-    '/zh/evals',
     '/en',
     '/',
     '/en/sign-in',

@@ -1,49 +1,14 @@
 import { z } from 'zod'
 import { defineModule } from '@/core/module/define'
 
-// Help & Tutorials: video courses, standalone teaching videos, and written
-// guides. Courses are the only section with sub-structure — chapters, which
-// this module owns outright (schema.ts, chapters.ts, actions.ts).
+// Help & Tutorials: courses and written guides. Courses are the only section
+// with sub-structure — chapters, which this module owns outright (schema.ts,
+// chapters.ts, actions.ts).
 
 export const courseMeta = z.object({
   level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   estimatedHours: z.number().positive().optional(),
 })
-
-// The origins this module will render in an iframe, per provider. One list
-// feeds two things that must never disagree: the CSP's `frame-src` (via the
-// manifest's `frameSrc` below) and the validation of `embedUrl`. A host the
-// browser would refuse to frame should not be storable in the first place.
-export const VIDEO_PROVIDER_ORIGINS = {
-  youtube: ['https://www.youtube.com', 'https://www.youtube-nocookie.com'],
-  bilibili: ['https://player.bilibili.com'],
-} as const
-
-// `provider` is a promise about where the URL points; without this refinement
-// it was decoration, and any URL an admin pasted went straight into an
-// iframe. Cross-checking the two also keeps the stored data inside what the
-// CSP's frame-src permits — otherwise the fault surfaces as a blank player
-// long after the save that caused it.
-export const videoMeta = z
-  .object({
-    provider: z.enum(['youtube', 'bilibili']),
-    embedUrl: z.url(),
-    duration: z.string().optional(),
-  })
-  .superRefine(({ provider, embedUrl }, ctx) => {
-    const allowed = VIDEO_PROVIDER_ORIGINS[provider]
-    // URL.parse returns null instead of throwing; z.url() has already run, so
-    // this is belt-and-braces for an input it would accept and WHATWG won't.
-    const origin = URL.parse(embedUrl)?.origin
-    if (origin && (allowed as readonly string[]).includes(origin)) return
-    ctx.addIssue({
-      code: 'custom',
-      path: ['embedUrl'],
-      // Name the origins rather than saying "invalid": the admin pasting a
-      // watch?v= link needs to be told the embed form exists.
-      message: `must be hosted by ${provider} (${allowed.join(' or ')})`,
-    })
-  })
 
 export const guideMeta = z.object({
   level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
@@ -51,7 +16,6 @@ export const guideMeta = z.object({
 })
 
 export type CourseMeta = z.infer<typeof courseMeta>
-export type VideoMeta = z.infer<typeof videoMeta>
 export type GuideMeta = z.infer<typeof guideMeta>
 
 const levelField = {
@@ -93,43 +57,6 @@ export const help = defineModule({
       },
     },
     {
-      key: 'video',
-      path: '/help/videos',
-      titleKey: 'videos.title',
-      descriptionKey: 'videos.description',
-      meta: videoMeta,
-      metaFields: [
-        {
-          name: 'provider',
-          kind: 'select',
-          labelKey: 'meta.provider',
-          required: true,
-          options: [
-            { value: 'youtube', label: 'YouTube' },
-            { value: 'bilibili', label: 'Bilibili' },
-          ],
-        },
-        {
-          name: 'embedUrl',
-          kind: 'text',
-          labelKey: 'meta.embedUrl',
-          required: true,
-          span: 'full',
-        },
-        {
-          name: 'duration',
-          kind: 'text',
-          labelKey: 'meta.duration',
-          placeholder: '12:34',
-        },
-      ],
-      landingTile: {
-        kind: 'stat',
-        titleKey: 'videos.landing.title',
-        descriptionKey: 'videos.landing.description',
-      },
-    },
-    {
       key: 'guide',
       path: '/help/guides',
       titleKey: 'guides.title',
@@ -146,15 +73,8 @@ export const help = defineModule({
       },
     },
   ],
-  // Courses and videos were top-level sections before this module existed.
-  redirects: [
-    { from: '/courses', to: '/help/courses' },
-    { from: '/videos', to: '/help/videos' },
-  ],
-  // Video detail pages iframe the provider. Declaring the origins here is what
-  // widens the CSP's frame-src — no other module can, and this one stops
-  // widening it the day it stops embedding.
-  frameSrc: Object.values(VIDEO_PROVIDER_ORIGINS).flat(),
+  // Courses were a top-level section before this module existed.
+  redirects: [{ from: '/courses', to: '/help/courses' }],
   messages: {
     en: () => import('./messages/en.json'),
     zh: () => import('./messages/zh.json'),

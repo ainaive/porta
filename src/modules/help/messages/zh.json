@@ -4,7 +4,7 @@
   },
   "index": {
     "title": "帮助与教程",
-    "description": "上手这套工具链：视频课程、内部分享录像与文字指南。"
+    "description": "上手这套工具链：结构化课程与文字指南。"
   },
   "courses": {
     "title": "课程",
@@ -12,14 +12,6 @@
     "landing": {
       "title": "课程与章节",
       "description": "体系化的学习路径，拆分为有序章节，可直接链接到任意一章。"
-    }
-  },
-  "videos": {
-    "title": "视频",
-    "description": "教学视频与内部分享录像。",
-    "landing": {
-      "title": "教学视频",
-      "description": "内部分享录像与操作演示，内嵌 YouTube 与哔哩哔哩播放。"
     }
   },
   "guides": {
@@ -44,9 +36,6 @@
   "meta": {
     "level": "难度",
     "hours": "预计学时",
-    "provider": "提供方",
-    "embedUrl": "嵌入 URL",
-    "duration": "时长",
     "sourceUrl": "来源 URL"
   }
 }

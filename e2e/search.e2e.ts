@@ -17,22 +17,20 @@ test.describe('global search', () => {
   test('one query finds resources in more than one section', async ({
     page,
   }) => {
-    // "silicon" appears in a tool's title and in a video's — sections owned by
-    // two different modules. Per-section search could never return both.
+    // "silicon" appears in a tool's summary and in a guide's — sections owned
+    // by two different modules. Per-section search could never return both.
     await page.goto('/en/search?q=silicon')
     const results = page.getByRole('main')
     // Scoped to main: the section names also appear in the header nav, the
     // footer and the filter chips, so an unscoped match is ambiguous.
     const tool = results.getByRole('link', { name: /Silicon CLI/ })
-    const video = results.getByRole('link', {
-      name: /Getting started with Silicon Ecosystem/,
-    })
+    const guide = results.getByRole('link', { name: /Requesting an invite/ })
     await expect(tool).toBeVisible()
-    await expect(video).toBeVisible()
+    await expect(guide).toBeVisible()
     // Cards from a cross-section result have to name their section — a title
-    // alone does not say whether you found a tool or the video about it.
+    // alone does not say whether you found a tool or the guide about it.
     await expect(tool).toContainText('Tool Shelf')
-    await expect(video).toContainText('Videos')
+    await expect(guide).toContainText('Guides')
   })
 
   test('a signed-out visitor can search and reach the sign-in wall', async ({
@@ -49,14 +47,12 @@ test.describe('global search', () => {
 
   test('the section filter narrows the results', async ({ page }) => {
     await page.goto('/en/search?q=silicon')
-    await filters(page).getByRole('link', { name: 'Videos' }).click()
-    await expect(page).toHaveURL(/type=video/)
+    await filters(page).getByRole('link', { name: 'Guides' }).click()
+    await expect(page).toHaveURL(/type=guide/)
 
     const results = page.getByRole('main')
     await expect(
-      results.getByRole('link', {
-        name: /Getting started with Silicon Ecosystem/,
-      }),
+      results.getByRole('link', { name: /Requesting an invite/ }),
     ).toBeVisible()
     await expect(
       results.getByRole('link', { name: /Silicon CLI/ }),
@@ -67,15 +63,7 @@ test.describe('global search', () => {
     await page.goto('/en/search?q=silicon')
     // Derived from the registry, so this is the guard against the chips
     // drifting back into a hand-kept list.
-    for (const section of [
-      'Tool Shelf',
-      'Agents',
-      'Models',
-      'Reports',
-      'Courses',
-      'Videos',
-      'Guides',
-    ]) {
+    for (const section of ['Tool Shelf', 'Courses', 'Guides']) {
       await expect(
         filters(page).getByRole('link', { name: section, exact: true }),
       ).toBeVisible()

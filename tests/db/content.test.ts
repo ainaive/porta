@@ -228,16 +228,14 @@ describe('getHomeOverview', () => {
     await insertResource('c1', [{ locale: 'en', title: 'Course 1' }], {
       type: 'course',
     })
-    await insertResource('v1', [{ locale: 'en', title: 'Video 1' }], {
-      type: 'video',
+    await insertResource('g1', [{ locale: 'en', title: 'Guide 1' }], {
+      type: 'guide',
     })
 
     const { sections } = await getHomeOverview('en')
     expect(sections.tool.count).toBe(2)
     expect(sections.course.count).toBe(1)
-    expect(sections.video.count).toBe(1)
-    // Every type has an entry even with nothing published for it.
-    expect(sections.model).toEqual({ count: 0, items: [] })
+    expect(sections.guide.count).toBe(1)
   })
 
   test('counts only what a visitor can reach', async () => {
@@ -347,9 +345,9 @@ describe('searchPublished', () => {
       { type: 'course' },
     )
     await insertResource(
-      'deploy-video',
+      'deploy-guide',
       [{ locale: 'en', title: 'Deploying in practice' }],
-      { type: 'video' },
+      { type: 'guide' },
     )
     await insertResource('unrelated', [
       { locale: 'en', title: 'Something else' },
@@ -359,8 +357,8 @@ describe('searchPublished', () => {
     expect(total).toBe(3)
     expect(items.map((item) => item.type).sort()).toEqual([
       'course',
+      'guide',
       'tool',
-      'video',
     ])
   })
 
@@ -384,7 +382,7 @@ describe('searchPublished', () => {
     await insertResource(
       'gateway',
       [{ locale: 'zh', title: '内部推理网关', body: 'OpenAI 协议兼容' }],
-      { type: 'model' },
+      { type: 'guide' },
     )
 
     const byBody = await searchPublished('en', { q: 'openai' })
@@ -416,7 +414,7 @@ describe('searchPublished', () => {
   })
 
   test('paginates across sections and clamps an out-of-range page', async () => {
-    const types = ['tool', 'course', 'video'] as const
+    const types = ['tool', 'course', 'guide'] as const
     for (let i = 0; i < PAGE_SIZE + 3; i++) {
       await insertResource(
         `match-${i}`,

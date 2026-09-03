@@ -4,6 +4,11 @@ import { parseMeta, resourceTypes, slugSchema } from './meta'
 // The per-section zod schemas are tested by the modules that own them
 // (src/modules/*/module.test.ts). What is tested here is the generic
 // write-time path: form fields → candidate object → the module's schema.
+//
+// `parseMeta` reads the live registry, so a MetaField kind can only be
+// exercised here while some registered section uses it. The `lines` kind
+// currently has no consumer and is covered by no test — like `frameSrc`, it
+// stays a supported seam rather than being removed for want of a caller.
 
 function form(entries: Record<string, string>): FormData {
   const data = new FormData()
@@ -27,29 +32,6 @@ describe('parseMeta', () => {
     expect(error).toContain('url')
   })
 
-  test('parses lines fields, keeping | inside URLs', () => {
-    const { meta, error } = parseMeta(
-      'model',
-      form({
-        links: [
-          'Docs | https://example.com/docs',
-          '',
-          '  Weird | https://example.com/a|b  ',
-        ].join('\n'),
-      }),
-    )
-    expect(error).toBeUndefined()
-    expect(meta?.links).toEqual([
-      { label: 'Docs', url: 'https://example.com/docs' },
-      { label: 'Weird', url: 'https://example.com/a|b' },
-    ])
-  })
-
-  test('rejects a link line without a URL', () => {
-    const { error } = parseMeta('model', form({ links: 'just a label' }))
-    expect(error).toContain('links')
-  })
-
   test('coerces number fields and rejects NaN', () => {
     const ok = parseMeta('course', form({ estimatedHours: '2.5' }))
     expect(ok.meta).toEqual({ estimatedHours: 2.5 })
@@ -59,13 +41,6 @@ describe('parseMeta', () => {
 
     const bad = parseMeta('course', form({ estimatedHours: 'many' }))
     expect(bad.error).toContain('estimatedHours')
-  })
-
-  test('required fields submit empty strings so the schema can reject them', () => {
-    // `video.embedUrl` is required: an empty input must fail validation
-    // rather than silently drop out of the object.
-    const { error } = parseMeta('video', form({ provider: 'youtube' }))
-    expect(error).toContain('embedUrl')
   })
 
   test('an unregistered section is rejected, not stored', () => {

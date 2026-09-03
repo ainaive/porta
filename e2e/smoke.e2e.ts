@@ -52,12 +52,7 @@ test.describe('public smoke', () => {
       ['/en/tools', 'Tool Shelf'],
       ['/en/help', 'Help & Tutorials'],
       ['/en/help/courses', 'Courses'],
-      ['/en/help/videos', 'Videos'],
       ['/en/help/guides', 'Guides'],
-      ['/en/evals', 'AI Evaluation'],
-      ['/en/evals/agents', 'Agents'],
-      ['/en/evals/models', 'Models'],
-      ['/en/evals/reports', 'Reports'],
     ] as const) {
       await page.goto(path)
       await expect(page.getByRole('heading', { name: heading })).toBeVisible()
@@ -67,17 +62,13 @@ test.describe('public smoke', () => {
   test('the bento shows a tile for every section that has content', async ({
     page,
   }) => {
-    // The tiles are derived from the registry (ADR 0015). Before that, four
-    // were hardcoded and agents, reports and guides could not appear here at
-    // all — so this asserts the three that used to be impossible.
+    // The tiles are derived from the registry (ADR 0015). Before that they
+    // were hardcoded and guides could not appear here at all — so this
+    // asserts the one that used to be impossible.
     await page.goto('/en')
     for (const tile of [
       'Tools directory',
-      'Agents, assessed',
-      'Model API resources',
-      'Measurement write-ups',
       'Courses and chapters',
-      'Teaching videos',
       'Written guides',
     ]) {
       await expect(page.getByRole('heading', { name: tile })).toBeVisible()
@@ -138,11 +129,6 @@ test.describe('public smoke', () => {
 })
 
 test.describe('signed in', () => {
-  test('video detail embeds the provider player', async ({ page }) => {
-    await page.goto('/en/help/videos/getting-started-with-silicon')
-    await expect(page.locator('iframe[src*="youtube.com"]')).toBeVisible()
-  })
-
   test('course chapters navigate with prev/next', async ({ page }) => {
     await page.goto('/en/help/courses/prompt-engineering-101')
     await page.getByRole('link', { name: /Why prompts matter/ }).click()

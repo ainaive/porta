@@ -57,20 +57,20 @@ describe('sectionTiles', () => {
   test('preserves registry order', () => {
     const tile = { kind: 'stat', titleKey: 't', descriptionKey: 'd' } as const
     const registered = [
-      section('report', tile),
-      section('agent', tile),
-      section('model', tile),
+      section('guide', tile),
+      section('tool', tile),
+      section('course', tile),
     ]
     expect(sectionTiles(() => 1, registered).map((t) => t.section.key)).toEqual(
-      ['report', 'agent', 'model'],
+      ['guide', 'tool', 'course'],
     )
   })
 })
 
 describe('packTiles', () => {
   test('reproduces the hand-tuned grid for the four original tiles', () => {
-    // tool(list) model(fields) course(stat) video(stat) bilingual search —
-    // the composition ADR 0008 shipped. The derived version must not move it.
+    // tool(list) + three stats + bilingual + search — the composition ADR
+    // 0008 shipped. The derived version must not move it.
     const packed = packTiles([
       { span: 4 },
       { span: 2 },
@@ -85,12 +85,12 @@ describe('packTiles', () => {
   test('packs all seven sections into flush rows', () => {
     const packed = packTiles([
       { span: 4 }, // tool
-      { span: 2 }, // agent
-      { span: 2 }, // model
-      { span: 2 }, // report
       { span: 2 }, // course
-      { span: 2 }, // video
       { span: 2 }, // guide
+      { span: 2 }, // (spare)
+      { span: 2 }, // (spare)
+      { span: 2 }, // (spare)
+      { span: 2 }, // (spare)
       { span: 2 }, // bilingual
       { span: 6 }, // search
     ])

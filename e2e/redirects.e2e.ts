@@ -5,38 +5,16 @@ import { expect, test } from '@playwright/test'
 // in chat and bookmarked, so this is a contract, not a nicety.
 test.use({ storageState: { cookies: [], origins: [] } })
 
-test('the old model catalog path redirects into AI Evaluation', async ({
-  page,
-}) => {
-  await page.goto('/en/models')
-  await expect(page).toHaveURL(/\/en\/evals\/models$/)
-  await expect(page.getByRole('heading', { name: 'Models' })).toBeVisible()
-})
-
-test('a deep link redirects and keeps its query string', async ({ page }) => {
-  await page.goto('/zh/models?q=silicon')
-  await expect(page).toHaveURL(/\/zh\/evals\/models\?q=silicon$/)
-})
-
-test('a moved detail link lands on the new gated URL, not the old one', async ({
-  page,
-}) => {
-  // Signed out: the redirect must run before the auth gate, or `next=` would
-  // send the visitor back to a path that no longer exists.
-  await page.goto('/en/models/claude-api')
-  await expect(page).toHaveURL(
-    /\/en\/sign-in\?next=%2Fen%2Fevals%2Fmodels%2Fclaude-api$/,
-  )
-})
-
-test('the old course and video paths redirect into Help & Tutorials', async ({
+test('the old course path redirects into Help & Tutorials', async ({
   page,
 }) => {
   await page.goto('/en/courses')
   await expect(page).toHaveURL(/\/en\/help\/courses$/)
+})
 
-  await page.goto('/en/videos')
-  await expect(page).toHaveURL(/\/en\/help\/videos$/)
+test('a redirect keeps its query string', async ({ page }) => {
+  await page.goto('/zh/courses?q=prompt')
+  await expect(page).toHaveURL(/\/zh\/help\/courses\?q=prompt$/)
 })
 
 test('a positional chapter URL survives the move', async ({ page }) => {

@@ -11,11 +11,11 @@
     "account": "Account"
   },
   "home": {
-    "subtitle": "Internal tools, model API resources, courses, and teaching videos — catalogued in one place, in both languages.",
+    "subtitle": "Internal tools, courses, and written guides — catalogued in one place, in both languages.",
     "kicker": "ECOSYSTEM TOOLCHAIN PORTAL",
     "heroLine1": "One portal,",
     "heroLine2": "the entire toolchain",
-    "heroSub": "Internal tools, model API resources, courses, and teaching videos — catalogued in one place, in both languages.",
+    "heroSub": "Internal tools, courses, and written guides — catalogued in one place, in both languages.",
     "ctaPrimary": "Sign in",
     "ctaSecondary": "Browse the catalog",
     "preview": {
